@@ -95,7 +95,14 @@ const userLogin = (req, res) => {
       customer: {
         id: customer.id,
         name: customer.name,
-        email: customer.email
+        email: customer.email,
+        phone: customer.phone || "Not provided",
+    pancard: customer.pancard || "Not provided",
+    location: customer.location || "Not provided",
+    options: customer.options || "Not provided",
+    email_verified: customer.email_verified,
+    phone_verified: customer.phone_verified,
+    kyc_status: customer.kyc_status
       }
     });
   });
