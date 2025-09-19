@@ -4,10 +4,11 @@ const router = express.Router();
 const verifyToken = require('../middleware/auth');
 const userRegister = require('../controller/userRegister/register');
 const otpController = require('../controller/userRegister/verifyotp');
+const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
-const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
+const services = require('../controller/services/services');
 
 // Define routes for user registration and login
 router.post('/user/signup', userRegister.userSignUp);
@@ -34,6 +35,14 @@ router.get('/admin/roles', adminRegister.getAdminRoles);
 router.post('/admin/users',verifyToken, adminUsers.createAdminUser);
 router.post('/admin/login', adminUsers.adminLogin);
 router.get('/admin/users', verifyToken, adminUsers.getAdminUsers);
+
+// Service Catalog Routes
+router.post("/services", verifyToken, services.createService);
+router.get("/services", services.getAllServices);
+router.get("/service/:id", services.getServiceById);
+router.put("/service/:id", verifyToken, services.updateService);
+router.delete("/service/:id", verifyToken, services.deleteService);
+
 
 
 module.exports = router;
