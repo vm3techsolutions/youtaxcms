@@ -6,6 +6,12 @@ const db = require("../../../config/db");
 
 
 
+/**
+ * Create a new admin user. Only users with Admin role (role_id = 4) can create new admin users.
+ * @param {Object} req - Express request object, expects req.user.id and req.body: name, email, password, phone, role_id
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
 const createAdminUser = async (req, res) => {
   const { name, email, password, phone, role_id } = req.body;
 const created_by = req.user ? req.user.id : null;
@@ -93,6 +99,12 @@ const created_by = req.user ? req.user.id : null;
 // Login Admin
 
 
+/**
+ * Login an admin user and return JWT token if credentials are valid.
+ * @param {Object} req - Express request object, expects req.body: email, password
+ * @param {Object} res - Express response object
+ * @returns {void}
+ */
 const adminLogin = (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ message: "Email and password required" });
@@ -121,6 +133,12 @@ const adminLogin = (req, res) => {
 };
 
 // Get All Admin Users
+/**
+ * Get all admin users with their roles and basic info.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {void}
+ */
 const getAdminUsers = (req, res) => {
   const sql = `SELECT au.id, au.name, au.email, au.phone, ar.name AS role, au.created_at
                FROM admin_users au
