@@ -9,6 +9,7 @@ const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
 const services = require('../controller/services/services');
+const serviceDocuments = require('../controller/services/serviceDocuments');
 
 // Define routes for user registration and login
 router.post('/user/signup', userRegister.userSignUp);
@@ -43,6 +44,13 @@ router.get("/service/:id", services.getServiceById);
 router.put("/service/:id", verifyToken, services.updateService);
 router.delete("/service/:id", verifyToken, services.deleteService);
 
+// Service Documents Routes
+router.post("/service-documents", verifyToken, serviceDocuments.createServiceDocument);
+router.get("/service-documents/service/:serviceId", serviceDocuments.getDocumentsByService);
+router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
+
+router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
+router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
 
 
 module.exports = router;
