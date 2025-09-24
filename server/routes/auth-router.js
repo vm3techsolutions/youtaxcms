@@ -6,6 +6,8 @@ const userRegister = require('../controller/userRegister/register');
 const otpController = require('../controller/userRegister/verifyotp');
 const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
 const orderController = require('../controller/order/createOrder');
+const upload = require("../config/multer");
+const kycController = require("../controller/userMyprofile/kycUpload");
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -21,6 +23,12 @@ router.post("/customerprofile", verifyToken, userMyprofile.createMyProfile);
 router.get("/customerprofile", verifyToken, userMyprofile.getMyProfiles);
 router.get("/customerprofile/:id", verifyToken, userMyprofile.getMyProfileById);
 router.put("/customerprofile", verifyToken, userMyprofile.updateMyProfile);
+
+// KYC Routes 
+router.post("/kyc/upload",verifyToken,upload.single("document"),kycController.uploadKycDocument);
+router.get("/kyc", verifyToken, kycController.getMyKycDocuments);
+// router.get("/kyc/all", verifyToken, kycController.getAllKycDocuments);
+
 
 
 // Password reset routes
