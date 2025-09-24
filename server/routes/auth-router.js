@@ -5,6 +5,7 @@ const verifyToken = require('../middleware/auth');
 const userRegister = require('../controller/userRegister/register');
 const otpController = require('../controller/userRegister/verifyotp');
 const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
+const orderController = require('../controller/order/createOrder');
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -30,6 +31,11 @@ router.post("/reset-password", userRegister.resetPassword);
 router.post('/send-otp', verifyToken ,otpController.sendOtp);
 router.post('/verify-otp', verifyToken, otpController.verifyOtp);
 
+// Order Routes
+router.post("/create-order", verifyToken, orderController.createOrder);
+router.post("/verify-payment", verifyToken, orderController.verifyPaymentLink);
+router.post("/pending-orders", verifyToken, orderController.createPendingPaymentLink);
+// ===========================================================================
 
 // Admin routes
 router.get('/admin/roles', adminRegister.getAdminRoles);
