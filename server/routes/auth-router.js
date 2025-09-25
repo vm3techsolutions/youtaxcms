@@ -8,6 +8,7 @@ const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
 const orderController = require('../controller/order/createOrder');
 const upload = require("../config/multer");
 const kycController = require("../controller/userMyprofile/kycUpload");
+const orderDocuments = require("../controller/orderDocument/orderDocuments");
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -43,6 +44,10 @@ router.post('/verify-otp', verifyToken, otpController.verifyOtp);
 router.post("/create-order", verifyToken, orderController.createOrder);
 router.post("/verify-payment", verifyToken, orderController.verifyPaymentLink);
 router.post("/pending-orders", verifyToken, orderController.createPendingPaymentLink);
+
+// Order Document Routes
+router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
+router.get("/order-documents/:order_id", verifyToken, orderDocuments.getOrderDocuments);
 // ===========================================================================
 
 // Admin routes
