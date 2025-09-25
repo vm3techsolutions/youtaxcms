@@ -50,8 +50,8 @@ export default function Sidebar() {
   const role = currentAdmin?.role || "Viewer"; // fallback role
   const items = menuConfig[role] || [];
 
-  console.log("currentAdmin =>", currentAdmin);
-console.log("role =>", role);
+//   console.log("currentAdmin =>", currentAdmin);
+// console.log("role =>", role);
 
   return (
     <div className="h-full bg-white flex flex-col justify-between border-r border-gray-200">

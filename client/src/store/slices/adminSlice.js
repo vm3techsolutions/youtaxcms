@@ -3,12 +3,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "@/api/axiosInstance";
 
-// 🔹 Helpers
+// ---------------- Helpers ----------------
+
+// Unique session ID per browser
+const generateSessionId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+};
+
 const getStorageItem = (key) => {
   if (typeof window !== "undefined") {
     return (
       localStorage.getItem(key) ||
-      sessionStorage.getItem(key) // check both
+      sessionStorage.getItem(key)
     );
   }
   return null;
@@ -22,7 +28,7 @@ const parseJSON = (item) => {
   }
 };
 
-// --------------------- Async Thunks ---------------------
+// ---------------- Async Thunks ----------------
 
 // 👉 Register new admin
 export const registerAdmin = createAsyncThunk(
@@ -42,7 +48,7 @@ export const registerAdmin = createAsyncThunk(
   }
 );
 
-// 👉 Admin login (with rememberMe)
+// 👉 Admin login
 export const loginAdmin = createAsyncThunk(
   "admin/login",
   async ({ email, password, rememberMe }, { rejectWithValue }) => {
@@ -51,8 +57,11 @@ export const loginAdmin = createAsyncThunk(
 
       if (typeof window !== "undefined") {
         const storage = rememberMe ? localStorage : sessionStorage;
+        const sessionId = generateSessionId();
+
         storage.setItem("token", res.data.token);
         storage.setItem("currentAdmin", JSON.stringify(res.data.admin));
+        storage.setItem("sessionId", sessionId);
       }
 
       return res.data; // { message, token, admin }
@@ -101,7 +110,11 @@ export const fetchCurrentAdmin = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = getStorageItem("token");
-      if (!token) throw new Error("No token found");
+      const sessionId = getStorageItem("sessionId");
+
+      if (!token || !sessionId) {
+        throw new Error("No valid session");
+      }
 
       const res = await axiosInstance.get("/admin/me", {
         headers: { Authorization: `Bearer ${token}` },
@@ -111,6 +124,7 @@ export const fetchCurrentAdmin = createAsyncThunk(
         const storage =
           localStorage.getItem("token") === token ? localStorage : sessionStorage;
         storage.setItem("currentAdmin", JSON.stringify(res.data));
+        storage.setItem("sessionId", sessionId); // persist same sessionId
       }
 
       return res.data;
@@ -120,13 +134,14 @@ export const fetchCurrentAdmin = createAsyncThunk(
   }
 );
 
-// --------------------- Slice ---------------------
+// ---------------- Slice ----------------
 
 const initialState = {
   admins: [],
   roles: [],
   currentAdmin: parseJSON(getStorageItem("currentAdmin")),
   token: getStorageItem("token"),
+  sessionId: getStorageItem("sessionId"),
   registerLoading: false,
   loginLoading: false,
   adminsLoading: false,
@@ -143,22 +158,39 @@ const adminSlice = createSlice({
     logoutAdmin: (state) => {
       state.currentAdmin = null;
       state.token = null;
+      state.sessionId = null;
       state.success = false;
+
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
         localStorage.removeItem("currentAdmin");
+        localStorage.removeItem("sessionId");
         sessionStorage.removeItem("token");
         sessionStorage.removeItem("currentAdmin");
-      }
-    },
-    setToken: (state, action) => {
-      state.token = action.payload;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", action.payload);
+        sessionStorage.removeItem("sessionId");
       }
     },
     resetSuccess: (state) => {
       state.success = false;
+    },
+    checkAdminSession: (state) => {
+      if (typeof window !== "undefined") {
+        const sessionId = getStorageItem("sessionId");
+        if (!sessionId) {
+          // No valid session in this browser → force logout
+          state.currentAdmin = null;
+          state.token = null;
+          state.sessionId = null;
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("token");
+            localStorage.removeItem("currentAdmin");
+            localStorage.removeItem("sessionId");
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("currentAdmin");
+            sessionStorage.removeItem("sessionId");
+          }
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -188,6 +220,7 @@ const adminSlice = createSlice({
         state.loginLoading = false;
         state.currentAdmin = action.payload.admin;
         state.token = action.payload.token;
+        state.sessionId = getStorageItem("sessionId");
         state.success = true;
       })
       .addCase(loginAdmin.rejected, (state, action) => {
@@ -236,16 +269,11 @@ const adminSlice = createSlice({
         state.fetchCurrentLoading = false;
         state.currentAdmin = null;
         state.token = null;
+        state.sessionId = null;
         state.error = action.payload;
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          localStorage.removeItem("currentAdmin");
-          sessionStorage.removeItem("token");
-          sessionStorage.removeItem("currentAdmin");
-        }
       });
   },
 });
 
-export const { logoutAdmin, setToken, resetSuccess } = adminSlice.actions;
+export const { logoutAdmin, resetSuccess, checkAdminSession } = adminSlice.actions;
 export default adminSlice.reducer;
