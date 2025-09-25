@@ -1,11 +1,28 @@
 "use client";
 
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { sendOtp, verifyOtp, clearMessages } from "@/store/slices/userSlice";
+import { useState, useEffect } from "react";
 
 export default function UserProfile() {
-  const user = useSelector((state) => state.user.userInfo);
+  const dispatch = useDispatch();
+  const { userInfo, otpLoading, verifyLoading, successMessage, error } = useSelector(
+    (state) => state.user
+  );
 
-  if (!user) {
+  const [otpType, setOtpType] = useState(null);
+  const [otpCode, setOtpCode] = useState("");
+
+  useEffect(() => {
+    if (successMessage || error) {
+      const timer = setTimeout(() => {
+        dispatch(clearMessages());
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, error, dispatch]);
+
+  if (!userInfo) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p className="text-gray-500">No user data found.</p>
@@ -13,69 +30,126 @@ export default function UserProfile() {
     );
   }
 
+  const handleSendOtp = (type) => {
+    setOtpType(type);
+    dispatch(sendOtp(type));
+  };
+
+  const handleVerifyOtp = () => {
+    if (otpType && otpCode) {
+      dispatch(verifyOtp({ type: otpType, otp: otpCode }));
+      setOtpCode("");
+      setOtpType(null);
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg mt-10 border border-gray-100">
+    <div className="max-w-3xl bg-white p-8 rounded-xl shadow-lg border border-gray-100">
       <h2 className="text-3xl font-bold mb-8 text-gray-800 border-b pb-4">
         User Profile
       </h2>
+
+      {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
+      {error && <p className="text-red-600 mb-4">{error}</p>}
 
       <div className="space-y-6">
         {/* Full Name */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Full Name:</h3>
-          <p className="text-gray-600">{user.name}</p>
+          <p className="text-gray-600">{userInfo.name}</p>
         </div>
 
-        {/* Email with verification */}
+        {/* Email */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Email:</h3>
-          <p className="text-gray-600">{user.email}</p>
+          <p className="text-gray-600">{userInfo.email}</p>
           <span
             className={`ml-3 px-2 py-1 text-xs rounded-full font-medium ${
-              user.isEmailVerified
+              userInfo.isEmailVerified
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-600"
             }`}
           >
-            {user.isEmailVerified ? "Verified" : "Not Verified"}
+            {userInfo.isEmailVerified ? "Verified" : "Not Verified"}
           </span>
+          {!userInfo.isEmailVerified && (
+            <button
+              onClick={() => handleSendOtp("email")}
+              disabled={otpLoading}
+              className="ml-4 text-blue-600 underline"
+            >
+              {otpLoading && otpType === "email" ? "Sending..." : "Verify"}
+            </button>
+          )}
         </div>
 
-        {/* Phone with verification */}
+        {/* Phone */}
         <div className="flex items-center">
-          <h3 className="w-40 font-semibold text-gray-700">Phone Number:</h3>
-          <p className="text-gray-600">
-            {user.phone || "Not Provided"}
-          </p>
+          <h3 className="w-40 font-semibold text-gray-700">Phone:</h3>
+          <p className="text-gray-600">{userInfo.phone || "Not Provided"}</p>
           <span
             className={`ml-3 px-2 py-1 text-xs rounded-full font-medium ${
-              user.isPhoneVerified
+              userInfo.isPhoneVerified
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-600"
             }`}
           >
-            {user.isPhoneVerified ? "Verified" : "Not Verified"}
+            {userInfo.isPhoneVerified ? "Verified" : "Not Verified"}
           </span>
+          {!userInfo.isPhoneVerified && (
+            <button
+              onClick={() => handleSendOtp("phone")}
+              disabled={otpLoading}
+              className="ml-4 text-blue-600 underline"
+            >
+              {otpLoading && otpType === "phone" ? "Sending..." : "Verify"}
+            </button>
+          )}
         </div>
 
         {/* PAN Card */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">PAN Card:</h3>
-          <p className="text-gray-600">{user.pancard || "Not Provided"}</p>
+          <p className="text-gray-600">{userInfo.pancard || "Not Provided"}</p>
         </div>
 
         {/* Location */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Location:</h3>
-          <p className="text-gray-600">{user.location || "Not Provided"}</p>
+          <p className="text-gray-600">{userInfo.location || "Not Provided"}</p>
         </div>
 
         {/* Branch */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Branch:</h3>
-          <p className="text-gray-600">{user.options || "Not Provided"}</p>
+          <p className="text-gray-600">{userInfo.options || "Not Provided"}</p>
         </div>
       </div>
+
+      {/* OTP Input Modal-like */}
+      {otpType && (
+        <div className="mt-6 border-t pt-4">
+          <h4 className="text-lg font-semibold text-gray-800 mb-2">
+            Enter OTP for {otpType}
+          </h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+              className="border rounded px-3 py-2 flex-1"
+              placeholder="Enter OTP"
+            />
+            <button
+              onClick={handleVerifyOtp}
+              disabled={verifyLoading}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              {verifyLoading ? "Verifying..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

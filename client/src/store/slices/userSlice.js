@@ -12,14 +12,13 @@ const generateSessionId = () => {
 const getStorageItem = (key) => {
   if (typeof window !== "undefined") {
     return (
-      localStorage.getItem(key) ||
-      sessionStorage.getItem(key)
+      localStorage.getItem(key) || sessionStorage.getItem(key)
     );
   }
   return null;
 };
 
-// Async thunk: Login
+// ✅ Async thunk: Login
 export const loginUser = createAsyncThunk(
   "user/login",
   async ({ credentials, rememberMe }, { rejectWithValue }) => {
@@ -28,7 +27,7 @@ export const loginUser = createAsyncThunk(
 
       if (typeof window !== "undefined") {
         const storage = rememberMe ? localStorage : sessionStorage;
-        const sessionId = generateSessionId(); // unique for this browser
+        const sessionId = generateSessionId();
 
         storage.setItem("token", response.data.token);
         storage.setItem("userInfo", JSON.stringify(response.data.customer));
@@ -44,6 +43,46 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// ✅ Async thunk: Send OTP
+export const sendOtp = createAsyncThunk(
+  "user/sendOtp",
+  async (type, { getState, rejectWithValue }) => {
+    try {
+      const { token } = getState().user;
+      const response = await axiosInstance.post(
+        "/send-otp",
+        { type },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return { type, message: response.data.message };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "OTP send failed" });
+    }
+  }
+);
+
+// ✅ Async thunk: Verify OTP
+export const verifyOtp = createAsyncThunk(
+  "user/verifyOtp",
+  async ({ type, otp }, { getState, rejectWithValue }) => {
+    try {
+      const { token } = getState().user;
+      const response = await axiosInstance.post(
+        "/verify-otp",
+        { type, otp },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return { type, message: response.data.message };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "OTP verification failed" });
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
@@ -51,8 +90,10 @@ const userSlice = createSlice({
       ? JSON.parse(getStorageItem("userInfo"))
       : null,
     token: getStorageItem("token") || null,
-    sessionId: getStorageItem("sessionId") || null, // track per-browser session
+    sessionId: getStorageItem("sessionId") || null,
     loading: false,
+    otpLoading: false,
+    verifyLoading: false,
     error: null,
     successMessage: null,
   },
@@ -80,7 +121,6 @@ const userSlice = createSlice({
       if (typeof window !== "undefined") {
         const sessionId = getStorageItem("sessionId");
         if (!sessionId) {
-          // If no sessionId in this browser, force logout
           state.userInfo = null;
           state.token = null;
           state.sessionId = null;
@@ -90,6 +130,7 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // ✅ Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -105,6 +146,50 @@ const userSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload.message || "Login failed";
+      })
+
+      // ✅ Send OTP
+      .addCase(sendOtp.pending, (state) => {
+        state.otpLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(sendOtp.fulfilled, (state, action) => {
+        state.otpLoading = false;
+        state.successMessage = action.payload.message || "OTP sent successfully";
+      })
+      .addCase(sendOtp.rejected, (state, action) => {
+        state.otpLoading = false;
+        state.error = action.payload.message || "OTP send failed";
+      })
+
+      // ✅ Verify OTP
+      .addCase(verifyOtp.pending, (state) => {
+        state.verifyLoading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.verifyLoading = false;
+        state.successMessage = action.payload.message;
+
+        // 🔑 Update verification status
+        if (state.userInfo) {
+          if (action.payload.type === "email") {
+            state.userInfo.isEmailVerified = true;
+          } else if (action.payload.type === "phone") {
+            state.userInfo.isPhoneVerified = true;
+          }
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+            sessionStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+          }
+        }
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
+        state.verifyLoading = false;
+        state.error = action.payload.message || "OTP verification failed";
       });
   },
 });
