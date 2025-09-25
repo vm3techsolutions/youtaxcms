@@ -8,11 +8,11 @@ const db = require("../../config/db");
  */
 const createService = async (req, res) => {
   try {
-    const { name, description, base_price, advance_price, service_charges, sla_days } = req.body;
+    const { name, description, base_price, advance_price, service_charges, sla_days,requires_advance } = req.body;
     const created_by = req.user ? req.user.id : null;
 
-    if (!name || !base_price || !advance_price) {
-      return res.status(400).json({ message: "Name, Base Price, and Advance Price are required" });
+    if (!name || !base_price ) {
+      return res.status(400).json({ message: "Name, Base Price are required" });
     }
     // Check if creator is admin with role_id 4
     const [creator] = await db.promise().query(
@@ -37,8 +37,8 @@ const createService = async (req, res) => {
 
     const sql = `
       INSERT INTO services 
-      (name, description, base_price, advance_price, service_charges, sla_days, created_by) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (name, description, base_price, advance_price, service_charges, sla_days,requires_advance, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db
@@ -47,9 +47,10 @@ const createService = async (req, res) => {
         name,
         description || null,
         base_price,
-        advance_price,
+        advance_price || null,
         service_charges || null,
         sla_days || null,
+        requires_advance ? 1 : 0,
         created_by,
       ]);
 

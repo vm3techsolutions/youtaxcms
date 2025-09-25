@@ -4,20 +4,23 @@ const razorpay = require("../../config/razorpay");
 
 
 /**
- * Create a new order and Razorpay Payment Link
+ * Create a new order and Razorpay Payment Link (supports advance/full payment option)
  */
 const createOrder = async (req, res) => {
   try {
-    const { service_id, customer_name, customer_email, customer_contact } = req.body;
+    const { service_id, customer_name, customer_email, customer_contact, payment_option } = req.body;
     const customer_id = req.user ? req.user.id : null;
 
     if (!customer_id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    if (!service_id || !customer_name || !customer_email || !customer_contact || !payment_option) {
+      return res.status(400).json({ message: "service_id, customer_name, customer_email, customer_contact and payment_option are required" });
+    }
 
     // 1. fetch service pricing
     const [services] = await db.promise().query(
-      "SELECT base_price, advance_price, requires_advance FROM services WHERE id=?",
+      "SELECT base_price, advance_price, service_charges, requires_advance FROM services WHERE id=?",
       [service_id]
     );
     if (!services || services.length === 0) {
@@ -25,50 +28,112 @@ const createOrder = async (req, res) => {
     }
 
     const service = services[0];
-    const totalAmount = parseFloat(service.base_price) || 0;
-    const advanceRequired = service.requires_advance
-      ? parseFloat(service.advance_price) || 0
-      : 0;
-      
+
+    const basePrice = service.base_price ? parseFloat(service.base_price) : 0;
+    const serviceCharges = service.service_charges ? parseFloat(service.service_charges) : 0;
+    const advancePrice = service.advance_price ? parseFloat(service.advance_price) : 0;
+
+    const totalAmount = basePrice + serviceCharges;
+
+    let amountToPay = totalAmount; // default full payment
+    let paymentType = "final";     // default payment type
+
+
+    if (!advancePrice || advancePrice <= 0) {
+      // No advance → full payment mandatory
+      amountToPay = totalAmount;
+      paymentType = "final";
+      if (payment_option === "advance") {
+        return res.status(400).json({
+          message: "Advance payment not available for this service. Please pay full.",
+        });
+      }
+    } else {
+      // Advance available → customer choice
+      if (payment_option === "advance") {
+        amountToPay = advancePrice;
+        paymentType = "advance";
+      } else {
+        amountToPay = totalAmount;
+        paymentType = "final";
+      }
+    }
+
+    // 🚨 validate before Razorpay call
+    if (!amountToPay || amountToPay <= 0) {
+      return res.status(400).json({ message: "Invalid payment amount" });
+    }
 
     // 2. insert order
     const [ins] = await db.promise().query(
-      `INSERT INTO orders (customer_id, service_id, status, total_amount, advance_required, advance_paid) 
+      `INSERT INTO orders 
+        (customer_id, service_id, status, total_amount, advance_required, advance_paid) 
        VALUES (?, ?, 'awaiting_payment', ?, ?, 0)`,
-      [customer_id, service_id, totalAmount, advanceRequired]
+      [customer_id, service_id, totalAmount, service.advance_price || 0]
     );
     const orderId = ins.insertId;
 
-    // 3. create Razorpay Payment Link (instead of Checkout order)
-    let paymentLink = null;
-    if (advanceRequired > 0) {
-      paymentLink = await razorpay.paymentLink.create({
-        amount: Math.round(advanceRequired * 100), // paise
-        currency: "INR",
-        description: `Advance payment for service ${service_id}`,
-        customer: {
-          name: customer_name,
-          email: customer_email,
-          contact: customer_contact,
-        },
-        notify: { sms: true, email: true },
-        reminder_enable: true,
-        notes: {
-          order_id: String(orderId),
-          customer_id: String(customer_id),
-          service_id: String(service_id),
-        },
-        callback_url: "https://yourdomain.com/api/orders/verifyPaymentLink",
-        callback_method: "get",
-      });
+    // 3. create Razorpay Payment Link
+    // const paymentLink = await razorpay.paymentLink.create({
+    //   amount: Math.round(amountToPay * 100), // paise
+    //   currency: "INR",
+    //   description: `Payment for service ${service_id}`,
+    //   customer: {
+    //     name: customer_name,
+    //     email: customer_email,
+    //     contact: customer_contact,
+    //   },
+    //   notify: { sms: true, email: true },
+    //   reminder_enable: true,
+    //   notes: {
+    //     order_id: String(orderId),
+    //     customer_id: String(customer_id),
+    //     service_id: String(service_id),
+    //     payment_option: payment_option || "full",
+    //   },
+    //   callback_url: "https://yourdomain.com/api/orders/verifyPaymentLink",
+    //   callback_method: "get",
+    // });
 
-      // insert payment record
-      await db.promise().query(
-        `INSERT INTO payments (order_id, customer_id, amount, payment_type, payment_mode, status, txn_ref) 
-         VALUES (?, ?, ?, 'advance', 'razorpay', 'initiated', ?)`,
-        [orderId, customer_id, advanceRequired, paymentLink.id]
-      );
-    }
+    let paymentLink;
+try {
+  paymentLink = await razorpay.paymentLink.create({
+    amount: Math.round(amountToPay * 100),
+    currency: "INR",
+    description: `Payment for service ${service_id}`,
+    customer: { name: customer_name, email: customer_email, contact: customer_contact },
+    notify: { sms: true, email: true },
+    reminder_enable: true,
+    notes: {
+      order_id: String(orderId),
+      customer_id: String(customer_id),
+      service_id: String(service_id),
+      payment_option: paymentType,
+    },
+    callback_url: "https://<your-ngrok-or-domain>/api/orders/verifyPaymentLink",
+    callback_method: "get",
+  });
+} catch (err) {
+  console.error("Razorpay Error (paymentLink.create):", err.error || err.message || err);
+  return res.status(500).json({
+    message: "Failed to create Razorpay Payment Link",
+    error: err.error || err.message,
+  });
+}
+
+    // insert payment record
+    await db.promise().query(
+      `INSERT INTO payments 
+       (order_id, customer_id, amount, payment_type, payment_mode, status, txn_ref) 
+       VALUES (?, ?, ?, ?, 'razorpay', 'initiated', ?)`,
+      [
+        orderId,
+        customer_id,
+        amountToPay,
+        paymentType,
+        paymentLink.id,
+      ]
+    );
 
     res.status(201).json({
       success: true,
@@ -76,19 +141,18 @@ const createOrder = async (req, res) => {
         id: orderId,
         status: "awaiting_payment",
         total_amount: totalAmount,
-        advance_required: advanceRequired,
+        service_charges: service.service_charges,
+        advance_required: service.advance_price || 0,
       },
-      razorpay: paymentLink
-        ? {
-            payment_link: paymentLink.short_url, // 🔗 open this in browser
-            id: paymentLink.id,
-            status: paymentLink.status,
-          }
-        : null,
+      razorpay: {
+        payment_link: paymentLink.short_url,
+        id: paymentLink.id,
+        status: paymentLink.status,
+      },
     });
   } catch (err) {
     console.error("DB Error (createOrder):", err);
-    res.status(500).json({ message: "Database error" });
+  res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };
 
@@ -117,7 +181,7 @@ const verifyPaymentLink = async (req, res) => {
        SET status='success', 
            payment_mode=? 
        WHERE txn_ref=?`,
-      [ paymentMethod || 'razorpay', payment_link_id]
+      [paymentMethod || 'razorpay', payment_link_id]
     );
 
     // // ✅ Update orders table
@@ -128,7 +192,7 @@ const verifyPaymentLink = async (req, res) => {
     //   [paymentLink.notes.order_id]
     // );
 
-    
+
     // Fetch order
     const [orderRows] = await db.promise().query(
       `SELECT total_amount, advance_paid FROM orders WHERE id=?`,
@@ -138,7 +202,7 @@ const verifyPaymentLink = async (req, res) => {
 
     // Calculate new advance_paid
     // const amountPaid = order.advance_paid + (paymentLink.amount / 100); // Razorpay returns paise
-const amountPaid = parseFloat(order.advance_paid || 0) + (paymentLink.amount / 100); // Razorpay amount is in paise
+    const amountPaid = parseFloat(order.advance_paid || 0) + (paymentLink.amount / 100); // Razorpay amount is in paise
 
     // Determine payment status
     let newPaymentStatus = "unpaid";
@@ -148,15 +212,15 @@ const amountPaid = parseFloat(order.advance_paid || 0) + (paymentLink.amount / 1
       newPaymentStatus = "partially_paid";
     }
 
-    
 
-    
+
+
     // Update orders table with actual amountPaid
     const [orderResult] = await db.promise().query(
       `UPDATE orders 
        SET advance_paid=?, payment_status=?, status='in_progress' 
        WHERE id=?`,
-      [ amountPaid,newPaymentStatus, paymentLink.notes.order_id]
+      [amountPaid, newPaymentStatus, paymentLink.notes.order_id]
     );
     console.log("Orders update affectedRows:", orderResult.affectedRows);
 
