@@ -43,7 +43,7 @@ export default function UserLayout({ children }) {
         </aside>
 
         {/* ✅ Main content on the right */}
-        <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
+        <main className="flex-1 px-6 overflow-y-auto bg-gray-50">
           {children}
         </main>
       </div>

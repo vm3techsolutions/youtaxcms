@@ -21,7 +21,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="mt-6 space-y-1">
         <Link
-          href="/user/dashboard"
+          href="/user/services"
           className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
         >
           <Cog6ToothIcon className="w-5 h-5" />

@@ -1,32 +1,24 @@
+"use client";
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "@/api/axiosInstance";
 
-// 🔹 Helpers to safely get from storage
+// Helper to generate session ID
+const generateSessionId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+};
+
+// Helpers to safely get from storage
 const getStorageItem = (key) => {
   if (typeof window !== "undefined") {
     return (
-      localStorage.getItem(key) ||
-      sessionStorage.getItem(key) // check both storages
+      localStorage.getItem(key) || sessionStorage.getItem(key)
     );
   }
   return null;
 };
 
-// Async thunks
-export const signupUser = createAsyncThunk(
-  "user/signup",
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post("/user/signup", userData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: "Signup failed" }
-      );
-    }
-  }
-);
-
+// ✅ Async thunk: Login
 export const loginUser = createAsyncThunk(
   "user/login",
   async ({ credentials, rememberMe }, { rejectWithValue }) => {
@@ -35,8 +27,11 @@ export const loginUser = createAsyncThunk(
 
       if (typeof window !== "undefined") {
         const storage = rememberMe ? localStorage : sessionStorage;
+        const sessionId = generateSessionId();
+
         storage.setItem("token", response.data.token);
         storage.setItem("userInfo", JSON.stringify(response.data.customer));
+        storage.setItem("sessionId", sessionId);
       }
 
       return response.data;
@@ -48,30 +43,42 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-export const forgotPassword = createAsyncThunk(
-  "user/forgotPassword",
-  async (emailData, { rejectWithValue }) => {
+// ✅ Async thunk: Send OTP
+export const sendOtp = createAsyncThunk(
+  "user/sendOtp",
+  async (type, { getState, rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/forgot-password", emailData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { error: "Request failed" }
+      const { token } = getState().user;
+      const response = await axiosInstance.post(
+        "/send-otp",
+        { type },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
+      return { type, message: response.data.message };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "OTP send failed" });
     }
   }
 );
 
-export const resetPassword = createAsyncThunk(
-  "user/resetPassword",
-  async (resetData, { rejectWithValue }) => {
+// ✅ Async thunk: Verify OTP
+export const verifyOtp = createAsyncThunk(
+  "user/verifyOtp",
+  async ({ type, otp }, { getState, rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/reset-password", resetData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { error: "Reset failed" }
+      const { token } = getState().user;
+      const response = await axiosInstance.post(
+        "/verify-otp",
+        { type, otp },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
+      return { type, message: response.data.message };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "OTP verification failed" });
     }
   }
 );
@@ -83,7 +90,10 @@ const userSlice = createSlice({
       ? JSON.parse(getStorageItem("userInfo"))
       : null,
     token: getStorageItem("token") || null,
+    sessionId: getStorageItem("sessionId") || null,
     loading: false,
+    otpLoading: false,
+    verifyLoading: false,
     error: null,
     successMessage: null,
   },
@@ -91,76 +101,98 @@ const userSlice = createSlice({
     logout: (state) => {
       state.userInfo = null;
       state.token = null;
+      state.sessionId = null;
       state.successMessage = null;
+
       if (typeof window !== "undefined") {
         localStorage.removeItem("userInfo");
         localStorage.removeItem("token");
+        localStorage.removeItem("sessionId");
         sessionStorage.removeItem("userInfo");
         sessionStorage.removeItem("token");
+        sessionStorage.removeItem("sessionId");
+      }
+    },
+    clearMessages: (state) => {
+      state.error = null;
+      state.successMessage = null;
+    },
+    checkSession: (state) => {
+      if (typeof window !== "undefined") {
+        const sessionId = getStorageItem("sessionId");
+        if (!sessionId) {
+          state.userInfo = null;
+          state.token = null;
+          state.sessionId = null;
+        }
       }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Signup
-      .addCase(signupUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(signupUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.successMessage = action.payload.message;
-      })
-      .addCase(signupUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload.message;
-      })
-
-      // Login
+      // ✅ Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.successMessage = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.token;
-        state.userInfo = action.payload.customer; // ✅ consistent
+        state.userInfo = action.payload.customer;
+        state.sessionId = getStorageItem("sessionId");
         state.successMessage = action.payload.message;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message;
+        state.error = action.payload.message || "Login failed";
       })
 
-      // Forgot Password
-      .addCase(forgotPassword.pending, (state) => {
-        state.loading = true;
+      // ✅ Send OTP
+      .addCase(sendOtp.pending, (state) => {
+        state.otpLoading = true;
         state.error = null;
+        state.successMessage = null;
       })
-      .addCase(forgotPassword.fulfilled, (state, action) => {
-        state.loading = false;
-        state.successMessage = action.payload.message;
+      .addCase(sendOtp.fulfilled, (state, action) => {
+        state.otpLoading = false;
+        state.successMessage = action.payload.message || "OTP sent successfully";
       })
-      .addCase(forgotPassword.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload.error;
+      .addCase(sendOtp.rejected, (state, action) => {
+        state.otpLoading = false;
+        state.error = action.payload.message || "OTP send failed";
       })
 
-      // Reset Password
-      .addCase(resetPassword.pending, (state) => {
-        state.loading = true;
+      // ✅ Verify OTP
+      .addCase(verifyOtp.pending, (state) => {
+        state.verifyLoading = true;
         state.error = null;
+        state.successMessage = null;
       })
-      .addCase(resetPassword.fulfilled, (state, action) => {
-        state.loading = false;
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.verifyLoading = false;
         state.successMessage = action.payload.message;
+
+        // 🔑 Update verification status
+        if (state.userInfo) {
+          if (action.payload.type === "email") {
+            state.userInfo.isEmailVerified = true;
+          } else if (action.payload.type === "phone") {
+            state.userInfo.isPhoneVerified = true;
+          }
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+            sessionStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+          }
+        }
       })
-      .addCase(resetPassword.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload.error;
+      .addCase(verifyOtp.rejected, (state, action) => {
+        state.verifyLoading = false;
+        state.error = action.payload.message || "OTP verification failed";
       });
   },
 });
 
-export const { logout } = userSlice.actions;
+export const { logout, clearMessages, checkSession } = userSlice.actions;
 export default userSlice.reducer;

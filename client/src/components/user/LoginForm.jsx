@@ -56,7 +56,7 @@ export default function LoginForm() {
 
   // ✅ Redirect if already logged in
   useEffect(() => {
-    if (token || successMessage) {
+    if (token) {
       router.push("/user/dashboard");
     }
   }, [token, successMessage, router]);

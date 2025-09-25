@@ -46,3 +46,12 @@ body {
 button, a, link, Link:hover{
   cursor: pointer;
 }
+
+.primary-btn{
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.primary-btn:hover{
+  background-color: var(--color-secondary);
+}
