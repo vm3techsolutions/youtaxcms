@@ -20,12 +20,11 @@ export default function LoginForm() {
   });
   const [rememberMe, setRememberMe] = useState(false);
 
-  // ✅ Prefill credentials if saved in localStorage
+  // ✅ Prefill saved email if "remember me" was checked
   useEffect(() => {
-    const savedCredentials = localStorage.getItem("rememberMe");
-    if (savedCredentials) {
-      const { email, password } = JSON.parse(savedCredentials);
-      setCredentials({ email, password });
+    const savedEmail = localStorage.getItem("rememberMeEmail");
+    if (savedEmail) {
+      setCredentials((prev) => ({ ...prev, email: savedEmail }));
       setRememberMe(true);
     }
   }, []);
@@ -44,31 +43,26 @@ export default function LoginForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // ✅ store only email for rememberMe
     if (rememberMe) {
-      localStorage.setItem("rememberMe", JSON.stringify(credentials));
+      localStorage.setItem("rememberMeEmail", credentials.email);
     } else {
-      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("rememberMeEmail");
     }
 
-    dispatch(loginUser(credentials));
+    // ✅ dispatch login with credentials + rememberMe flag
+    dispatch(loginUser({ credentials, rememberMe }));
   };
 
   // ✅ Redirect if already logged in
   useEffect(() => {
-    if (token) {
+    if (token || successMessage) {
       router.push("/user/dashboard");
     }
-  }, [token, router]);
-
-  // ✅ Redirect after successful login
-  useEffect(() => {
-    if (successMessage) {
-      router.push("/user/dashboard");
-    }
-  }, [successMessage, router]);
+  }, [token, successMessage, router]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <div className="w-full max-w-4xl bg-white p-14 rounded-2xl shadow-md">
         {/* Logo */}
         <div className="flex justify-center mb-4">
@@ -154,7 +148,9 @@ export default function LoginForm() {
 
         {/* Error & Success Messages */}
         {error && (
-          <p className="text-center text-sm text-red-500 mt-4">{error}</p>
+          <p className="text-center text-sm text-red-500 mt-4">
+            {typeof error === "string" ? error : error.message || "Login failed"}
+          </p>
         )}
         {successMessage && (
           <p className="text-center text-sm text-green-500 mt-4">

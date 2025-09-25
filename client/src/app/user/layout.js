@@ -27,7 +27,7 @@ export default function UserLayout({ children }) {
   if (hideLayout) {
     // For login/register → full width page
     return (
-      <main className="flex min-h-screen w-full bg-gray-50">{children}</main>
+      <main className="flex min-h-screen items-center justify-center w-full bg-gray-50">{children}</main>
     );
   }
 

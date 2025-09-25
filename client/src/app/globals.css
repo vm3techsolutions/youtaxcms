@@ -16,7 +16,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #ffffff;
     --foreground: #ededed;
   }
 }
@@ -41,4 +41,8 @@ body {
 
 .secondaryBg{
   background-color: var(--color-secondary);
+}
+
+button, a, link, Link:hover{
+  cursor: pointer;
 }

@@ -150,7 +150,7 @@ export default function RegisterForm() {
           </div>
 
           {/* Remember Me + Forgot Password */}
-          <div className="flex items-center justify-between text-sm">
+          {/* <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -163,7 +163,7 @@ export default function RegisterForm() {
             <Link href="/user/forgot-password" className="text-blue-600 hover:text-blue-400">
               Forgot Password?
             </Link>
-          </div>
+          </div> */}
 
           {/* Button */}
           <button
