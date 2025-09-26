@@ -14,6 +14,7 @@ const adminRegister = require('../controller/adminController/adminRoles/adminRol
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
 const services = require('../controller/services/services');
 const serviceDocuments = require('../controller/services/serviceDocuments');
+const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
 const { isSales } = require('../middleware/auth');
 const salesController = require('../controller/adminController/salesController/sales');
 
@@ -74,6 +75,10 @@ router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
 
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
+
+//adminCustomerController
+router.get('/admin/customer/:id', verifyToken, adminCoustomerController.getUserById);
+router.get('/admin/customers', verifyToken, adminCoustomerController.getAllUsers);
 
 
 // sales routes
