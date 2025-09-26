@@ -1,18 +1,31 @@
 "use client";
 
 import { useSelector, useDispatch } from "react-redux";
-import { sendOtp, verifyOtp, clearMessages } from "@/store/slices/userSlice";
+import {
+  sendOtp,
+  verifyOtp,
+  clearMessages,
+  fetchVerificationStatus,
+} from "@/store/slices/userSlice";
 import { useState, useEffect } from "react";
 
 export default function UserProfile() {
   const dispatch = useDispatch();
-  const { userInfo, otpLoading, verifyLoading, successMessage, error } = useSelector(
-    (state) => state.user
-  );
+  const {
+    userInfo,
+    otpLoading,
+    verifyLoading,
+    successMessage,
+    error,
+    verificationStatus,
+    loadingVerification, // optional flag to show spinner
+  } = useSelector((state) => state.user);
 
   const [otpType, setOtpType] = useState(null);
   const [otpCode, setOtpCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(true);
 
+  // Auto clear messages
   useEffect(() => {
     if (successMessage || error) {
       const timer = setTimeout(() => {
@@ -21,6 +34,14 @@ export default function UserProfile() {
       return () => clearTimeout(timer);
     }
   }, [successMessage, error, dispatch]);
+
+  // Fetch verification status on mount
+  useEffect(() => {
+    if (userInfo) {
+      setIsVerifying(true);
+      dispatch(fetchVerificationStatus()).finally(() => setIsVerifying(false));
+    }
+  }, [userInfo, dispatch]);
 
   if (!userInfo) {
     return (
@@ -43,6 +64,36 @@ export default function UserProfile() {
     }
   };
 
+  const renderVerificationBadge = (verified, type) => {
+    if (isVerifying) {
+      return (
+        <span className="ml-3 px-2 py-1 text-xs rounded-full font-medium bg-gray-200 text-gray-400 animate-pulse">
+          Loading...
+        </span>
+      );
+    }
+    return (
+      <>
+        <span
+          className={`ml-3 px-2 py-1 text-xs rounded-full font-medium ${
+            verified ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+          }`}
+        >
+          {verified ? "Verified" : "Not Verified"}
+        </span>
+        {!verified && (
+          <button
+            onClick={() => handleSendOtp(type)}
+            disabled={otpLoading}
+            className="ml-4 text-blue-600 underline"
+          >
+            {otpLoading && otpType === type ? "Sending..." : "Verify"}
+          </button>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="max-w-3xl bg-white p-8 rounded-xl shadow-lg border border-gray-100">
       <h2 className="text-3xl font-bold mb-8 text-gray-800 border-b pb-4">
@@ -63,48 +114,14 @@ export default function UserProfile() {
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Email:</h3>
           <p className="text-gray-600">{userInfo.email}</p>
-          <span
-            className={`ml-3 px-2 py-1 text-xs rounded-full font-medium ${
-              userInfo.isEmailVerified
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-600"
-            }`}
-          >
-            {userInfo.isEmailVerified ? "Verified" : "Not Verified"}
-          </span>
-          {!userInfo.isEmailVerified && (
-            <button
-              onClick={() => handleSendOtp("email")}
-              disabled={otpLoading}
-              className="ml-4 text-blue-600 underline"
-            >
-              {otpLoading && otpType === "email" ? "Sending..." : "Verify"}
-            </button>
-          )}
+          {renderVerificationBadge(verificationStatus.email_verified, "email")}
         </div>
 
         {/* Phone */}
         <div className="flex items-center">
           <h3 className="w-40 font-semibold text-gray-700">Phone:</h3>
           <p className="text-gray-600">{userInfo.phone || "Not Provided"}</p>
-          <span
-            className={`ml-3 px-2 py-1 text-xs rounded-full font-medium ${
-              userInfo.isPhoneVerified
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-600"
-            }`}
-          >
-            {userInfo.isPhoneVerified ? "Verified" : "Not Verified"}
-          </span>
-          {!userInfo.isPhoneVerified && (
-            <button
-              onClick={() => handleSendOtp("phone")}
-              disabled={otpLoading}
-              className="ml-4 text-blue-600 underline"
-            >
-              {otpLoading && otpType === "phone" ? "Sending..." : "Verify"}
-            </button>
-          )}
+          {renderVerificationBadge(verificationStatus.phone_verified, "phone")}
         </div>
 
         {/* PAN Card */}
@@ -126,7 +143,7 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* OTP Input Modal-like */}
+      {/* OTP Input */}
       {otpType && (
         <div className="mt-6 border-t pt-4">
           <h4 className="text-lg font-semibold text-gray-800 mb-2">

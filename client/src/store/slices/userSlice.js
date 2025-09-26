@@ -11,13 +11,23 @@ const generateSessionId = () => {
 // Helpers to safely get from storage
 const getStorageItem = (key) => {
   if (typeof window !== "undefined") {
-    return (
-      localStorage.getItem(key) || sessionStorage.getItem(key)
-    );
+    return localStorage.getItem(key) || sessionStorage.getItem(key);
   }
   return null;
 };
 
+// ✅ Async thunk: Signup
+export const signupUser = createAsyncThunk(
+  "user/signup",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/user/signup", userData);
+      return response.data; // { message: 'Signup successful' }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "Signup failed" });
+    }
+  }
+);
 // ✅ Async thunk: Login
 export const loginUser = createAsyncThunk(
   "user/login",
@@ -58,7 +68,9 @@ export const sendOtp = createAsyncThunk(
       );
       return { type, message: response.data.message };
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "OTP send failed" });
+      return rejectWithValue(
+        error.response?.data || { message: "OTP send failed" }
+      );
     }
   }
 );
@@ -78,7 +90,29 @@ export const verifyOtp = createAsyncThunk(
       );
       return { type, message: response.data.message };
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "OTP verification failed" });
+      return rejectWithValue(
+        error.response?.data || { message: "OTP verification failed" }
+      );
+    }
+  }
+);
+
+// ✅ Get verification status (email_verified, phone_verified)
+export const fetchVerificationStatus = createAsyncThunk(
+  "user/fetchVerificationStatus",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { token } = getState().user;
+      const response = await axiosInstance.get("/verification-status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data; // { email_verified, phone_verified }
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || {
+          message: "Failed to fetch verification status",
+        }
+      );
     }
   }
 );
@@ -96,6 +130,7 @@ const userSlice = createSlice({
     verifyLoading: false,
     error: null,
     successMessage: null,
+    verificationStatus: { email_verified: false, phone_verified: false },
   },
   reducers: {
     logout: (state) => {
@@ -130,6 +165,21 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // ✅ Signup
+      .addCase(signupUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(signupUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.successMessage = action.payload.message;
+      })
+      .addCase(signupUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message || "Signup failed";
+      })
+
       // ✅ Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -156,7 +206,8 @@ const userSlice = createSlice({
       })
       .addCase(sendOtp.fulfilled, (state, action) => {
         state.otpLoading = false;
-        state.successMessage = action.payload.message || "OTP sent successfully";
+        state.successMessage =
+          action.payload.message || "OTP sent successfully";
       })
       .addCase(sendOtp.rejected, (state, action) => {
         state.otpLoading = false;
@@ -173,12 +224,11 @@ const userSlice = createSlice({
         state.verifyLoading = false;
         state.successMessage = action.payload.message;
 
-        // 🔑 Update verification status
         if (state.userInfo) {
           if (action.payload.type === "email") {
-            state.userInfo.isEmailVerified = true;
+            state.userInfo.email_verified = true;
           } else if (action.payload.type === "phone") {
-            state.userInfo.isPhoneVerified = true;
+            state.userInfo.phone_verified = true;
           }
 
           if (typeof window !== "undefined") {
@@ -190,6 +240,14 @@ const userSlice = createSlice({
       .addCase(verifyOtp.rejected, (state, action) => {
         state.verifyLoading = false;
         state.error = action.payload.message || "OTP verification failed";
+      })
+
+      // ✅ Fetch Verification Status
+      .addCase(fetchVerificationStatus.fulfilled, (state, action) => {
+        state.verificationStatus = action.payload; // { email_verified, phone_verified }
+      })
+      .addCase(fetchVerificationStatus.rejected, (state, action) => {
+        state.error = action.payload.message;
       });
   },
 });
