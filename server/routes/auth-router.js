@@ -39,6 +39,7 @@ router.post("/reset-password", userRegister.resetPassword);
 // OTP routes
 router.post('/send-otp', verifyToken ,otpController.sendOtp);
 router.post('/verify-otp', verifyToken, otpController.verifyOtp);
+router.get('/verification-status', verifyToken, otpController.getVerificationStatus);
 
 // Order Routes
 router.post("/create-order", verifyToken, orderController.createOrder);

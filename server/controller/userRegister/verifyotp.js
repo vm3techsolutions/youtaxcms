@@ -113,4 +113,34 @@ const verifyOtp = async (req, res) => {
         return res.status(200).json({ message: `${type} verified successfully` });
     });
 };
-module.exports = { sendOtp, verifyOtp };
+
+/**
+ * Get customer's phone and email verification status.
+ * @param {import('express').Request} req Express request object (expects req.user.id)
+ * @param {import('express').Response} res Express response object
+ * @returns {Promise<void>}
+ */
+const getVerificationStatus = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    if (!customerId) {
+      return res.status(400).json({ message: "Invalid request" });
+    }
+    const [rows] = await db.promise().query(
+      "SELECT email_verified, phone_verified FROM customers WHERE id = ?",
+      [customerId]
+    );
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+    res.status(200).json({
+      email_verified: !!rows[0].email_verified,
+      phone_verified: !!rows[0].phone_verified,
+    });
+  } catch (err) {
+    console.error("Error fetching verification status:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+module.exports = { sendOtp, verifyOtp, getVerificationStatus };
