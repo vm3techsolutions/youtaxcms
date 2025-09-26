@@ -218,7 +218,7 @@ const verifyPaymentLink = async (req, res) => {
     // Update orders table with actual amountPaid
     const [orderResult] = await db.promise().query(
       `UPDATE orders 
-       SET advance_paid=?, payment_status=?, status='in_progress' 
+       SET advance_paid=?, payment_status=?, status='awaiting_docs' 
        WHERE id=?`,
       [amountPaid, newPaymentStatus, paymentLink.notes.order_id]
     );
