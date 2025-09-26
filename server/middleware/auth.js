@@ -26,4 +26,12 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-module.exports = verifyToken;
+const isSales = (req, res, next) => {
+  
+  if (!req.user || req.user.role !== "Sale") {
+    return res.status(403).json({ message: "Access denied. Sales role required." });
+  }
+  next();
+};
+
+module.exports = { verifyToken, isSales };

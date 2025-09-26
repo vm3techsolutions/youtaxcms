@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const verifyToken = require('../middleware/auth');
+const {verifyToken} = require('../middleware/auth');
 const userRegister = require('../controller/userRegister/register');
 const otpController = require('../controller/userRegister/verifyotp');
 const userMyprofile = require('../controller/userMyprofile/customerMyprofile');
@@ -14,6 +14,9 @@ const adminRegister = require('../controller/adminController/adminRoles/adminRol
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
 const services = require('../controller/services/services');
 const serviceDocuments = require('../controller/services/serviceDocuments');
+const { isSales } = require('../middleware/auth');
+const salesController = require('../controller/adminController/salesController/sales');
+
 
 // Define routes for user registration and login
 router.post('/user/signup', userRegister.userSignUp);
@@ -71,6 +74,19 @@ router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
 
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
+
+
+// sales routes
+
+// Routes
+router.get("/orders/pending",verifyToken, isSales, salesController.getPendingOrders);
+router.put("/orders/document/status",verifyToken, isSales, salesController.updateDocumentStatusByOrderDId);
+router.post("/orders/check-status",verifyToken, isSales, salesController.triggerOrderStatusCheck);
+
+
+// router.put("/documents/verify",verifyToken, isSales, salesController.verifyDocument);
+// router.post("/orders/forward",verifyToken, isSales, salesController.forwardToAccounts);
+
 
 
 module.exports = router;
