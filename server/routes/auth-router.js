@@ -9,6 +9,7 @@ const orderController = require('../controller/order/createOrder');
 const upload = require("../config/multer");
 const kycController = require("../controller/userMyprofile/kycUpload");
 const orderDocuments = require("../controller/orderDocument/orderDocuments");
+const supportController = require("../controller/supportTicket/support");
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -55,10 +56,19 @@ router.get('/verification-status', verifyToken, otpController.getVerificationSta
 router.post("/create-order", verifyToken, orderController.createOrder);
 router.post("/verify-payment", verifyToken, orderController.verifyPaymentLink);
 router.post("/pending-orders", verifyToken, orderController.createPendingPaymentLink);
+// Get My Orders
+router.get("/my/orders", verifyToken, orderController.getMyOrders);
+router.get("/order/:customer_id", verifyToken, orderController.getOrdersByCustomerId);
+router.get("/order/:order_id/payments", verifyToken, orderController.getOrderPayments);
 
 // Order Document Routes
 router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
 router.get("/order-documents/:order_id", verifyToken, orderDocuments.getOrderDocuments);
+
+// Support Ticket Routes
+router.post("/support/ticket", verifyToken, supportController.createTicket);
+router.get("/support/tickets", verifyToken, supportController.listTickets);
+
 // ===========================================================================
 
 // Admin routes
