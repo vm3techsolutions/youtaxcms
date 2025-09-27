@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const db = require("../../config/db");
 const sendEmail = require("../../config/forgotMail");
+const sendWelcomeMail = require("../../utils/welcomeMail");
 
 // Signup
 /**
@@ -48,8 +49,10 @@ const userSignUp = async (req, res) => {
           false, // phone_verified
           'pending' // kyc_status
         ],
-        (err) => {
+        async (err) => {
           if (err) return res.status(500).json({ message: 'Insert failed', error: err });
+          // Send welcome mail after successful signup
+          await sendWelcomeMail(email, name);
           return res.status(200).json({ message: 'Signup successful' });
         }
       );
