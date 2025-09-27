@@ -31,17 +31,17 @@ const menuConfig = {
     { name: "Minutes", path: "/sales/minutes", icon: ChartBarIcon },
   ],
   Accounts: [
-    { name: "Overview", path: "/accountant/dashboard", icon: Cog6ToothIcon },
-    { name: "Pricing", path: "/accountant/pricing", icon: ArrowDownTrayIcon },
-    { name: "Payment", path: "/accountant/payment", icon: ChartBarIcon },
-    { name: "Invoice", path: "/accountant/invoice", icon: ChartBarIcon },
+    { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
+    { name: "Orders", path: "/accounts/orders", icon: ArrowDownTrayIcon },
+    { name: "Payment", path: "/accounts/payment", icon: ChartBarIcon },
+    { name: "Invoice", path: "/accounts/invoice", icon: ChartBarIcon },
   ],
   Operation: [
-    { name: "Overview", path: "/operation/dashboard", icon: Cog6ToothIcon },
-    { name: "Deliverables", path: "/operation/deliverables", icon: UserCircleIcon },
-    { name: "Verification", path: "/operation/verification", icon: UserCircleIcon },
-    { name: "Activity", path: "/operation/activity", icon: UserCircleIcon },
-    { name: "Notes", path: "/operation/notes", icon: UserCircleIcon },
+    { name: "Overview", path: "/operations/dashboard", icon: Cog6ToothIcon },
+    { name: "Deliverables", path: "/operations/deliverables", icon: UserCircleIcon },
+    { name: "Verification", path: "/operations/verification", icon: UserCircleIcon },
+    { name: "Orders", path: "/operations/activity", icon: UserCircleIcon },
+    { name: "Notes", path: "/operations/notes", icon: UserCircleIcon },
   ],
 };
 

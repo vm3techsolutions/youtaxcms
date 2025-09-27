@@ -24,12 +24,15 @@ export const createOrder = createAsyncThunk(
 // Verify Razorpay payment link
 export const verifyPaymentLink = createAsyncThunk(
   "orders/verifyPaymentLink",
-  async (payment_link_id, { rejectWithValue }) => {
+  async ({ payment_id, payment_link_id, signature }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await axiosInstance.post("/verify-payment", { payment_link_id }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.post(
+        "/verify-payment",
+        { payment_id, payment_link_id, signature },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Expect backend to return: { success: true, order_id: 123 }
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to verify payment");
@@ -46,6 +49,7 @@ const initialState = {
   error: null,
   success: false,
   paymentVerified: false,
+  verifiedOrderId: null, // <-- store verified order id
 };
 
 const ordersSlice = createSlice({
@@ -59,6 +63,7 @@ const ordersSlice = createSlice({
       state.error = null;
       state.success = false;
       state.paymentVerified = false;
+      state.verifiedOrderId = null;
     },
   },
   extraReducers: (builder) => {
@@ -87,6 +92,9 @@ const ordersSlice = createSlice({
       .addCase(verifyPaymentLink.fulfilled, (state, action) => {
         state.loading = false;
         state.paymentVerified = action.payload.success;
+        if (action.payload.success) {
+          state.verifiedOrderId = action.payload.order_id; // <-- store order_id
+        }
       })
       .addCase(verifyPaymentLink.rejected, (state, action) => {
         state.loading = false;

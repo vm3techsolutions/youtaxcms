@@ -110,7 +110,7 @@ try {
       service_id: String(service_id),
       payment_option: paymentType,
     },
-    callback_url: "https://<your-ngrok-or-domain>/api/orders/verifyPaymentLink",
+    callback_url: "http://localhost:3000/user/payment-success",
     callback_method: "get",
   });
 } catch (err) {
@@ -265,7 +265,7 @@ const createPendingPaymentLink = async (req, res) => {
       customer: { name: customer.name, email: customer.email, contact: customer.contact },
       notify: { sms: true, email: true },
       notes: { order_id: String(order_id) },
-      callback_url: "https://yourdomain.com/api/orders/verifyPaymentLink",
+      callback_url: "http://localhost:3000/user/payment-success",
       callback_method: "get",
     });
 

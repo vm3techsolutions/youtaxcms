@@ -13,10 +13,14 @@ export const uploadOrderDocuments = createAsyncThunk(
   async ({ order_id, service_doc_id, files }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
       const formData = new FormData();
       formData.append("order_id", order_id);
       formData.append("service_doc_id", service_doc_id);
-      files.forEach((file) => formData.append("files", file));
+
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
 
       const res = await axiosInstance.post("/upload/order-document", formData, {
         headers: {
@@ -38,11 +42,11 @@ export const fetchOrderDocuments = createAsyncThunk(
   async (order_id, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
       const res = await axiosInstance.get(`/order-documents/${order_id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
       return res.data; // Array of documents
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch documents");
@@ -53,12 +57,13 @@ export const fetchOrderDocuments = createAsyncThunk(
 // ========================
 // Slice
 // ========================
+
 const initialState = {
-  documents: [],
-  loadingUpload: false,
-  loadingFetch: false,
+  documents: [],        // All uploaded documents
+  loadingFetch: false,  // Loading for fetching documents
+  loadingUpload: false, // Loading for uploading files
   error: null,
-  successUpload: false,
+  success: false,       // Success flag for upload
 };
 
 const orderDocumentsSlice = createSlice({
@@ -67,10 +72,13 @@ const orderDocumentsSlice = createSlice({
   reducers: {
     resetOrderDocumentsState: (state) => {
       state.documents = [];
-      state.loadingUpload = false;
       state.loadingFetch = false;
+      state.loadingUpload = false;
       state.error = null;
-      state.successUpload = false;
+      state.success = false;
+    },
+    resetUploadSuccess: (state) => {
+      state.success = false;
     },
   },
   extraReducers: (builder) => {
@@ -79,12 +87,13 @@ const orderDocumentsSlice = createSlice({
       .addCase(uploadOrderDocuments.pending, (state) => {
         state.loadingUpload = true;
         state.error = null;
-        state.successUpload = false;
+        state.success = false;
       })
       .addCase(uploadOrderDocuments.fulfilled, (state, action) => {
         state.loadingUpload = false;
-        state.successUpload = true;
-        state.documents = action.payload.files;
+        state.success = true;
+        // Merge newly uploaded files with existing documents
+        state.documents = [...state.documents, ...action.payload.files];
       })
       .addCase(uploadOrderDocuments.rejected, (state, action) => {
         state.loadingUpload = false;
@@ -107,5 +116,5 @@ const orderDocumentsSlice = createSlice({
   },
 });
 
-export const { resetOrderDocumentsState } = orderDocumentsSlice.actions;
+export const { resetOrderDocumentsState, resetUploadSuccess } = orderDocumentsSlice.actions;
 export default orderDocumentsSlice.reducer;

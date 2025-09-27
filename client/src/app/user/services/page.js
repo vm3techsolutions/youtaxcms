@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices } from "@/store/slices/servicesSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
-import { createOrder, resetOrderState } from "@/store/slices/orderSlice";
+import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { useRouter } from "next/navigation";
 
 export default function ServicesFlex() {
@@ -15,32 +15,18 @@ export default function ServicesFlex() {
     (state) => state.services
   );
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
-
-  // Logged-in user info
   const { userInfo } = useSelector((state) => state.user);
-
   const { order, loading: orderLoading, error: orderError, success } = useSelector(
     (state) => state.order
   );
 
   const [expanded, setExpanded] = useState(null);
   const [modalService, setModalService] = useState(null);
+  const [paymentOption, setPaymentOption] = useState("full");
 
   useEffect(() => {
     dispatch(fetchServices());
   }, [dispatch]);
-
-  // Redirect to documents page after order creation
-  useEffect(() => {
-    if (success && order?.id && modalService) {
-      alert("Order created! Redirecting to document upload page.");
-      router.push(
-        `/user/documents?serviceId=${modalService.id}&serviceName=${encodeURIComponent(
-          modalService.name
-        )}&orderId=${order.id}`
-      );
-    }
-  }, [success, order, modalService, router]);
 
   const handleToggle = (serviceId) => {
     setExpanded(expanded === serviceId ? null : serviceId);
@@ -52,6 +38,7 @@ export default function ServicesFlex() {
   const handleApplyNow = (service) => {
     setModalService(service);
     dispatch(resetOrderState());
+    setPaymentOption("full");
   };
 
   const handleBackToList = () => {
@@ -59,28 +46,36 @@ export default function ServicesFlex() {
     dispatch(resetOrderState());
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!userInfo?.id) return alert("Please login first!");
     if (!modalService) return;
 
-    if (!userInfo?.id) {
-      alert("Please login first!");
-      return;
-    }
+    const paymentData = {
+      service_id: modalService.id,
+      customer_name: userInfo.name,
+      customer_email: userInfo.email,
+      customer_contact: userInfo.phone,
+      payment_option: paymentOption,
+      callback_url: `${window.location.origin}/user/payment-success`, // Razorpay will redirect here
+    };
 
-    // ✅ Updated payload according to backend requirements
-    dispatch(
-      createOrder({
-        service_id: modalService.id,
-        customer_name: userInfo.name,
-        customer_email: userInfo.email,
-        customer_contact: userInfo.phone, // make sure contact exists in userInfo
-        payment_option: "full", // or "advance"
-      })
-    );
+    const resultAction = await dispatch(createOrder(paymentData));
+
+    if (createOrder.fulfilled.match(resultAction)) {
+      const url = resultAction.payload.razorpay?.payment_link;
+      if (url) {
+        // Open Razorpay payment page
+        window.location.href = url;
+      } else {
+        alert("Payment link not available");
+      }
+    } else {
+      alert(resultAction.payload || "Failed to create order");
+    }
   };
 
-  if (servicesLoading) return <p className="text-center">Loading services...</p>;
-  if (servicesError) return <p className="text-center text-red-500">{servicesError}</p>;
+  if (servicesLoading) return <p className="text-center mt-8">Loading services...</p>;
+  if (servicesError) return <p className="text-center text-red-500 mt-8">{servicesError}</p>;
 
   return (
     <div className="container mx-auto py-4 px-4">
@@ -116,7 +111,7 @@ export default function ServicesFlex() {
                   <div className="flex justify-center mb-4">
                     <button
                       onClick={() => handleApplyNow(service)}
-                      className="px-4 py-2 primary-btn text-white rounded-lg transition"
+                      className="px-4 py-2 primary-btn text-white rounded-lg"
                     >
                       Apply Now
                     </button>
@@ -128,7 +123,7 @@ export default function ServicesFlex() {
         })}
       </div>
 
-      {/* Modal */}
+      {/* Payment Modal */}
       {modalService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-11/12 max-w-xl p-6 relative max-h-[90vh] overflow-y-auto">
@@ -144,22 +139,27 @@ export default function ServicesFlex() {
               {modalService.description || "No description available"}
             </p>
 
-            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-              <div className="p-2 border rounded bg-gray-50">
-                Base Price: ₹{modalService.base_price}
-              </div>
-              <div className="p-2 border rounded bg-gray-50">
-                Advance Price: ₹{modalService.advance_price || "N/A"}
-              </div>
-              <div className="p-2 border rounded bg-gray-50">
-                Service Charges: ₹{modalService.service_charges || "N/A"}
-              </div>
-              <div className="p-2 border rounded bg-gray-50">
-                SLA Days: {modalService.sla_days || "N/A"}
-              </div>
-              <div className="p-2 border rounded bg-gray-50 col-span-2">
-                Requires Advance: {modalService.requires_advance ? "✅ Yes" : "❌ No"}
-              </div>
+            <div className="flex justify-center gap-4 mb-4">
+              {modalService.advance_price > 0 && (
+                <>
+                  <button
+                    onClick={() => setPaymentOption("full")}
+                    className={`px-4 py-2 rounded-lg ${
+                      paymentOption === "full" ? "bg-green-500 text-white" : "bg-gray-200"
+                    }`}
+                  >
+                    Full Payment
+                  </button>
+                  <button
+                    onClick={() => setPaymentOption("advance")}
+                    className={`px-4 py-2 rounded-lg ${
+                      paymentOption === "advance" ? "bg-green-500 text-white" : "bg-gray-200"
+                    }`}
+                  >
+                    Advance Payment
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="text-center mt-4">
@@ -168,12 +168,9 @@ export default function ServicesFlex() {
                 disabled={orderLoading}
                 className="px-6 py-2 primary-btn text-white rounded-lg"
               >
-                {orderLoading ? "Processing..." : "Confirm Payment & Proceed"}
+                {orderLoading ? "Processing..." : "Confirm & Pay"}
               </button>
-
-              {orderError && (
-                <p className="text-red-500 mt-2 text-sm">{orderError}</p>
-              )}
+              {orderError && <p className="text-red-500 mt-2">{orderError}</p>}
             </div>
           </div>
         </div>
