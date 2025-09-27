@@ -37,11 +37,11 @@ export default function KycUploadForm() {
   };
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md ">
       {successMessage && <p className="text-green-600 mb-2">{successMessage}</p>}
       {error && <p className="text-red-600 mb-2">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-2xl p-6 space-y-4 border">
+      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-2xl p-6 space-y-4 ">
         <h2 className="text-lg font-semibold">Upload Document</h2>
 
         <label className="block">
@@ -87,20 +87,7 @@ export default function KycUploadForm() {
           {loadingUpload ? "Uploading..." : "Submit"}
         </button>
 
-        {document?.signed_url && (
-          <div className="mt-4">
-            <h3 className="font-medium text-gray-700">Uploaded Document:</h3>
-            <a
-              href={document.signed_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              View Document
-            </a>
-          </div>
-        )}
-
+        
       </form>
     </div>
   );
