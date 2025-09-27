@@ -41,8 +41,11 @@ export default function ServicesFlex() {
   const handleConfirmPayment = () => {
     // For now, simulate payment as successful
     alert("Payment successful! Redirecting to document upload page.");
-    router.push(`/user/documents?serviceId=${modalService.id}&serviceName=${encodeURIComponent(modalService.name)}`);
-
+router.push(
+  `/user/documents?serviceId=${modalService.id}&serviceName=${encodeURIComponent(
+    modalService.name
+  )}&orderId=${modalService.id}` // using service.id as orderId for now
+);
   };
 
   if (servicesLoading) return <p className="text-center">Loading services...</p>;

@@ -13,16 +13,12 @@ export const uploadOrderDocuments = createAsyncThunk(
   async ({ order_id, service_doc_id, files }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
       const formData = new FormData();
       formData.append("order_id", order_id);
       formData.append("service_doc_id", service_doc_id);
+      files.forEach((file) => formData.append("files", file));
 
-      files.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      const res = await axiosInstance.post("/order-documents/upload", formData, {
+      const res = await axiosInstance.post("/upload/order-document", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -42,11 +38,11 @@ export const fetchOrderDocuments = createAsyncThunk(
   async (order_id, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
       const res = await axiosInstance.get(`/order-documents/${order_id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       return res.data; // Array of documents
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch documents");
@@ -57,12 +53,12 @@ export const fetchOrderDocuments = createAsyncThunk(
 // ========================
 // Slice
 // ========================
-
 const initialState = {
   documents: [],
-  loading: false,
+  loadingUpload: false,
+  loadingFetch: false,
   error: null,
-  success: false,
+  successUpload: false,
 };
 
 const orderDocumentsSlice = createSlice({
@@ -71,40 +67,41 @@ const orderDocumentsSlice = createSlice({
   reducers: {
     resetOrderDocumentsState: (state) => {
       state.documents = [];
-      state.loading = false;
+      state.loadingUpload = false;
+      state.loadingFetch = false;
       state.error = null;
-      state.success = false;
+      state.successUpload = false;
     },
   },
   extraReducers: (builder) => {
     builder
       // Upload Documents
       .addCase(uploadOrderDocuments.pending, (state) => {
-        state.loading = true;
+        state.loadingUpload = true;
         state.error = null;
-        state.success = false;
+        state.successUpload = false;
       })
       .addCase(uploadOrderDocuments.fulfilled, (state, action) => {
-        state.loading = false;
-        state.success = true;
+        state.loadingUpload = false;
+        state.successUpload = true;
         state.documents = action.payload.files;
       })
       .addCase(uploadOrderDocuments.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingUpload = false;
         state.error = action.payload;
       })
 
       // Fetch Documents
       .addCase(fetchOrderDocuments.pending, (state) => {
-        state.loading = true;
+        state.loadingFetch = true;
         state.error = null;
       })
       .addCase(fetchOrderDocuments.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingFetch = false;
         state.documents = action.payload;
       })
       .addCase(fetchOrderDocuments.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingFetch = false;
         state.error = action.payload;
       });
   },

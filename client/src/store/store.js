@@ -6,6 +6,8 @@ import serviceDocumentsReducer from "./slices/serviceDocumentsSlice";
 import kycReducer from "./slices/kycSlice";
 import orderReducer from "./slices/orderSlice";
 import orderDocumentsReducer from "./slices/orderDocumentsSlice";
+import profileReducer from "./slices/profileSlice";
+import passwordResetReducer from "./slices/passwordResetSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +18,7 @@ export const store = configureStore({
     kyc: kycReducer,
     order: orderReducer,
     orderDocuments: orderDocumentsReducer,
+    profile: profileReducer,
+    passwordReset: passwordResetReducer,
   },
 });
