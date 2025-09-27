@@ -17,6 +17,12 @@ const serviceDocuments = require('../controller/services/serviceDocuments');
 const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
 const { isSales } = require('../middleware/auth');
 const salesController = require('../controller/adminController/salesController/sales');
+const accountController = require('../controller/adminController/accountController/account');
+const { isAccount } = require('../middleware/auth');
+const operationController = require('../controller/adminController/operationController/operation');
+const { isOperation } = require('../middleware/auth');
+const adminControllerScond = require('../controller/adminController/adminControllerSecond/admin');
+const { isAdmin } = require('../middleware/auth');
 
 
 // Define routes for user registration and login
@@ -91,6 +97,29 @@ router.post("/orders/check-status",verifyToken, isSales, salesController.trigger
 
 // router.put("/documents/verify",verifyToken, isSales, salesController.verifyDocument);
 // router.post("/orders/forward",verifyToken, isSales, salesController.forwardToAccounts);
+
+
+
+// accounts routes
+router.get("/accounts/orders/pending", verifyToken, isAccount ,accountController.getPendingOrdersForAccounts);
+router.get("/accounts/orders/:id/payments", verifyToken, isAccount ,accountController.getOrderPayments);
+router.post("/accounts/orders/forward", verifyToken, isAccount ,accountController.forwardToOperations);
+
+
+
+// operation routes
+router.get("/operations/orders/assigned", verifyToken , isOperation, operationController.getAssignedOrdersForOperations);
+router.post("/operations/upload/deliverable", verifyToken , isOperation, upload.array("files"), operationController.uploadDeliverable);
+router.get("/operations/upload/deliverable/:order_id", verifyToken , isOperation, operationController.getDeliverablesForOrder);
+router.get("/operations/upload/deliverablebyid/:id", verifyToken , isOperation, operationController.getDeliverableById);
+
+
+// admin routes second
+router.get("/admin/orders/all", verifyToken , isAdmin, adminControllerScond.getAssignedOrdersForAdmin);
+router.get("/admin/orders/deliverables/:order_id", verifyToken , isAdmin, adminControllerScond.getDeliverablesForAdmin);
+router.put("/admin/orders/qc-deliverable", verifyToken , isAdmin, adminControllerScond.qcDeliverable);
+router.get("/admin/orders/approved/:order_id", verifyToken , isAdmin, adminControllerScond.getApprovedDeliverablesForOrder);
+router.put("/admin/orders/approve-completion", verifyToken , isAdmin, adminControllerScond.approveOrderCompleted);
 
 
 

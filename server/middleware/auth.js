@@ -34,4 +34,28 @@ const isSales = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, isSales };
+const isAccount = (req, res, next) => {
+  
+  if (!req.user || req.user.role !== "Accounts") {
+    return res.status(403).json({ message: "Access denied. Account role required." });
+  }
+  next();
+};
+
+const isOperation = (req, res, next) => {
+  
+  if (!req.user || req.user.role !== "Operation") {
+    return res.status(403).json({ message: "Access denied. Operation role required." });
+  }
+  next();
+};
+
+const isAdmin = (req, res, next) => {
+
+  if (!req.user || req.user.role !== "Admin") {
+    return res.status(403).json({ message: "Access denied. Admin role required." });
+  }
+  next();
+};
+
+module.exports = { verifyToken, isSales, isAccount, isOperation, isAdmin };
