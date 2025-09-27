@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
       <p style="font-size: 16px; color: #333;">${message}</p>
       <p style="margin-top: 30px; font-size: 14px; color: #777;">If you did not request this, please ignore this email.</p>
       <hr style="margin-top: 30px;" />
-      <p style="font-size: 12px; color: #aaa;">© ${new Date().getFullYear()} Softcon. All rights reserved.</p>
+      <p style="font-size: 12px; color: #aaa;">© ${new Date().getFullYear()} youtax. All rights reserved.</p>
     </div>
   `;
 
