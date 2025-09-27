@@ -4,22 +4,43 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchServices } from "@/store/slices/servicesSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
-import { resetOrderState } from "@/store/slices/orderSlice";
+import { createOrder, resetOrderState } from "@/store/slices/orderSlice";
 import { useRouter } from "next/navigation";
 
 export default function ServicesFlex() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { services, loading: servicesLoading, error: servicesError } = useSelector((state) => state.services);
+  const { services, loading: servicesLoading, error: servicesError } = useSelector(
+    (state) => state.services
+  );
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
 
+  // Logged-in user info
+  const { userInfo } = useSelector((state) => state.user);
+
+  const { order, loading: orderLoading, error: orderError, success } = useSelector(
+    (state) => state.order
+  );
+
   const [expanded, setExpanded] = useState(null);
-  const [modalService, setModalService] = useState(null); // selected service
+  const [modalService, setModalService] = useState(null);
 
   useEffect(() => {
     dispatch(fetchServices());
   }, [dispatch]);
+
+  // Redirect to documents page after order creation
+  useEffect(() => {
+    if (success && order?.id && modalService) {
+      alert("Order created! Redirecting to document upload page.");
+      router.push(
+        `/user/documents?serviceId=${modalService.id}&serviceName=${encodeURIComponent(
+          modalService.name
+        )}&orderId=${order.id}`
+      );
+    }
+  }, [success, order, modalService, router]);
 
   const handleToggle = (serviceId) => {
     setExpanded(expanded === serviceId ? null : serviceId);
@@ -39,13 +60,23 @@ export default function ServicesFlex() {
   };
 
   const handleConfirmPayment = () => {
-    // For now, simulate payment as successful
-    alert("Payment successful! Redirecting to document upload page.");
-router.push(
-  `/user/documents?serviceId=${modalService.id}&serviceName=${encodeURIComponent(
-    modalService.name
-  )}&orderId=${modalService.id}` // using service.id as orderId for now
-);
+    if (!modalService) return;
+
+    if (!userInfo?.id) {
+      alert("Please login first!");
+      return;
+    }
+
+    // ✅ Updated payload according to backend requirements
+    dispatch(
+      createOrder({
+        service_id: modalService.id,
+        customer_name: userInfo.name,
+        customer_email: userInfo.email,
+        customer_contact: userInfo.phone, // make sure contact exists in userInfo
+        payment_option: "full", // or "advance"
+      })
+    );
   };
 
   if (servicesLoading) return <p className="text-center">Loading services...</p>;
@@ -97,7 +128,7 @@ router.push(
         })}
       </div>
 
-      {/* ---------------- Modal for Service Info ---------------- */}
+      {/* Modal */}
       {modalService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-11/12 max-w-xl p-6 relative max-h-[90vh] overflow-y-auto">
@@ -109,13 +140,23 @@ router.push(
             </button>
 
             <h2 className="text-2xl font-bold mb-4">{modalService.name}</h2>
-            <p className="text-gray-600 mb-4">{modalService.description || "No description available"}</p>
+            <p className="text-gray-600 mb-4">
+              {modalService.description || "No description available"}
+            </p>
 
             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-              <div className="p-2 border rounded bg-gray-50">Base Price: ₹{modalService.base_price}</div>
-              <div className="p-2 border rounded bg-gray-50">Advance Price: ₹{modalService.advance_price || "N/A"}</div>
-              <div className="p-2 border rounded bg-gray-50">Service Charges: ₹{modalService.service_charges || "N/A"}</div>
-              <div className="p-2 border rounded bg-gray-50">SLA Days: {modalService.sla_days || "N/A"}</div>
+              <div className="p-2 border rounded bg-gray-50">
+                Base Price: ₹{modalService.base_price}
+              </div>
+              <div className="p-2 border rounded bg-gray-50">
+                Advance Price: ₹{modalService.advance_price || "N/A"}
+              </div>
+              <div className="p-2 border rounded bg-gray-50">
+                Service Charges: ₹{modalService.service_charges || "N/A"}
+              </div>
+              <div className="p-2 border rounded bg-gray-50">
+                SLA Days: {modalService.sla_days || "N/A"}
+              </div>
               <div className="p-2 border rounded bg-gray-50 col-span-2">
                 Requires Advance: {modalService.requires_advance ? "✅ Yes" : "❌ No"}
               </div>
@@ -124,10 +165,15 @@ router.push(
             <div className="text-center mt-4">
               <button
                 onClick={handleConfirmPayment}
+                disabled={orderLoading}
                 className="px-6 py-2 primary-btn text-white rounded-lg"
               >
-                Confirm Payment & Proceed
+                {orderLoading ? "Processing..." : "Confirm Payment & Proceed"}
               </button>
+
+              {orderError && (
+                <p className="text-red-500 mt-2 text-sm">{orderError}</p>
+              )}
             </div>
           </div>
         </div>
