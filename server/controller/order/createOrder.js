@@ -283,4 +283,71 @@ const createPendingPaymentLink = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink };
+/**
+ * Get all orders for a customer by customer_id
+ */
+const getMyOrders = async (req, res) => {
+  try {
+ 
+    const customer_id = req.user ? req.user.id : null;
+
+    if (!customer_id) {
+      return res.status(400).json({ message: "customer_id is required" });
+    }
+
+    const [orders] = await db.promise().query(
+      `SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC`,
+      [customer_id]
+    );
+
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error("DB Error (getOrdersByCustomerId):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+const getOrdersByCustomerId = async (req, res) => {
+  try {
+    const customer_id = req.params.customer_id || (req.user && req.user.id);
+    if (!customer_id) {
+      return res.status(400).json({ message: "customer_id is required" });
+    }
+
+    const [orders] = await db.promise().query(
+      `SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC`,
+      [customer_id]
+    );
+
+    res.json({ success: true, orders });
+  } catch (err) {
+    console.error("DB Error (getOrdersByCustomerId):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+const getOrderPayments = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+    const customer_id = req.user ? req.user.id : null;
+
+    if (!order_id) {
+      return res.status(400).json({ message: "order_id is required" });
+    }
+    if (!customer_id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const [payments] = await db.promise().query(
+      `SELECT * FROM payments WHERE order_id = ? AND customer_id = ? ORDER BY created_at DESC`,
+      [order_id, customer_id]
+    );
+
+    res.json({ success: true, payments });
+  } catch (err) {
+    console.error("DB Error (getOrderPayments):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+
+module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments };

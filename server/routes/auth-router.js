@@ -56,6 +56,10 @@ router.get('/verification-status', verifyToken, otpController.getVerificationSta
 router.post("/create-order", verifyToken, orderController.createOrder);
 router.post("/verify-payment", verifyToken, orderController.verifyPaymentLink);
 router.post("/pending-orders", verifyToken, orderController.createPendingPaymentLink);
+// Get My Orders
+router.get("/my/orders", verifyToken, orderController.getMyOrders);
+router.get("/order/:customer_id", verifyToken, orderController.getOrdersByCustomerId);
+router.get("/order/:order_id/payments", verifyToken, orderController.getOrderPayments);
 
 // Order Document Routes
 router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
