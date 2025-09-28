@@ -96,30 +96,30 @@ const createOrder = async (req, res) => {
     // });
 
     let paymentLink;
-    try {
-      paymentLink = await razorpay.paymentLink.create({
-        amount: Math.round(amountToPay * 100),
-        currency: "INR",
-        description: `Payment for service ${service_id}`,
-        customer: { name: customer_name, email: customer_email, contact: customer_contact },
-        notify: { sms: true, email: true },
-        reminder_enable: true,
-        notes: {
-          order_id: String(orderId),
-          customer_id: String(customer_id),
-          service_id: String(service_id),
-          payment_option: paymentType,
-        },
-        callback_url: "https://<your-ngrok-or-domain>/api/orders/verifyPaymentLink",
-        callback_method: "get",
-      });
-    } catch (err) {
-      console.error("Razorpay Error (paymentLink.create):", err.error || err.message || err);
-      return res.status(500).json({
-        message: "Failed to create Razorpay Payment Link",
-        error: err.error || err.message,
-      });
-    }
+try {
+  paymentLink = await razorpay.paymentLink.create({
+    amount: Math.round(amountToPay * 100),
+    currency: "INR",
+    description: `Payment for service ${service_id}`,
+    customer: { name: customer_name, email: customer_email, contact: customer_contact },
+    notify: { sms: true, email: true },
+    reminder_enable: true,
+    notes: {
+      order_id: String(orderId),
+      customer_id: String(customer_id),
+      service_id: String(service_id),
+      payment_option: paymentType,
+    },
+    callback_url: "http://localhost:3000/user/payment-success",
+    callback_method: "get",
+  });
+} catch (err) {
+  console.error("Razorpay Error (paymentLink.create):", err.error || err.message || err);
+  return res.status(500).json({
+    message: "Failed to create Razorpay Payment Link",
+    error: err.error || err.message,
+  });
+}
 
     // insert payment record
     await db.promise().query(
@@ -273,7 +273,7 @@ const createPendingPaymentLink = async (req, res) => {
       customer: { name: customer.name, email: customer.email, contact: customer.contact },
       notify: { sms: true, email: true },
       notes: { order_id: String(order_id) },
-      callback_url: "https://yourdomain.com/api/orders/verifyPaymentLink",
+      callback_url: "http://localhost:3000/user/payment-success",
       callback_method: "get",
     });
 

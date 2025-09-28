@@ -8,6 +8,9 @@ import orderReducer from "./slices/orderSlice";
 import orderDocumentsReducer from "./slices/orderDocumentsSlice";
 import profileReducer from "./slices/profileSlice";
 import passwordResetReducer from "./slices/passwordResetSlice";
+import userOrdersReducer from "./slices/userOrdersSlice";
+import salesReducer from "./slices/salesSlice";
+import accountsReducer from "./slices/accountsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -20,5 +23,8 @@ export const store = configureStore({
     orderDocuments: orderDocumentsReducer,
     profile: profileReducer,
     passwordReset: passwordResetReducer,
+    userOrders: userOrdersReducer,
+    sales: salesReducer,
+    accounts: accountsReducer,
   },
 });

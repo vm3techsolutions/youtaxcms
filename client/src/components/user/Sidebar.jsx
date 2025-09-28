@@ -29,6 +29,14 @@ export default function Sidebar() {
         </Link>
 
         <Link
+          href="/user/orders"
+          className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
+        >
+          <Cog6ToothIcon className="w-5 h-5" />
+          <span>Orders</span>
+        </Link>
+
+        <Link
           href="/user/payment"
           className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
         >
