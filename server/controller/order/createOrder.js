@@ -96,30 +96,30 @@ const createOrder = async (req, res) => {
     // });
 
     let paymentLink;
-try {
-  paymentLink = await razorpay.paymentLink.create({
-    amount: Math.round(amountToPay * 100),
-    currency: "INR",
-    description: `Payment for service ${service_id}`,
-    customer: { name: customer_name, email: customer_email, contact: customer_contact },
-    notify: { sms: true, email: true },
-    reminder_enable: true,
-    notes: {
-      order_id: String(orderId),
-      customer_id: String(customer_id),
-      service_id: String(service_id),
-      payment_option: paymentType,
-    },
-    callback_url: "https://<your-ngrok-or-domain>/api/orders/verifyPaymentLink",
-    callback_method: "get",
-  });
-} catch (err) {
-  console.error("Razorpay Error (paymentLink.create):", err.error || err.message || err);
-  return res.status(500).json({
-    message: "Failed to create Razorpay Payment Link",
-    error: err.error || err.message,
-  });
-}
+    try {
+      paymentLink = await razorpay.paymentLink.create({
+        amount: Math.round(amountToPay * 100),
+        currency: "INR",
+        description: `Payment for service ${service_id}`,
+        customer: { name: customer_name, email: customer_email, contact: customer_contact },
+        notify: { sms: true, email: true },
+        reminder_enable: true,
+        notes: {
+          order_id: String(orderId),
+          customer_id: String(customer_id),
+          service_id: String(service_id),
+          payment_option: paymentType,
+        },
+        callback_url: "https://<your-ngrok-or-domain>/api/orders/verifyPaymentLink",
+        callback_method: "get",
+      });
+    } catch (err) {
+      console.error("Razorpay Error (paymentLink.create):", err.error || err.message || err);
+      return res.status(500).json({
+        message: "Failed to create Razorpay Payment Link",
+        error: err.error || err.message,
+      });
+    }
 
     // insert payment record
     await db.promise().query(
@@ -152,7 +152,7 @@ try {
     });
   } catch (err) {
     console.error("DB Error (createOrder):", err);
-  res.status(500).json({ message: "Internal server error", error: err.message });
+    res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };
 
@@ -195,7 +195,7 @@ const verifyPaymentLink = async (req, res) => {
 
     // Fetch order
     const [orderRows] = await db.promise().query(
-      `SELECT total_amount, advance_paid FROM orders WHERE id=?`,
+      `SELECT total_amount, advance_paid, status FROM orders WHERE id=?`,
       [paymentLink.notes.order_id]
     );
     const order = orderRows[0];
@@ -213,16 +213,24 @@ const verifyPaymentLink = async (req, res) => {
     }
 
 
+    const newOrderStatus = order.status === 'awaiting_payment' ? 'awaiting_docs' : order.status;
+
+    await db.promise().query(
+      `UPDATE orders 
+       SET advance_paid=?, payment_status=?, status=? 
+       WHERE id=?`,
+      [amountPaid, newPaymentStatus, newOrderStatus, paymentLink.notes.order_id]
+    );
 
 
     // Update orders table with actual amountPaid
-    const [orderResult] = await db.promise().query(
-      `UPDATE orders 
-       SET advance_paid=?, payment_status=?, status='awaiting_docs' 
-       WHERE id=?`,
-      [amountPaid, newPaymentStatus, paymentLink.notes.order_id]
-    );
-    console.log("Orders update affectedRows:", orderResult.affectedRows);
+    // const [orderResult] = await db.promise().query(
+    //   `UPDATE orders 
+    //    SET advance_paid=?, payment_status=?, status='awaiting_docs' 
+    //    WHERE id=?`,
+    //   [amountPaid, newPaymentStatus, paymentLink.notes.order_id]
+    // );
+    // console.log("Orders update affectedRows:", orderResult.affectedRows);
 
     res.json({
       success: true,
