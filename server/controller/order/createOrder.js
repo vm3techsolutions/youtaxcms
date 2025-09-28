@@ -357,5 +357,33 @@ const getOrderPayments = async (req, res) => {
   }
 };
 
+/**
+ * Get all pending payments for a customer by customer_id
+ * Only returns orders with payment_status = 'partially_paid'
+ */
+const getPendingPaymentsByCustomerId = async (req, res) => {
+  try {
+    const customer_id = req.user ? req.user.id : null;
+    if (!customer_id) {
+      return res.status(400).json({ message: "customer_id is required" });
+    }
 
-module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments };
+    // Only collect orders with partial payment (not unpaid)
+    const [orders] = await db.promise().query(
+      `SELECT id, total_amount, advance_paid, pending_amount, payment_status, status
+       FROM orders
+       WHERE customer_id = ? AND pending_amount > 0 AND payment_status = 'partially_paid'
+       ORDER BY created_at DESC`,
+      [customer_id]
+    );
+
+    res.json({ success: true, pending_orders: orders });
+  } catch (err) {
+    console.error("DB Error (getPendingPaymentsByCustomerId):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+
+
+module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments, getPendingPaymentsByCustomerId };

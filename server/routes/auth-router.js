@@ -60,6 +60,7 @@ router.post("/pending-orders", verifyToken, orderController.createPendingPayment
 router.get("/my/orders", verifyToken, orderController.getMyOrders);
 router.get("/order/:customer_id", verifyToken, orderController.getOrdersByCustomerId);
 router.get("/order/:order_id/payments", verifyToken, orderController.getOrderPayments);
+router.get("/pending-payments", verifyToken, orderController.getPendingPaymentsByCustomerId);
 
 // Order Document Routes
 router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
