@@ -111,7 +111,7 @@ const updateDocumentStatusByOrderDId = async (req, res) => {
 // };
 
 // After verification, trigger order status check
-const triggerOrderStatusCheckInternal = async (order_id,salesId) => {
+const triggerOrderStatusCheckInternal = async (order_id,salesId,account_id) => {
   try {
     // Check all documents for this order
     const [docs] = await db.promise().query(
@@ -131,14 +131,14 @@ const triggerOrderStatusCheckInternal = async (order_id,salesId) => {
       if (orderStatus[0].status !== 'under_review') {
         // All docs verified → move order → under_review
         await db.promise().query(
-          `UPDATE orders SET status='under_review' WHERE id=?`,
-          [order_id]
+          `UPDATE orders SET status='under_review', assigned_to=? WHERE id=?`,
+          [account_id,order_id]
         );
 
         await db.promise().query(
           `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at)
-           VALUES (?, ?, NULL, 'sale', 'accounts', 'all_docs_verified', 'All documents verified, sent to Accounts', NOW())`,
-          [order_id,salesId]
+           VALUES (?, ?, ?, 'sale', 'accounts', 'all_docs_verified', 'All documents verified, sent to Accounts', NOW())`,
+          [order_id,salesId,account_id]
         );
       }
     }
@@ -152,14 +152,14 @@ const triggerOrderStatusCheckInternal = async (order_id,salesId) => {
 // ========================
 const triggerOrderStatusCheck = async (req, res) => {
   try {
-    const { order_id } = req.body;
+    const { order_id, account_id } = req.body;
     const salesId = req.user.id; // Sales role user ID
 
     if (!order_id) {
       return res.status(400).json({ message: "order_id is required" });
     }
 
-    await triggerOrderStatusCheckInternal(order_id,salesId);
+    await triggerOrderStatusCheckInternal(order_id,salesId,account_id);
 
     res.json({ success: true, message: "Order status check triggered" });
   } catch (err) {

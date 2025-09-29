@@ -66,6 +66,11 @@ router.get("/pending-payments", verifyToken, orderController.getPendingPaymentsB
 router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
 router.get("/order-documents/:order_id", verifyToken, orderDocuments.getOrderDocuments);
 
+
+//Order Receipt
+router.get("/receipts/:paymentId/signed-url", orderController.getSignedReceiptUrl);
+
+
 // Support Ticket Routes
 router.post("/support/ticket", verifyToken, supportController.createTicket);
 router.get("/support/tickets", verifyToken, supportController.listTickets);
@@ -77,6 +82,7 @@ router.get('/admin/roles', adminRegister.getAdminRoles);
 router.post('/admin/users',verifyToken, adminUsers.createAdminUser);
 router.post('/admin/login', adminUsers.adminLogin);
 router.get('/admin/users', verifyToken, adminUsers.getAdminUsers);
+router.get('/admin/users/role/:roleId', verifyToken, adminUsers.getAdminUsersByRole);
 
 // Service Catalog Routes
 router.post("/services", verifyToken, services.createService);
