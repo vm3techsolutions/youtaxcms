@@ -1,16 +1,29 @@
-
 const db = require("../../../config/db");
 
-// Get orders pending payment check
+// Get orders pending payment check (assigned to this account user), with customer and service name
 const getPendingOrdersForAccounts = async (req, res) => {
   try {
+    const accountsId = req.user.id; // logged-in accounts user
+
     const [orders] = await db.promise().query(
-      `SELECT o.id, o.customer_id, o.status, o.total_amount,
-              SUM(p.amount) AS paid_amount
+      `SELECT 
+          o.id, 
+          o.customer_id, 
+          c.name AS customer_name,
+          s.name AS service_name,
+          o.status, 
+          o.total_amount,
+          o.assigned_to,
+          SUM(p.amount) AS paid_amount
        FROM orders o
+       LEFT JOIN customers c ON o.customer_id = c.id
+       LEFT JOIN services s ON o.service_id = s.id
        LEFT JOIN payments p ON o.id = p.order_id AND p.status='success'
        WHERE o.status='under_review'
-       GROUP BY o.id`
+         AND o.assigned_to=?
+       GROUP BY o.id
+       ORDER BY o.id DESC`,
+      [accountsId]
     );
 
     res.json({ success: true, data: orders });

@@ -77,6 +77,7 @@ router.get('/admin/roles', adminRegister.getAdminRoles);
 router.post('/admin/users',verifyToken, adminUsers.createAdminUser);
 router.post('/admin/login', adminUsers.adminLogin);
 router.get('/admin/users', verifyToken, adminUsers.getAdminUsers);
+router.get('/admin/users/role/:roleId', verifyToken, adminUsers.getAdminUsersByRole);
 
 // Service Catalog Routes
 router.post("/services", verifyToken, services.createService);

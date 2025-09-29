@@ -149,4 +149,32 @@ const getAdminUsers = (req, res) => {
   });
 };
 
-module.exports = { createAdminUser, adminLogin, getAdminUsers };
+/**
+ * Get all admin users by role
+ * Example: /api/admin-users/role/:roleId
+ */
+const getAdminUsersByRole = async (req, res) => {
+  try {
+    const { roleId } = req.params;
+
+    const [rows] = await db.promise().query(
+      `SELECT u.id, u.name, u.email, r.name AS role_name, r.description
+       FROM admin_users u
+       JOIN admin_roles r ON u.role_id = r.id
+       WHERE r.id = ?`,
+      [roleId]
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching users by role:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+module.exports = {
+  createAdminUser,
+  adminLogin,
+  getAdminUsers,
+  getAdminUsersByRole
+};
