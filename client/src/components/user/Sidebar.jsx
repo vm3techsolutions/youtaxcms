@@ -37,7 +37,7 @@ export default function Sidebar() {
         </Link>
 
         <Link
-          href="/user/payment"
+          href="/user/payments"
           className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
         >
           <BanknotesIcon className="w-5 h-5" />

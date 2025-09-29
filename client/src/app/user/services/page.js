@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchServices } from "@/store/slices/servicesSlice";
+import { fetchServices, fetchServiceById  } from "@/store/slices/servicesSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { useRouter } from "next/navigation";
@@ -36,9 +36,15 @@ export default function ServicesFlex() {
   };
 
   const handleApplyNow = (service) => {
-    setModalService(service);
-    dispatch(resetOrderState());
-    setPaymentOption("full");
+   setModalService(service);
+  dispatch(resetOrderState());
+  setPaymentOption("full");
+
+  dispatch(fetchServiceById(service.id)).then((resultAction) => {
+    if (fetchServiceById.fulfilled.match(resultAction)) {
+      setModalService(resultAction.payload);
+    }
+  });
   };
 
   const handleBackToList = () => {
@@ -124,7 +130,7 @@ export default function ServicesFlex() {
       </div>
 
       {/* Payment Modal */}
-      {modalService && (
+      {/* {modalService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-11/12 max-w-xl p-6 relative max-h-[90vh] overflow-y-auto">
             <button
@@ -174,7 +180,134 @@ export default function ServicesFlex() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+
+
+     {/* Checkout Side Panel */}
+{modalService && (
+  <div className="fixed inset-0 z-50 flex">
+    {/* Overlay */}
+    <div className="flex-1 bg-black/50" onClick={handleBackToList}></div>
+
+    {/* Sliding Panel from Right */}
+    <div
+      className={`bg-white h-screen w-[30%] shadow-xl fixed right-0 top-0 transform transition-transform duration-500 ease-in-out ${
+        modalService ? "translate-x-0" : "translate-x-full"
+      }`}
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center px-4 py-8 border-b">
+        <h2 className="text-xl font-bold">Payment</h2>
+        <button
+          onClick={handleBackToList}
+          className="text-gray-500 hover:text-gray-800"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-6 flex flex-col gap-4 mb-18 overflow-y-auto">
+        {/* Service Details */}
+        <div>
+          <h3 className="text-lg font-semibold">{modalService.name}</h3>
+          <p className="text-gray-600">
+            {modalService.description || "No description available"}
+          </p>
+        </div>
+
+        {/* Price Details */}
+        <div className="bg-gray-100 p-4 rounded-lg">
+          {(() => {
+            const basePrice = Number(modalService.base_price || 0);
+            const serviceCharges = Number(modalService.service_charges || 0);
+            const totalPrice = basePrice + serviceCharges;
+            const advancePrice = Number(modalService.advance_price || 0);
+            const remainingAmount = totalPrice - advancePrice;
+
+            return (
+              <>
+                {/* Service Price */}
+                <div className="flex justify-between mb-2">
+                  <span className="font-medium">Service Price:</span>
+                  <span>₹{totalPrice.toLocaleString()}</span>
+                </div>
+
+                {/* Advance Payment */}
+                {paymentOption === "advance" && advancePrice > 0 && (
+                  <div className="flex justify-between mb-2 text-blue-600">
+                    <span className="font-medium">Advance Amount:</span>
+                    <span>₹{advancePrice.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Total to Pay Now */}
+                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                  <span>
+                    Total{paymentOption === "advance" && advancePrice > 0 ? " to Pay Now" : ""}
+                  </span>
+                  <span>
+                    ₹
+                    {paymentOption === "advance" && advancePrice > 0
+                      ? advancePrice.toLocaleString()
+                      : totalPrice.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Remaining Amount */}
+                {paymentOption === "advance" && advancePrice > 0 && (
+                  <div className="flex justify-between font-medium text-red-600 mt-1">
+                    <span>Remaining Amount to Pay on Completion:</span>
+                    <span>₹{remainingAmount.toLocaleString()}</span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+
+        {/* Payment Options */}
+        <div className="flex gap-4 mt-3">
+          <button
+            onClick={() => setPaymentOption("full")}
+            className={`px-4 py-2 rounded-lg flex-1 ${
+              paymentOption === "full" ? "bg-green-500 text-white" : "bg-gray-200"
+            }`}
+          >
+            Full Payment
+          </button>
+          <button
+            onClick={() => setPaymentOption("advance")}
+            disabled={!modalService.advance_price || modalService.advance_price <= 0}
+            className={`px-4 py-2 rounded-lg flex-1 ${
+              paymentOption === "advance" ? "bg-green-500 text-white" : "bg-gray-200"
+            } disabled:opacity-50`}
+          >
+            Advance Payment
+          </button>
+        </div>
+      </div>
+
+      {/* Footer - Confirm Button */}
+      <div className="px-4 flex justify-center">
+        <button
+          onClick={handleConfirmPayment}
+          disabled={orderLoading}
+          className="px-6 py-2 primary-btn text-white rounded-lg w-full"
+        >
+          {orderLoading ? "Processing..." : "Confirm & Pay"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
     </div>
   );
 }
