@@ -9,15 +9,16 @@ import {
   clearMessages,
 } from "@/store/slices/accountsSlice";
 
-export default function AccountsDashboard() {
+export default function AccountsOrdersPage() {
   const dispatch = useDispatch();
-  const { pendingOrders, paymentsByOrder, loading, error, success } = useSelector(
-    (state) => state.accounts
-  );
+  const { pendingOrders, paymentsByOrder, customers, loading, error, success } = useSelector(
+  (state) => state.accounts
+);
 
+  const [showPayments, setShowPayments] = useState(false);
+  const [showForward, setShowForward] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [remarks, setRemarks] = useState("");
-  const [assignedTo, setAssignedTo] = useState(""); // operations user ID
+  const [selectedAccountant, setSelectedAccountant] = useState("");
 
   useEffect(() => {
     dispatch(fetchPendingOrdersForAccounts());
@@ -26,120 +27,201 @@ export default function AccountsDashboard() {
   const handleViewPayments = (orderId) => {
     dispatch(fetchOrderPayments(orderId));
     setSelectedOrder(orderId);
+    setShowPayments(true);
   };
 
-  const handleForward = (orderId) => {
-    if (!assignedTo) return alert("Please select Operations user!");
-    dispatch(forwardToOperations({ order_id: orderId, remarks, assigned_to: assignedTo }));
+  const handleForwardOrder = () => {
+    if (!selectedAccountant) return alert("Select an accountant");
+    dispatch(
+      forwardToOperations({
+        order_id: selectedOrder,
+        assigned_to: selectedAccountant,
+        remarks: "Verified and forwarded",
+      })
+    );
+    setShowForward(false);
+    setSelectedAccountant("");
   };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold text-center mb-4">Accounts Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Accounts Dashboard</h1>
 
-      {loading && <p className="text-gray-500 text-center">Loading...</p>}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {loading && <p className="text-center text-gray-500">Loading...</p>}
+      {error && (
+        <p className="text-center text-red-500 mb-4">
+          {error}{" "}
+          <button
+            onClick={() => dispatch(clearMessages())}
+            className="underline ml-2"
+          >
+            Clear
+          </button>
+        </p>
+      )}
       {success && (
-        <p className="text-green-600 text-center">
-          {success}
-          <button className="ml-2 text-sm underline" onClick={() => dispatch(clearMessages())}>
-            x
+        <p className="text-center text-green-500 mb-4">
+          {success}{" "}
+          <button
+            onClick={() => dispatch(clearMessages())}
+            className="underline ml-2"
+          >
+            Clear
           </button>
         </p>
       )}
 
-      <table className="min-w-full border">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="py-2 px-4 border">Order ID</th>
-            <th className="py-2 px-4 border">Customer</th>
-            <th className="py-2 px-4 border">Total</th>
-            <th className="py-2 px-4 border">Paid</th>
-            <th className="py-2 px-4 border">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pendingOrders.length === 0 ? (
+      <div className="overflow-x-auto">
+        <table className="min-w-full border rounded">
+          <thead className="bg-gray-100">
             <tr>
-              <td colSpan="5" className="text-center py-4 text-gray-500">
-                No pending orders.
-              </td>
+              <th className="py-2 px-4 border">Order ID</th>
+              <th className="py-2 px-4 border">Customer</th>
+              <th className="py-2 px-4 border">Total</th>
+              <th className="py-2 px-4 border">Paid</th>
+              <th className="py-2 px-4 border">Status</th>
+              <th className="py-2 px-4 border">Actions</th>
             </tr>
-          ) : (
-            pendingOrders.map((order) => (
+          </thead>
+          <tbody>
+            {pendingOrders.length === 0 && !loading && (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="text-center py-4 text-gray-500"
+                >
+                  No pending orders.
+                </td>
+              </tr>
+            )}
+
+            {pendingOrders.map((order) => (
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="py-2 px-4 border">{order.id}</td>
                 <td className="py-2 px-4 border">{order.customer_id}</td>
-                <td className="py-2 px-4 border">{order.total_amount}</td>
-                <td className="py-2 px-4 border">{order.paid_amount || 0}</td>
-                <td className="py-2 px-4 border flex space-x-2">
+                <td className="py-2 px-4 border">₹{order.total_amount}</td>
+                <td className="py-2 px-4 border">₹{order.paid_amount || 0}</td>
+                <td className="py-2 px-4 border">
+                  <span className="px-2 py-1 text-sm rounded bg-yellow-100 text-yellow-800">
+                    {order.status}
+                  </span>
+                </td>
+                <td className="py-2 px-4 border flex gap-2">
                   <button
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                     onClick={() => handleViewPayments(order.id)}
                   >
                     View Payments
                   </button>
                   <button
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                    onClick={() => handleForward(order.id)}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                    onClick={() => {
+                      setSelectedOrder(order.id);
+                      setShowForward(true);
+                    }}
                   >
                     Forward
                   </button>
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Payments Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-bold mb-4">Payments for Order #{selectedOrder}</h2>
+      {showPayments && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded shadow-lg w-2/3">
+            <h2 className="text-lg font-bold mb-4">
+              Payments for Order #{selectedOrder}
+            </h2>
+            <table className="min-w-full border rounded">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-2 px-4 border">Type</th>
+                  <th className="py-2 px-4 border">Mode</th>
+                  <th className="py-2 px-4 border">Amount</th>
+                  <th className="py-2 px-4 border">Status</th>
+                  <th className="py-2 px-4 border">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentsByOrder[selectedOrder]?.length > 0 ? (
+                  paymentsByOrder[selectedOrder].map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="py-2 px-4 border">{p.payment_type}</td>
+                      <td className="py-2 px-4 border">{p.payment_mode}</td>
+                      <td className="py-2 px-4 border">₹{p.amount}</td>
+                      <td className="py-2 px-4 border">
+                        <span
+                          className={`px-2 py-1 text-sm rounded ${
+                            p.status === "success"
+                              ? "bg-green-100 text-green-800"
+                              : p.status === "failed"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4 border">
+                        {new Date(p.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="text-center py-4 text-gray-500"
+                    >
+                      No payments found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <button
+              onClick={() => setShowPayments(false)}
+              className="mt-4 px-3 py-1 bg-red-600 text-white rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
-            {paymentsByOrder[selectedOrder] ? (
-              <ul className="space-y-2">
-                {paymentsByOrder[selectedOrder].map((p) => (
-                  <li key={p.id} className="border p-2 rounded">
-                    {p.payment_type} - {p.amount} ({p.status})
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Loading...</p>
-            )}
-
-            <div className="mt-4">
-              <label className="block mb-1">Remarks</label>
-              <textarea
-                className="w-full border rounded p-2"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block mb-1">Assign to (Ops User ID)</label>
-              <input
-                type="text"
-                className="w-full border rounded p-2"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-4">
+      {/* Forward Modal */}
+      {showForward && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded shadow-lg w-1/3">
+            <h2 className="text-lg font-bold mb-4">
+              Forward Order #{selectedOrder}
+            </h2>
+            <select
+              className="w-full border p-2 mb-4"
+              value={selectedAccountant}
+              onChange={(e) => setSelectedAccountant(e.target.value)}
+            >
+              <option value="">-- Select Accountant --</option>
+              <option value="2">Accountant A</option>
+              <option value="3">Accountant B</option>
+              <option value="4">Accountant C</option>
+            </select>
+            <div className="flex gap-2">
               <button
-                className="px-4 py-2 bg-gray-400 rounded text-white"
-                onClick={() => setSelectedOrder(null)}
+                onClick={handleForwardOrder}
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Close
+                Submit
               </button>
               <button
-                className="px-4 py-2 bg-green-600 rounded text-white"
-                onClick={() => handleForward(selectedOrder)}
+                onClick={() => setShowForward(false)}
+                className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
               >
-                Forward
+                Cancel
               </button>
             </div>
           </div>

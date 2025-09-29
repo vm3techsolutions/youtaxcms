@@ -1,122 +1,332 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPendingOrders, updateDocumentStatus, triggerOrderStatusCheck } from "@/store/slices/salesSlice";
+import {
+  fetchPendingOrders,
+  updateDocumentStatus,
+  fetchAdminUsers,
+  resetSalesState,
+} from "@/store/slices/salesSlice";
+import axiosInstance from "@/api/axiosInstance";
 
-export default function SalesDashboard() {
+export default function SalesOrdersPage() {
   const dispatch = useDispatch();
-  const { pendingOrders, loadingFetch, error, success } = useSelector((state) => state.sales);
+  const {
+    pendingOrders,
+    adminUsers,
+    loadingFetch,
+    loadingUpdate,
+    loadingAdmins,
+    error,
+    success,
+  } = useSelector((state) => state.sales);
 
- useEffect(() => {
-  dispatch(fetchPendingOrders()).then((res) => {
-    if (res.payload && Array.isArray(res.payload)) {
-      res.payload.forEach((order) => {
-        dispatch(fetchOrderPaymentStatus(order.id));
-      });
-    }
+  const [ordersWithDocs, setOrdersWithDocs] = useState([]);
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [assignedAccountant, setAssignedAccountant] = useState({});
+  const [filter, setFilter] = useState("all");
+
+  // Filter only accountants
+  const accountants = adminUsers.filter((user) => user.role === "accountant");
+
+  // Fetch orders + admin users on mount
+  useEffect(() => {
+    dispatch(fetchPendingOrders());
+    dispatch(fetchAdminUsers());
+
+    return () => dispatch(resetSalesState());
+  }, [dispatch]);
+
+  // Fetch documents for orders
+  useEffect(() => {
+    const fetchDocumentsForOrders = async () => {
+      if (!pendingOrders || pendingOrders.length === 0) return;
+
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const updatedOrders = await Promise.all(
+        pendingOrders.map(async (order) => {
+          try {
+            const res = await axiosInstance.get(`/order-documents/${order.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            return { ...order, documents: res.data };
+          } catch (err) {
+            console.error("❌ Error fetching docs for order", order.id, err);
+            return { ...order, documents: [] };
+          }
+        })
+      );
+      setOrdersWithDocs(updatedOrders);
+    };
+
+    fetchDocumentsForOrders();
+  }, [pendingOrders]);
+
+  // Handle Verify / Reject
+  const handleVerifyReject = (orderId, docId, status) => {
+    dispatch(
+      updateDocumentStatus({
+        order_id: orderId,
+        order_document_id: docId,
+        status,
+        remarks: status === "verified" ? "Looks good" : "Not acceptable",
+      })
+    ).then(() => {
+      setOrdersWithDocs((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                documents: order.documents.map((doc) =>
+                  doc.id === docId ? { ...doc, status } : doc
+                ),
+              }
+            : order
+        )
+      );
+    });
+  };
+
+  // Assign Accountant
+  const handleAssignAccountant = (orderId) => {
+    const accountantId = assignedAccountant[orderId];
+    if (!accountantId) return alert("Select an accountant first");
+
+    console.log(`Assign order ${orderId} to accountant ${accountantId}`);
+    // TODO: API call to assign accountant
+  };
+
+  // Preview documents
+  const renderDocumentPreview = (doc) => {
+    const fileUrl = doc.signed_url || doc.file_url;
+    if (!fileUrl) return <span className="text-gray-500">No preview</span>;
+
+    const isImage = /\.(jpg|jpeg|png|gif)$/i.test(fileUrl);
+    return isImage ? (
+      <img
+        src={fileUrl}
+        alt={doc.doc_name || "Document"}
+        className="h-16 w-16 object-cover rounded border"
+      />
+    ) : (
+      <a
+        href={fileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 underline"
+      >
+        View File
+      </a>
+    );
+  };
+
+  // Filter orders
+  const filteredOrders = ordersWithDocs.filter((order) => {
+    const totalDocs = order.documents?.length || 0;
+    const verifiedDocs =
+      order.documents?.filter((d) => d.status === "verified").length || 0;
+    const allDocsUploaded = totalDocs > 0;
+    const allDocsVerified = allDocsUploaded && totalDocs === verifiedDocs;
+
+    let displayStatus = "Pending Documents";
+    if (!allDocsUploaded) displayStatus = "Pending Documents";
+    else if (!allDocsVerified) displayStatus = "Pending Verification";
+    else displayStatus = "Completed / All Docs Verified";
+
+    if (filter === "pending_docs" && displayStatus !== "Pending Documents")
+      return false;
+    if (
+      filter === "pending_verification" &&
+      displayStatus !== "Pending Verification"
+    )
+      return false;
+    if (filter === "completed" && displayStatus !== "Completed / All Docs Verified")
+      return false;
+
+    return true;
   });
-}, [dispatch]);
+
+  console.log("Loaded accountants:", accountants);
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Sales Dashboard</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        Sales Dashboard – Orders
+      </h1>
 
-      {loadingFetch && <p className="text-center text-gray-500">Loading orders...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
-      {success && <p className="text-center text-green-500">Action completed successfully!</p>}
+      {/* Filters */}
+      <div className="mb-4 flex items-center space-x-3">
+        <label className="font-medium text-gray-700">Filter:</label>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="all">All Orders</option>
+          <option value="pending_docs">Pending Documents</option>
+          <option value="pending_verification">Pending Verification</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border rounded">
-          <thead className="bg-gray-100">
+      {loadingFetch && <p className="text-blue-600">Loading orders...</p>}
+      {loadingAdmins && <p className="text-blue-600">Loading accountants...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+      {success && (
+        <p className="text-green-600 mb-4">✅ Action completed successfully</p>
+      )}
+
+      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table className="w-full border-collapse">
+          <thead className="bg-gray-100 border-b">
             <tr>
-              <th className="py-2 px-4 border">Order ID</th>
-              <th className="py-2 px-4 border">Customer</th>
-              <th className="py-2 px-4 border">Service</th>
-              <th className="py-2 px-4 border">Payment Status</th>
-              <th className="py-2 px-4 border">Documents</th>
-              <th className="py-2 px-4 border">Actions</th>
+              <th className="p-3 text-left">Order ID</th>
+              <th className="p-3 text-left">Customer</th>
+              <th className="p-3 text-left">Service</th>
+              <th className="p-3 text-left">Order Status</th>
+              <th className="p-3 text-left">Documents</th>
+              <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {pendingOrders.length === 0 && !loadingFetch && (
+            {filteredOrders.length === 0 && !loadingFetch ? (
               <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">
-                  No pending orders.
+                <td colSpan="6" className="text-center text-gray-500 p-4 italic">
+                  No orders found 🎉
                 </td>
               </tr>
-            )}
+            ) : (
+              filteredOrders.map((order) => {
+                const totalDocs = order.documents?.length || 0;
+                const verifiedDocs =
+                  order.documents?.filter((d) => d.status === "verified").length || 0;
+                const allDocsUploaded = totalDocs > 0;
+                const allDocsVerified = allDocsUploaded && totalDocs === verifiedDocs;
 
-            {pendingOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="py-2 px-4 border">{order.id}</td>
-                <td className="py-2 px-4 border">{order.customer_name}</td>
-                <td className="py-2 px-4 border">{order.service_name}</td>
-                <td className="py-2 px-4 border">
-  {order.payment_status === "success" ? (
-    <span className="text-green-600 font-semibold">Paid</span>
-  ) : order.payment_status === "initiated" ? (
-    <span className="text-yellow-600 font-semibold">Pending</span>
-  ) : order.payment_status === "failed" ? (
-    <span className="text-red-600 font-semibold">Failed</span>
-  ) : (
-    <span className="text-gray-600 font-semibold">In-Progress</span>
-  )}
-</td>
-                <td className="py-2 px-4 border">
-                  {order.documents?.length > 0 ? (
-                    <ul className="space-y-1">
-                      {order.documents.map((doc) => (
-                        <li key={doc.id} className="flex justify-between items-center">
-                          <span className="truncate">{doc.file_url.split("/").pop()}</span>
-                          <span
-                            className={`ml-2 text-sm font-semibold ${
-                              doc.status === "verified"
-                                ? "text-green-600"
-                                : doc.status === "rejected"
-                                ? "text-red-600"
-                                : "text-gray-600"
-                            }`}
+                let displayStatus = "Pending Documents";
+                if (!allDocsUploaded) displayStatus = "Pending Documents";
+                else if (!allDocsVerified) displayStatus = "Pending Verification";
+                else displayStatus = "Completed / All Docs Verified";
+
+                return (
+                  <React.Fragment key={order.id}>
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3">#{order.id}</td>
+                      <td className="p-3">{order.customer_name}</td>
+                      <td className="p-3">{order.service_name}</td>
+                      <td className="p-3 font-semibold">{displayStatus}</td>
+
+                      <td className="p-3">
+                        {allDocsUploaded ? (
+                          <button
+                            onClick={() =>
+                              setExpandedOrder(expandedOrder === order.id ? null : order.id)
+                            }
+                            className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
                           >
-                            {doc.status || "Pending"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-500">No docs</span>
-                  )}
-                </td>
-                <td className="py-2 px-4 border flex space-x-2">
-                  <button
-                    className="bg-green-600 text-white px-2 py-1 rounded"
-                    onClick={() =>
-                      order.documents?.forEach((doc) =>
-                        dispatch(updateDocumentStatus({ order_id: order.id, order_document_id: doc.id, status: "verified" }))
-                      )
-                    }
-                  >
-                    Verify All
-                  </button>
-                  <button
-                    className="bg-red-600 text-white px-2 py-1 rounded"
-                    onClick={() =>
-                      order.documents?.forEach((doc) =>
-                        dispatch(updateDocumentStatus({ order_id: order.id, order_document_id: doc.id, status: "rejected" }))
-                      )
-                    }
-                  >
-                    Reject All
-                  </button>
-                  <button
-                    className="bg-blue-600 text-white px-2 py-1 rounded"
-                    onClick={() => dispatch(triggerOrderStatusCheck({ order_id: order.id }))}
-                  >
-                    Check Status
-                  </button>
-                </td>
-              </tr>
-            ))}
+                            {expandedOrder === order.id ? "Hide" : "View"} Documents
+                          </button>
+                        ) : (
+                          <span className="text-gray-500">No Docs</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-3">
+                        <select
+                          className="border p-1 rounded mr-2"
+                          value={assignedAccountant[order.id] || ""}
+                          onChange={(e) =>
+                            setAssignedAccountant({
+                              ...assignedAccountant,
+                              [order.id]: e.target.value,
+                            })
+                          }
+                          disabled={!allDocsVerified || accountants.length === 0}
+                        >
+                          <option value="">Select Accountant</option>
+                          {accountants.map((acc) => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={() => handleAssignAccountant(order.id)}
+                          disabled={!allDocsVerified || accountants.length === 0}
+                          className={`px-3 py-1 text-sm rounded ${
+                            allDocsVerified && accountants.length > 0
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                          }`}
+                        >
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+
+                    {/* Expanded Documents */}
+                    {expandedOrder === order.id && allDocsUploaded && (
+                      <tr>
+                        <td colSpan="6" className="bg-gray-50 p-4">
+                          <h3 className="text-lg font-semibold mb-2">Documents</h3>
+                          <div className="flex flex-wrap gap-4">
+                            {order.documents.map((doc) => (
+                              <div
+                                key={doc.id}
+                                className="w-40 bg-white border p-3 rounded shadow-sm flex flex-col items-center"
+                              >
+                                {renderDocumentPreview(doc)}
+                                <p className="font-medium text-sm mt-2 text-center">
+                                  {doc.doc_name || "Unnamed Document"}
+                                </p>
+                                <p className="text-xs text-gray-500">{doc.doc_type}</p>
+                                <p
+                                  className={`text-xs ${
+                                    doc.status === "verified"
+                                      ? "text-green-600"
+                                      : doc.status === "rejected"
+                                      ? "text-red-600"
+                                      : "text-gray-600"
+                                  }`}
+                                >
+                                  {doc.status || "Pending"}
+                                </p>
+
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={() =>
+                                      handleVerifyReject(order.id, doc.id, "verified")
+                                    }
+                                    disabled={loadingUpdate}
+                                    className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                                  >
+                                    Verify
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleVerifyReject(order.id, doc.id, "rejected")
+                                    }
+                                    disabled={loadingUpdate}
+                                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
