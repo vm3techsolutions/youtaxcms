@@ -56,7 +56,7 @@ export default function AdminLoginForm() {
             router.push("/sales/dashboard");
             break;
           case "Accounts":   // match DB
-            router.push("/accountant/dashboard");
+            router.push("/accounts/dashboard");
             break;
           case "Operation":
             router.push("/operation/dashboard");
@@ -82,10 +82,10 @@ export default function AdminLoginForm() {
           router.push("/sales/dashboard");
           break;
         case "Accountant":
-          router.push("/accountant/dashboard");
+          router.push("/accounts/dashboard");
           break;
         case "Operation":
-          router.push("/operation/dashboard");
+          router.push("/operations/dashboard");
           break;
         default:
           router.push("/admin/dashboard");

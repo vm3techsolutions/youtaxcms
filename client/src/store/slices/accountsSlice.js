@@ -1,15 +1,13 @@
 // src/store/slices/accountsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import axiosInstance from "@/api/axiosInstance";
 
 // ✅ 1. Fetch pending orders
 export const fetchPendingOrdersForAccounts = createAsyncThunk(
   "accounts/fetchPendingOrders",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("/api/accounts/orders/pending", {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get("/accounts/orders/pending");
       return res.data.data; // returning orders list
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch orders");
@@ -22,9 +20,7 @@ export const fetchOrderPayments = createAsyncThunk(
   "accounts/fetchOrderPayments",
   async (orderId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`/api/accounts/orders/${orderId}/payments`, {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get(`/accounts/orders/${orderId}/payments`);
       return { orderId, payments: res.data.data };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch payments");
@@ -37,11 +33,11 @@ export const forwardToOperations = createAsyncThunk(
   "accounts/forwardToOperations",
   async ({ order_id, remarks, assigned_to }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
-        "/api/accounts/orders/forward",
-        { order_id, remarks, assigned_to },
-        { withCredentials: true }
-      );
+      const res = await axiosInstance.post("/accounts/orders/forward", {
+        order_id,
+        remarks,
+        assigned_to,
+      });
       return { order_id, message: res.data.message };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to forward order");
@@ -53,8 +49,10 @@ const accountsSlice = createSlice({
   name: "accounts",
   initialState: {
     pendingOrders: [],
-    paymentsByOrder: {}, // { orderId: [payments] }
-    loading: false,
+    paymentsByOrder: {},
+    loadingOrders: false,
+    loadingPayments: false,
+    loadingForward: false,
     success: null,
     error: null,
   },
@@ -63,38 +61,54 @@ const accountsSlice = createSlice({
       state.success = null;
       state.error = null;
     },
+    resetAccountsState: (state) => {
+      state.pendingOrders = [];
+      state.paymentsByOrder = {};
+      state.loadingOrders = false;
+      state.loadingPayments = false;
+      state.loadingForward = false;
+      state.success = null;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
       // ✅ Pending Orders
       .addCase(fetchPendingOrdersForAccounts.pending, (state) => {
-        state.loading = true;
+        state.loadingOrders = true;
         state.error = null;
       })
       .addCase(fetchPendingOrdersForAccounts.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingOrders = false;
         state.pendingOrders = action.payload;
       })
       .addCase(fetchPendingOrdersForAccounts.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingOrders = false;
         state.error = action.payload;
       })
 
       // ✅ Payments
+      .addCase(fetchOrderPayments.pending, (state) => {
+        state.loadingPayments = true;
+        state.error = null;
+      })
       .addCase(fetchOrderPayments.fulfilled, (state, action) => {
+        state.loadingPayments = false;
         const { orderId, payments } = action.payload;
         state.paymentsByOrder[orderId] = payments;
       })
       .addCase(fetchOrderPayments.rejected, (state, action) => {
+        state.loadingPayments = false;
         state.error = action.payload;
       })
 
       // ✅ Forward to Operations
       .addCase(forwardToOperations.pending, (state) => {
-        state.loading = true;
+        state.loadingForward = true;
+        state.error = null;
       })
       .addCase(forwardToOperations.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loadingForward = false;
         state.success = action.payload.message;
         // remove forwarded order from pendingOrders
         state.pendingOrders = state.pendingOrders.filter(
@@ -102,11 +116,11 @@ const accountsSlice = createSlice({
         );
       })
       .addCase(forwardToOperations.rejected, (state, action) => {
-        state.loading = false;
+        state.loadingForward = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { clearMessages } = accountsSlice.actions;
+export const { clearMessages, resetAccountsState } = accountsSlice.actions;
 export default accountsSlice.reducer;

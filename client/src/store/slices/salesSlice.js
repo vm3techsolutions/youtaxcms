@@ -1,5 +1,3 @@
-"use client";
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "@/api/axiosInstance";
 
@@ -23,7 +21,7 @@ export const fetchPendingOrders = createAsyncThunk(
   }
 );
 
-// 2️⃣ Update Document Status (verify/reject)
+// 2️⃣ Update Document Status
 export const updateDocumentStatus = createAsyncThunk(
   "sales/updateDocumentStatus",
   async ({ order_id, order_document_id, status, remarks }, { rejectWithValue }) => {
@@ -34,14 +32,14 @@ export const updateDocumentStatus = createAsyncThunk(
         { order_id, order_document_id, status, remarks },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      return { ...res.data, order_id, order_document_id, status }; // Include ids for state update
+      return { ...res.data, order_id, order_document_id, status };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to update document status");
     }
   }
 );
 
-// 3️⃣ Trigger Order Status Check (manual)
+// 3️⃣ Trigger Order Status Check
 export const triggerOrderStatusCheck = createAsyncThunk(
   "sales/triggerOrderStatusCheck",
   async ({ order_id }, { rejectWithValue }) => {
@@ -59,21 +57,24 @@ export const triggerOrderStatusCheck = createAsyncThunk(
   }
 );
 
-// salesSlice.js
-export const fetchOrderPaymentStatus = createAsyncThunk(
-  "sales/fetchOrderPaymentStatus",
-  async (order_id, { rejectWithValue }) => {
+// 4️⃣ Fetch Accountants
+export const fetchAdminUsers = createAsyncThunk(
+  "sales/fetchAdminUsers",
+  async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await axiosInstance.get(`/orders/${order_id}/payments/status`, {
+      const res = await axiosInstance.get("/admin-users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return { order_id, payment_status: res.data.payment_status };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to fetch payment status");
+      return res.data; // assuming res.data is an array of all admins
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to fetch admin users" }
+      );
     }
   }
 );
+
 
 
 // ========================
@@ -82,9 +83,11 @@ export const fetchOrderPaymentStatus = createAsyncThunk(
 
 const initialState = {
   pendingOrders: [],
+  adminUsers: [],       // <-- Added accountants list
   loadingFetch: false,
   loadingUpdate: false,
   loadingCheck: false,
+  loadingAdmins: false, // <-- loading for accountants
   error: null,
   success: false,
 };
@@ -95,9 +98,11 @@ const salesSlice = createSlice({
   reducers: {
     resetSalesState: (state) => {
       state.pendingOrders = [];
+      state.accountants = [];
       state.loadingFetch = false;
       state.loadingUpdate = false;
       state.loadingCheck = false;
+      state.loadingAccountants = false;
       state.error = null;
       state.success = false;
     },
@@ -131,7 +136,6 @@ const salesSlice = createSlice({
         state.loadingUpdate = false;
         state.success = true;
 
-        // Update document status locally in pendingOrders if present
         const { order_id, order_document_id, status } = action.payload;
         const order = state.pendingOrders.find((o) => o.id === order_id);
         if (order && order.documents) {
@@ -150,26 +154,26 @@ const salesSlice = createSlice({
         state.error = null;
         state.success = false;
       })
-      .addCase(triggerOrderStatusCheck.fulfilled, (state, action) => {
+      .addCase(triggerOrderStatusCheck.fulfilled, (state) => {
         state.loadingCheck = false;
         state.success = true;
-        // Optionally: refresh pendingOrders or update status locally
       })
       .addCase(triggerOrderStatusCheck.rejected, (state, action) => {
         state.loadingCheck = false;
         state.error = action.payload;
       })
 
-    
-      .addCase(fetchOrderPaymentStatus.fulfilled, (state, action) => {
-  const { order_id, payment_status } = action.payload;
-  const order = state.pendingOrders.find((o) => o.id === order_id);
-  if (order) {
-    order.payment_status = payment_status;
-  }
-});
-
-
+      // Fetch admin users
+     .addCase(fetchAdminUsers.pending, (state) => {
+    state.loadingAdmins = true;
+  })
+  .addCase(fetchAdminUsers.fulfilled, (state, action) => {
+    state.loadingAdmins = false;
+    state.adminUsers = action.payload; // store all admins
+  })
+  .addCase(fetchAdminUsers.rejected, (state) => {
+    state.loadingAdmins = false;
+  });
   },
 });
 
