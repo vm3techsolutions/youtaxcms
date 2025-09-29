@@ -1,5 +1,12 @@
 const db = require("../../config/db");
 const razorpay = require("../../config/razorpay");
+const  sendPaymentReceiptMail  = require("../../utils/paymentReceiptMail");
+
+const s3 = require("../../config/aws");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 // const crypto = require("crypto");
 
 
@@ -171,7 +178,7 @@ const verifyPaymentLink = async (req, res) => {
     let paymentMethod = null;
 
     if (paymentLink.payments && paymentLink.payments.length > 0) {
-      // paymentId = paymentLink.payments[0].id;          // pay_xxx
+      paymentId = paymentLink.payments[0].id;          // pay_xxx
       paymentMethod = paymentLink.payments[0].method;  // upi, card, etc.
     }
 
@@ -183,6 +190,12 @@ const verifyPaymentLink = async (req, res) => {
        WHERE txn_ref=?`,
       [paymentMethod || 'razorpay', payment_link_id]
     );
+
+    // Fetch payment row
+    const [paymentRows] = await db.promise().query(`SELECT id, order_id, customer_id FROM payments WHERE txn_ref=?`, [payment_link_id]);
+    if (!paymentRows.length) return res.status(404).json({ message: "Payment not found after update" });
+    const payment = paymentRows[0];
+
 
     // // ✅ Update orders table
     // await db.promise().query(
@@ -231,6 +244,12 @@ const verifyPaymentLink = async (req, res) => {
     //   [amountPaid, newPaymentStatus, paymentLink.notes.order_id]
     // );
     // console.log("Orders update affectedRows:", orderResult.affectedRows);
+
+    try {
+      await sendPaymentReceiptMail(payment.id); // Pass payment.id
+    } catch (mailErr) {
+      console.error("Error sending payment email:", mailErr);
+    }
 
     res.json({
       success: true,
@@ -385,5 +404,40 @@ const getPendingPaymentsByCustomerId = async (req, res) => {
 };
 
 
+const getSignedReceiptUrl = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
 
-module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments, getPendingPaymentsByCustomerId };
+    const [rows] = await db.promise().query("SELECT receipt_url FROM payments WHERE id = ?", [paymentId]);
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Receipt not found" });
+    }
+
+    const receiptUrl = rows[0].receipt_url;
+    if (!receiptUrl) {
+      return res.status(404).json({ error: "No receipt stored for this payment" });
+    }
+
+    // Extract S3 key
+    const urlParts = new URL(receiptUrl);
+    const s3Key = decodeURIComponent(urlParts.pathname.substring(1));
+
+    // Generate signed URL
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 15 });
+
+    return res.json({ signedUrl });
+  } catch (err) {
+    console.error("❌ Error generating signed URL:", err);
+    return res.status(500).json({ error: "Failed to generate signed URL" });
+  }
+};
+
+
+
+module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments, getPendingPaymentsByCustomerId, getSignedReceiptUrl };

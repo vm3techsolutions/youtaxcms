@@ -66,6 +66,11 @@ router.get("/pending-payments", verifyToken, orderController.getPendingPaymentsB
 router.post("/upload/order-document",verifyToken,  upload.array("files"),    orderDocuments.uploadOrderDocument);
 router.get("/order-documents/:order_id", verifyToken, orderDocuments.getOrderDocuments);
 
+
+//Order Receipt
+router.get("/receipts/:paymentId/signed-url", orderController.getSignedReceiptUrl);
+
+
 // Support Ticket Routes
 router.post("/support/ticket", verifyToken, supportController.createTicket);
 router.get("/support/tickets", verifyToken, supportController.listTickets);
