@@ -7,20 +7,20 @@ const getPendingOrdersForAccounts = async (req, res) => {
 
     const [orders] = await db.promise().query(
       `SELECT 
-          o.id, 
-          o.customer_id, 
-          c.name AS customer_name,
-          s.name AS service_name,
-          o.status, 
-          o.total_amount,
-          o.assigned_to,
-          SUM(p.amount) AS paid_amount
+        o.id, 
+        o.customer_id, 
+        c.name AS customer_name,
+        s.name AS service_name,
+        o.status, 
+        o.total_amount,
+        o.assigned_to,
+        SUM(p.amount) AS paid_amount
        FROM orders o
        LEFT JOIN customers c ON o.customer_id = c.id
        LEFT JOIN services s ON o.service_id = s.id
        LEFT JOIN payments p ON o.id = p.order_id AND p.status='success'
-       WHERE o.status='under_review'
-         AND o.assigned_to=?
+       WHERE (o.status='under_review' OR o.status='awaiting_final_payment')
+       AND o.assigned_to=?
        GROUP BY o.id
        ORDER BY o.id DESC`,
       [accountsId]
@@ -73,8 +73,11 @@ const forwardToOperations = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    if (orderRows[0].status !== "under_review") {
-      return res.status(400).json({ message: "Order is not in under_review status, cannot forward" });
+    if (
+      orderRows[0].status !== "under_review" &&
+      orderRows[0].status !== "awaiting_final_payment"
+    ) {
+      return res.status(400).json({ message: "Order is not in under_review or awaiting_final_payment status, cannot forward" });
     }
 
     // Update order status + assign to operations user
