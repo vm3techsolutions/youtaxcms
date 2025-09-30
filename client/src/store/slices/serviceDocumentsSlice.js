@@ -13,13 +13,15 @@ export const createServiceDocument = createAsyncThunk(
       const res = await axiosInstance.post("/service-documents", docData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data; // Make sure API returns full document with service_id
+      // Backend returns { message, id }
+      return { ...docData, id: res.data.id }; // include ID from backend
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to create service document");
     }
   }
 );
 
+// Fetch all documents by service
 export const fetchDocumentsByService = createAsyncThunk(
   "serviceDocuments/fetchByService",
   async (serviceId, { rejectWithValue }) => {
@@ -39,7 +41,9 @@ export const fetchDocumentById = createAsyncThunk(
       const res = await axiosInstance.get(`/service-documents/${id}`);
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to fetch document");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch document"
+      );
     }
   }
 );
@@ -48,13 +52,16 @@ export const updateServiceDocument = createAsyncThunk(
   "serviceDocuments/update",
   async ({ id, data, serviceId }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axiosInstance.put(`/service-documents/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { updatedDoc: res.data, serviceId, id };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to update document");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to update document"
+      );
     }
   }
 );
@@ -63,13 +70,16 @@ export const deleteServiceDocument = createAsyncThunk(
   "serviceDocuments/delete",
   async ({ id, serviceId }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axiosInstance.delete(`/service-documents/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { id, serviceId, message: res.data.message };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to delete document");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to delete document"
+      );
     }
   }
 );
@@ -121,7 +131,8 @@ const serviceDocumentsSlice = createSlice({
       })
       .addCase(fetchDocumentsByService.fulfilled, (state, action) => {
         state.loading = false;
-        state.serviceDocuments[action.payload.serviceId] = action.payload.documents;
+        state.serviceDocuments[action.payload.serviceId] =
+          action.payload.documents;
       })
       .addCase(fetchDocumentsByService.rejected, (state, action) => {
         state.loading = false;
@@ -153,7 +164,9 @@ const serviceDocumentsSlice = createSlice({
         state.success = true;
         const { serviceId, id, updatedDoc } = action.payload;
         if (state.serviceDocuments[serviceId]) {
-          const index = state.serviceDocuments[serviceId].findIndex((d) => d.id === id);
+          const index = state.serviceDocuments[serviceId].findIndex(
+            (d) => d.id === id
+          );
           if (index !== -1) state.serviceDocuments[serviceId][index] = updatedDoc;
         }
       })
@@ -171,9 +184,9 @@ const serviceDocumentsSlice = createSlice({
         state.loading = false;
         const { serviceId, id } = action.payload;
         if (state.serviceDocuments[serviceId]) {
-          state.serviceDocuments[serviceId] = state.serviceDocuments[serviceId].filter(
-            (d) => d.id !== id
-          );
+          state.serviceDocuments[serviceId] = state.serviceDocuments[
+            serviceId
+          ].filter((d) => d.id !== id);
         }
       })
       .addCase(deleteServiceDocument.rejected, (state, action) => {

@@ -67,7 +67,7 @@ const updateDocumentStatusByOrderDId = async (req, res) => {
     }
 
     // After verification, trigger order status check
-    await triggerOrderStatusCheckInternal(order_id,salesId);
+    // await triggerOrderStatusCheckInternal(order_id,salesId);
 
     res.json({ success: true, message: `Document ${status}` });
   } catch (err) {

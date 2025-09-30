@@ -42,15 +42,15 @@ export const updateDocumentStatus = createAsyncThunk(
 // 3️⃣ Trigger Order Status Check
 export const triggerOrderStatusCheck = createAsyncThunk(
   "sales/triggerOrderStatusCheck",
-  async ({ order_id }, { rejectWithValue }) => {
+  async ({ order_id, account_id }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axiosInstance.post(
         "/orders/check-status",
-        { order_id },
+        { order_id, account_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      return { ...res.data, order_id };
+      return { ...res.data, order_id, account_id };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to trigger order status check");
     }

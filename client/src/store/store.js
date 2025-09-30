@@ -11,6 +11,7 @@ import passwordResetReducer from "./slices/passwordResetSlice";
 import userOrdersReducer from "./slices/userOrdersSlice";
 import salesReducer from "./slices/salesSlice";
 import accountsReducer from "./slices/accountsSlice";
+import adminUserReducer from "./slices/adminUserSlice";
 
 export const store = configureStore({
   reducer: {
@@ -26,5 +27,6 @@ export const store = configureStore({
     userOrders: userOrdersReducer,
     sales: salesReducer,
     accounts: accountsReducer,
+    adminUser: adminUserReducer,
   },
 });

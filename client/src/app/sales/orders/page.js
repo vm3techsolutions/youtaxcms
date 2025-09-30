@@ -5,38 +5,51 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPendingOrders,
   updateDocumentStatus,
-  fetchAdminUsers,
+  triggerOrderStatusCheck,
   resetSalesState,
 } from "@/store/slices/salesSlice";
+import { fetchAdminRoles } from "@/store/slices/adminSlice";
+import { fetchAdminUsersByRole } from "@/store/slices/adminUserSlice";
 import axiosInstance from "@/api/axiosInstance";
 
 export default function SalesOrdersPage() {
   const dispatch = useDispatch();
-  const {
-    pendingOrders,
-    adminUsers,
-    loadingFetch,
-    loadingUpdate,
-    loadingAdmins,
-    error,
-    success,
-  } = useSelector((state) => state.sales);
+
+  // Sales state  
+  const { pendingOrders, loadingFetch, loadingUpdate, error, success } =
+    useSelector((state) => state.sales);
+
+  // Admin slices
+  const { roles, rolesLoading } = useSelector((state) => state.admin);
+  const { usersByRole: accountants, loading: loadingAdmins } = useSelector(
+    (state) => state.adminUser
+  );
 
   const [ordersWithDocs, setOrdersWithDocs] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [assignedAccountant, setAssignedAccountant] = useState({});
+  const [forwardedAccountants, setForwardedAccountants] = useState({}); // actually assigned
   const [filter, setFilter] = useState("all");
 
-  // Filter only accountants
-  const accountants = adminUsers.filter((user) => user.role === "accountant");
-
-  // Fetch orders + admin users on mount
+  // Fetch orders + roles on mount
   useEffect(() => {
     dispatch(fetchPendingOrders());
-    dispatch(fetchAdminUsers());
+    dispatch(fetchAdminRoles());
 
     return () => dispatch(resetSalesState());
   }, [dispatch]);
+
+  // When roles are loaded → find accountant role → fetch users by roleId
+  useEffect(() => {
+    if (roles && roles.length > 0) {
+      const accountantRole = roles.find(
+        (r) => r?.name?.toLowerCase() === "accounts" // Adjust as per your DB
+      );
+      if (accountantRole) {
+        dispatch(fetchAdminUsersByRole(accountantRole.id));
+      }
+    }
+  }, [roles, dispatch]);
 
   // Fetch documents for orders
   useEffect(() => {
@@ -90,14 +103,44 @@ export default function SalesOrdersPage() {
     });
   };
 
-  // Assign Accountant
-  const handleAssignAccountant = (orderId) => {
-    const accountantId = assignedAccountant[orderId];
-    if (!accountantId) return alert("Select an accountant first");
+  // // Assign Accountant
+  // const handleAssignAccountant = (orderId) => {
+  //   const accountantId = assignedAccountant[orderId];
+  //   if (!accountantId) return alert("Select an accountant first");
 
-    console.log(`Assign order ${orderId} to accountant ${accountantId}`);
-    // TODO: API call to assign accountant
-  };
+  //   console.log(`Assign order ${orderId} to accountant ${accountantId}`);
+  //   // TODO: Add API call here
+  // };
+
+const handleAssignAccountant = async (orderId) => {
+  const accountantId = Number(assignedAccountant[orderId]); // convert to number
+  if (!accountantId) return alert("Select an accountant first");
+
+  try {
+    // Send both order_id and account_id to the backend
+    await dispatch(
+      triggerOrderStatusCheck({ order_id: orderId, account_id: accountantId })
+    ).unwrap();
+
+    // Find accountant name
+    const accountant = accountants.find((a) => a.id === accountantId);
+
+    // Update forwardedAccountants state
+    setForwardedAccountants((prev) => ({
+      ...prev,
+      [orderId]: accountant?.name || "Unknown",
+    }));
+
+    alert(`Order #${orderId} forwarded to Accounts: ${accountant?.name}`);
+  } catch (err) {
+    console.error("Failed to forward order:", err);
+    alert("Failed to forward order. Try again.");
+  }
+};
+
+
+
+
 
   // Preview documents
   const renderDocumentPreview = (doc) => {
@@ -138,18 +181,13 @@ export default function SalesOrdersPage() {
 
     if (filter === "pending_docs" && displayStatus !== "Pending Documents")
       return false;
-    if (
-      filter === "pending_verification" &&
-      displayStatus !== "Pending Verification"
-    )
+    if (filter === "pending_verification" && displayStatus !== "Pending Verification")
       return false;
     if (filter === "completed" && displayStatus !== "Completed / All Docs Verified")
       return false;
 
     return true;
   });
-
-  console.log("Loaded accountants:", accountants);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -173,11 +211,10 @@ export default function SalesOrdersPage() {
       </div>
 
       {loadingFetch && <p className="text-blue-600">Loading orders...</p>}
+      {rolesLoading && <p className="text-blue-600">Loading roles...</p>}
       {loadingAdmins && <p className="text-blue-600">Loading accountants...</p>}
       {error && <p className="text-red-500">{error}</p>}
-      {success && (
-        <p className="text-green-600 mb-4">✅ Action completed successfully</p>
-      )}
+      {success && <p className="text-green-600 mb-4">✅ Action completed successfully</p>}
 
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
         <table className="w-full border-collapse">
@@ -234,42 +271,50 @@ export default function SalesOrdersPage() {
                         )}
                       </td>
 
-                      {/* Actions */}
                       <td className="p-3">
-                        <select
-                          className="border p-1 rounded mr-2"
-                          value={assignedAccountant[order.id] || ""}
-                          onChange={(e) =>
-                            setAssignedAccountant({
-                              ...assignedAccountant,
-                              [order.id]: e.target.value,
-                            })
-                          }
-                          disabled={!allDocsVerified || accountants.length === 0}
-                        >
-                          <option value="">Select Accountant</option>
-                          {accountants.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.name}
-                            </option>
-                          ))}
-                        </select>
+  {forwardedAccountants[order.id] ? (
+    <span className="font-medium text-gray-700">
+      Forwarded to {forwardedAccountants[order.id]}
+    </span>
+  ) : (
+    <>
+      <select
+        className="border p-1 rounded mr-2"
+        value={assignedAccountant[order.id] || ""}
+        onChange={(e) =>
+          setAssignedAccountant({
+            ...assignedAccountant,
+            [order.id]: e.target.value,
+          })
+        }
+        disabled={!allDocsVerified || accountants.length === 0}
+      >
+        <option value="">Select Accountant</option>
+        {accountants.map((acc) => (
+          <option key={acc.id} value={acc.id}>
+            {acc.name}
+          </option>
+        ))}
+      </select>
 
-                        <button
-                          onClick={() => handleAssignAccountant(order.id)}
-                          disabled={!allDocsVerified || accountants.length === 0}
-                          className={`px-3 py-1 text-sm rounded ${
-                            allDocsVerified && accountants.length > 0
-                              ? "bg-blue-600 text-white hover:bg-blue-700"
-                              : "bg-gray-400 text-gray-700 cursor-not-allowed"
-                          }`}
-                        >
-                          Assign
-                        </button>
-                      </td>
+      <button
+        onClick={() => handleAssignAccountant(order.id)}
+        disabled={!allDocsVerified || accountants.length === 0}
+        className={`px-3 py-1 text-sm rounded ${
+          allDocsVerified && accountants.length > 0
+            ? "bg-blue-600 text-white hover:bg-blue-700"
+            : "bg-gray-400 text-gray-700 cursor-not-allowed"
+        }`}
+      >
+        Assign
+      </button>
+    </>
+  )}
+</td>
+
+
                     </tr>
 
-                    {/* Expanded Documents */}
                     {expandedOrder === order.id && allDocsUploaded && (
                       <tr>
                         <td colSpan="6" className="bg-gray-50 p-4">

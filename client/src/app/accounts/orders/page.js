@@ -7,22 +7,52 @@ import {
   fetchOrderPayments,
   forwardToOperations,
   clearMessages,
+  resetAccountsState,
 } from "@/store/slices/accountsSlice";
+import { fetchAdminRoles } from "@/store/slices/adminSlice";
+import { fetchAdminUsersByRole } from "@/store/slices/adminUserSlice";
 
 export default function AccountsOrdersPage() {
   const dispatch = useDispatch();
-  const { pendingOrders, paymentsByOrder, customers, loading, error, success } = useSelector(
-  (state) => state.accounts
-);
+  const {
+    pendingOrders,
+    paymentsByOrder,
+    loadingOrders,
+    loadingPayments,
+    loadingForward,
+    error,
+    success,
+  } = useSelector((state) => state.accounts);
+
+ // Admin slices
+  const { roles, rolesLoading } = useSelector((state) => state.admin);
+  const { usersByRole: operationsUsers, loading: loadingAdmins } = useSelector(
+    (state) => state.adminUser
+  );
 
   const [showPayments, setShowPayments] = useState(false);
   const [showForward, setShowForward] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedAccountant, setSelectedAccountant] = useState("");
+  const [selectedOperation, setSelectedOperation] = useState("");
 
+  // Fetch pending orders on mount
   useEffect(() => {
     dispatch(fetchPendingOrdersForAccounts());
+    dispatch(fetchAdminRoles());
+    return () => dispatch(resetAccountsState());
   }, [dispatch]);
+
+  // Fetch operations users after roles are loaded
+  useEffect(() => {
+    if (roles && roles.length > 0) {
+      const operationRole = roles.find(
+        (r) => r?.name?.toLowerCase() === "operation"
+      );
+      if (operationRole) {
+        dispatch(fetchAdminUsersByRole(operationRole.id));
+      }
+    }
+  }, [roles, dispatch]);
 
   const handleViewPayments = (orderId) => {
     dispatch(fetchOrderPayments(orderId));
@@ -31,30 +61,30 @@ export default function AccountsOrdersPage() {
   };
 
   const handleForwardOrder = () => {
-    if (!selectedAccountant) return alert("Select an accountant");
+    if (!selectedOperation) return alert("Select an Operation User");
     dispatch(
       forwardToOperations({
         order_id: selectedOrder,
-        assigned_to: selectedAccountant,
+        assigned_to: selectedOperation,
         remarks: "Verified and forwarded",
       })
     );
     setShowForward(false);
-    setSelectedAccountant("");
+    setSelectedOperation("");
   };
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Accounts Dashboard</h1>
 
-      {loading && <p className="text-center text-gray-500">Loading...</p>}
+      {/* Messages */}
+      {loadingOrders && <p className="text-center text-gray-500">Loading orders...</p>}
+      {loadingPayments && <p className="text-center text-gray-500">Loading payments...</p>}
+      {loadingForward && <p className="text-center text-gray-500">Forwarding order...</p>}
       {error && (
         <p className="text-center text-red-500 mb-4">
           {error}{" "}
-          <button
-            onClick={() => dispatch(clearMessages())}
-            className="underline ml-2"
-          >
+          <button onClick={() => dispatch(clearMessages())} className="underline ml-2">
             Clear
           </button>
         </p>
@@ -62,10 +92,7 @@ export default function AccountsOrdersPage() {
       {success && (
         <p className="text-center text-green-500 mb-4">
           {success}{" "}
-          <button
-            onClick={() => dispatch(clearMessages())}
-            className="underline ml-2"
-          >
+          <button onClick={() => dispatch(clearMessages())} className="underline ml-2">
             Clear
           </button>
         </p>
@@ -84,12 +111,9 @@ export default function AccountsOrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {pendingOrders.length === 0 && !loading && (
+            {pendingOrders.length === 0 && !loadingOrders && (
               <tr>
-                <td
-                  colSpan="6"
-                  className="text-center py-4 text-gray-500"
-                >
+                <td colSpan="6" className="text-center py-4 text-gray-500">
                   No pending orders.
                 </td>
               </tr>
@@ -98,7 +122,7 @@ export default function AccountsOrdersPage() {
             {pendingOrders.map((order) => (
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="py-2 px-4 border">{order.id}</td>
-                <td className="py-2 px-4 border">{order.customer_id}</td>
+                <td className="py-2 px-4 border">{order.customer_name || order.customer_id}</td>
                 <td className="py-2 px-4 border">₹{order.total_amount}</td>
                 <td className="py-2 px-4 border">₹{order.paid_amount || 0}</td>
                 <td className="py-2 px-4 border">
@@ -130,12 +154,10 @@ export default function AccountsOrdersPage() {
       </div>
 
       {/* Payments Modal */}
-      {showPayments && (
+      {showPayments && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow-lg w-2/3">
-            <h2 className="text-lg font-bold mb-4">
-              Payments for Order #{selectedOrder}
-            </h2>
+          <div className="bg-white p-6 rounded shadow-lg w-2/3 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-4">Payments for Order #{selectedOrder}</h2>
             <table className="min-w-full border rounded">
               <thead className="bg-gray-100">
                 <tr>
@@ -173,10 +195,7 @@ export default function AccountsOrdersPage() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="5"
-                      className="text-center py-4 text-gray-500"
-                    >
+                    <td colSpan="5" className="text-center py-4 text-gray-500">
                       No payments found.
                     </td>
                   </tr>
@@ -194,21 +213,21 @@ export default function AccountsOrdersPage() {
       )}
 
       {/* Forward Modal */}
-      {showForward && (
+      {showForward && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h2 className="text-lg font-bold mb-4">
-              Forward Order #{selectedOrder}
-            </h2>
+            <h2 className="text-lg font-bold mb-4">Forward Order #{selectedOrder}</h2>
             <select
               className="w-full border p-2 mb-4"
-              value={selectedAccountant}
-              onChange={(e) => setSelectedAccountant(e.target.value)}
+              value={selectedOperation}
+              onChange={(e) => setSelectedOperation(e.target.value)}
             >
-              <option value="">-- Select Accountant --</option>
-              <option value="2">Accountant A</option>
-              <option value="3">Accountant B</option>
-              <option value="4">Accountant C</option>
+              <option value="">-- Select Operation User --</option>
+              {operationsUsers.map((op) => (
+                <option key={op.id} value={op.id}>
+                  {op.name}
+                </option>
+              ))}
             </select>
             <div className="flex gap-2">
               <button

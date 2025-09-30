@@ -26,9 +26,6 @@ const menuConfig = {
   Sale: [
     { name: "Overview", path: "/sales/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/sales/orders", icon: ChartBarIcon },
-    { name: "Validation", path: "/sales/validation", icon: ChartBarIcon },
-    { name: "Handover", path: "/sales/handover", icon: ChartBarIcon },
-    { name: "Minutes", path: "/sales/minutes", icon: ChartBarIcon },
   ],
   Accounts: [
     { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
