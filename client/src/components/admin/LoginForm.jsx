@@ -59,7 +59,7 @@ export default function AdminLoginForm() {
             router.push("/accounts/dashboard");
             break;
           case "Operation":
-            router.push("/operation/dashboard");
+            router.push("/operations/dashboard");
             break;
           default:
             router.push("/admin/dashboard");
