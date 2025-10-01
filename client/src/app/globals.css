@@ -50,6 +50,7 @@ button, a, link, Link:hover{
 .primary-btn{
   background-color: var(--color-primary);
   color: #fff;
+  transition: all .9s;
 }
 
 .primary-btn:hover{

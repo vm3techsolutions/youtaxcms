@@ -10,12 +10,12 @@ export default function AdminServices() {
     <div className="p-6 space-y-6">
       {/* Header with toggle button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">
+        <h2 className="text-2xl font-semibold secondaryText">
           {showForm ? "Add New Service" : "Services"}
         </h2>
         <button
           onClick={() => setShowForm((prev) => !prev)}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+          className="primary-btn text-white px-4 py-2 rounded shadow hover:bg-blue-700"
         >
           {showForm ? "Back to List" : "Add New Service"}
         </button>

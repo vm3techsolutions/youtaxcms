@@ -6,10 +6,9 @@ import { fetchServices } from "@/store/slices/servicesSlice";
 import {
   fetchDocumentsByService,
   createServiceDocument,
-  updateServiceDocument,
   deleteServiceDocument
 } from "@/store/slices/serviceDocumentsSlice";
-import { Plus, X, Trash2, Edit, Save } from "lucide-react";
+import { Plus, X, Trash2, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ServiceCardsBookPopup() {
@@ -19,7 +18,7 @@ export default function ServiceCardsBookPopup() {
 
   const [selectedService, setSelectedService] = useState(null);
   const [documents, setDocuments] = useState([]);
-  const [editingDoc, setEditingDoc] = useState(null);
+  const [newDoc, setNewDoc] = useState(null);
 
   useEffect(() => {
     dispatch(fetchServices());
@@ -39,69 +38,46 @@ export default function ServiceCardsBookPopup() {
 
   const handleServiceClick = (service) => {
     setSelectedService(service);
-    setEditingDoc(null);
+    setNewDoc(null);
   };
 
   const handleAddDocument = () => {
-    setEditingDoc({
-      id: `new-${Date.now()}`,
+    setNewDoc({
       doc_code: "",
       doc_name: "",
       doc_type: "other",
       is_mandatory: true,
       allow_multiple: false,
       sort_order: documents.length,
-      isNew: true
     });
   };
 
-  const handleEditDocument = (doc) => setEditingDoc(doc);
-
   const handleDeleteDocument = async (doc) => {
-    if (doc.isNew) {
-      setEditingDoc(null);
-    } else {
-      await dispatch(deleteServiceDocument({ id: doc.id, serviceId: selectedService.id }));
-    }
+    await dispatch(deleteServiceDocument({ id: doc.id, serviceId: selectedService.id }));
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setEditingDoc({ ...editingDoc, [name]: type === "checkbox" ? checked : value });
+    setNewDoc({ ...newDoc, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleSaveDocument = async () => {
-    if (!editingDoc.doc_code.trim() || !editingDoc.doc_name.trim()) {
+    if (!newDoc.doc_code.trim() || !newDoc.doc_name.trim()) {
       alert("Document code and name are required");
       return;
     }
 
-    if (editingDoc.isNew) {
-      await dispatch(createServiceDocument({
-        service_id: selectedService.id,
-        doc_code: editingDoc.doc_code,
-        doc_name: editingDoc.doc_name,
-        doc_type: editingDoc.doc_type,
-        is_mandatory: editingDoc.is_mandatory,
-        allow_multiple: editingDoc.allow_multiple,
-        sort_order: editingDoc.sort_order,
-      }));
-    } else {
-      await dispatch(updateServiceDocument({
-        id: editingDoc.id,
-        data: {
-          doc_code: editingDoc.doc_code,
-          doc_name: editingDoc.doc_name,
-          doc_type: editingDoc.doc_type,
-          is_mandatory: editingDoc.is_mandatory,
-          allow_multiple: editingDoc.allow_multiple,
-          sort_order: editingDoc.sort_order
-        },
-        serviceId: selectedService.id
-      }));
-    }
+    await dispatch(createServiceDocument({
+      service_id: selectedService.id,
+      doc_code: newDoc.doc_code,
+      doc_name: newDoc.doc_name,
+      doc_type: newDoc.doc_type,
+      is_mandatory: newDoc.is_mandatory,
+      allow_multiple: newDoc.allow_multiple,
+      sort_order: newDoc.sort_order,
+    }));
 
-    setEditingDoc(null);
+    setNewDoc(null);
     dispatch(fetchDocumentsByService(selectedService.id));
   };
 
@@ -110,7 +86,6 @@ export default function ServiceCardsBookPopup() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Services</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {services.map((service) => (
           <div
@@ -118,7 +93,7 @@ export default function ServiceCardsBookPopup() {
             className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
             onClick={() => handleServiceClick(service)}
           >
-            <h3 className="text-lg font-semibold mb-2">{service.name}</h3>
+            <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
             <p className="text-gray-500 truncate">{service.description || "No description"}</p>
           </div>
         ))}
@@ -165,20 +140,15 @@ export default function ServiceCardsBookPopup() {
                   <p className="text-gray-400">Loading documents...</p>
                 ) : (
                   <>
-                    {editingDoc === null && (
+                    {newDoc === null && (
                       <>
                         {documents.length === 0 && <p className="text-gray-500">No documents added yet.</p>}
                         {documents.map(doc => (
                           <div key={doc.id} className="flex justify-between items-center border rounded p-2">
                             <span>{doc.doc_name}</span>
-                            <div className="flex gap-2">
-                              <button onClick={() => handleEditDocument(doc)} className="text-blue-600">
-                                <Edit size={18} />
-                              </button>
-                              <button onClick={() => handleDeleteDocument(doc)} className="text-red-600">
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
+                            <button onClick={() => handleDeleteDocument(doc)} className="text-red-600">
+                              <Trash2 size={18} />
+                            </button>
                           </div>
                         ))}
                         <button
@@ -190,12 +160,12 @@ export default function ServiceCardsBookPopup() {
                       </>
                     )}
 
-                    {editingDoc !== null && (
+                    {newDoc !== null && (
                       <div className="flex flex-col gap-2 border rounded p-4 mt-2">
                         <input
                           type="text"
                           name="doc_code"
-                          value={editingDoc.doc_code}
+                          value={newDoc.doc_code}
                           onChange={handleChange}
                           placeholder="Document Code"
                           className="border rounded p-2"
@@ -203,14 +173,14 @@ export default function ServiceCardsBookPopup() {
                         <input
                           type="text"
                           name="doc_name"
-                          value={editingDoc.doc_name}
+                          value={newDoc.doc_name}
                           onChange={handleChange}
                           placeholder="Document Name"
                           className="border rounded p-2"
                         />
                         <select
                           name="doc_type"
-                          value={editingDoc.doc_type}
+                          value={newDoc.doc_type}
                           onChange={handleChange}
                           className="border rounded p-2"
                         >
@@ -224,7 +194,7 @@ export default function ServiceCardsBookPopup() {
                           <input
                             type="checkbox"
                             name="is_mandatory"
-                            checked={editingDoc.is_mandatory}
+                            checked={newDoc.is_mandatory}
                             onChange={handleChange}
                           /> Mandatory
                         </label>
@@ -232,7 +202,7 @@ export default function ServiceCardsBookPopup() {
                           <input
                             type="checkbox"
                             name="allow_multiple"
-                            checked={editingDoc.allow_multiple}
+                            checked={newDoc.allow_multiple}
                             onChange={handleChange}
                           /> Multiple
                         </label>
@@ -240,7 +210,7 @@ export default function ServiceCardsBookPopup() {
                           <button onClick={handleSaveDocument} className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 flex items-center gap-1">
                             <Save size={16} /> Save
                           </button>
-                          <button onClick={() => setEditingDoc(null)} className="bg-gray-200 px-4 py-1 rounded hover:bg-gray-300 flex items-center gap-1">
+                          <button onClick={() => setNewDoc(null)} className="bg-gray-200 px-4 py-1 rounded hover:bg-gray-300 flex items-center gap-1">
                             Cancel
                           </button>
                         </div>
