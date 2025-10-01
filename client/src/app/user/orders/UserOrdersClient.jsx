@@ -106,6 +106,7 @@ export default function UserOrdersClient() {
             <th className="p-2 border text-center">Status</th>
             <th className="p-2 border text-center">Date</th>
             <th className="p-2 border text-center">Documents</th>
+            <th className="p-2 border text-center">Action</th>
             <th className="p-2 border text-center">Steps</th>
           </tr>
         </thead>
@@ -147,6 +148,17 @@ export default function UserOrdersClient() {
                     {allUploaded ? "View Documents" : "Upload Documents"}
                   </button>
                 </td>
+                <td className="p-2 border">
+  <button
+    className="px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+    onClick={() =>
+      router.push(`/user/orders/${order.id}`)
+    }
+  >
+    View
+  </button>
+</td>
+
                 <td className="p-2 border">{renderSteps(order)}</td>
               </tr>
             );

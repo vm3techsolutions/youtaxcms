@@ -12,6 +12,10 @@ export const uploadKycDocument = createAsyncThunk(
       const res = await axiosInstance.post("/kyc/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+        // ✅ Immediately fetch the updated document (so we get status & uploaded_at)
+      dispatch(fetchMyKycDocument());
+      
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Upload failed");
@@ -58,7 +62,7 @@ const kycSlice = createSlice({
       })
       .addCase(uploadKycDocument.fulfilled, (state, action) => {
         state.loadingUpload = false;
-        state.document = action.payload;
+        // state.document = action.payload;
         state.successMessage = action.payload.message;
       })
       .addCase(uploadKycDocument.rejected, (state, action) => {
