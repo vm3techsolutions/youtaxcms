@@ -40,6 +40,40 @@ export const verifyPaymentLink = createAsyncThunk(
   }
 );
 
+// Fetch pending payments
+export const fetchPendingPayments = createAsyncThunk(
+  "orders/fetchPendingPayments",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axiosInstance.get("/pending-payments", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.pending_orders;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch pending payments");
+    }
+  }
+);
+
+// Create pending payment link
+export const createPendingPaymentLink = createAsyncThunk(
+  "orders/createPendingPaymentLink",
+  async (order_id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axiosInstance.post(
+        "/pending-orders",
+        { order_id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to create payment link");
+    }
+  }
+);
+
 // --------------------- Slice ---------------------
 
 const initialState = {
@@ -50,6 +84,8 @@ const initialState = {
   success: false,
   paymentVerified: false,
   verifiedOrderId: null, // <-- store verified order id
+  pendingPayments: [],   // <-- add this
+
 };
 
 const ordersSlice = createSlice({
@@ -97,6 +133,37 @@ const ordersSlice = createSlice({
         }
       })
       .addCase(verifyPaymentLink.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch Pending Payments
+      .addCase(fetchPendingPayments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPendingPayments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.pendingPayments = action.payload || [];  // <-- store result in state
+      })
+
+      .addCase(fetchPendingPayments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Create Pending Payment Link
+      .addCase(createPendingPaymentLink.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createPendingPaymentLink.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        // Handle newly created payment link if needed
+      })
+      .addCase(createPendingPaymentLink.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

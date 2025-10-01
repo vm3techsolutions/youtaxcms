@@ -387,12 +387,13 @@ const getPendingPaymentsByCustomerId = async (req, res) => {
       return res.status(400).json({ message: "customer_id is required" });
     }
 
-    // Only collect orders with partial payment (not unpaid)
+    // Only collect orders with partial payment (not unpaid), include service name
     const [orders] = await db.promise().query(
-      `SELECT id, total_amount, advance_paid, pending_amount, payment_status, status
-       FROM orders
-       WHERE customer_id = ? AND pending_amount > 0 AND payment_status = 'partially_paid'
-       ORDER BY created_at DESC`,
+      `SELECT o.id, o.total_amount, o.advance_paid, o.pending_amount, o.payment_status, o.status, s.name AS service_name
+       FROM orders o
+       JOIN services s ON o.service_id = s.id
+       WHERE o.customer_id = ? AND o.pending_amount > 0 AND o.payment_status = 'partially_paid'
+       ORDER BY o.created_at DESC`,
       [customer_id]
     );
 
