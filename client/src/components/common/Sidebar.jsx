@@ -35,7 +35,7 @@ const menuConfig = {
   ],
   Operation: [
     { name: "Overview", path: "/operations/dashboard", icon: Cog6ToothIcon },
-    { name: "Orders", path: "/operations/activity", icon: UserCircleIcon },
+    { name: "Orders", path: "/operations/orders", icon: UserCircleIcon },
     { name: "Deliverables", path: "/operations/deliverables", icon: UserCircleIcon },
   ],
 };

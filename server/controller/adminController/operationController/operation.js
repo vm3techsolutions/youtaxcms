@@ -23,15 +23,17 @@ const generateSignedUrl = async (fileUrl) => {
 };
 
 // ========================
-// Get Assigned Orders for Operation
+// Get Assigned Orders for Operation (with customer name and service name)
 // ========================
 const getAssignedOrdersForOperations = async (req, res) => {
   try {
     const operationId = req.user.id; // logged-in operations user
 
     const [orders] = await db.promise().query(
-      `SELECT o.* 
+      `SELECT o.*, c.name AS customer_name, s.name AS service_name
        FROM orders o
+       JOIN customers c ON o.customer_id = c.id
+       JOIN services s ON o.service_id = s.id
        WHERE o.assigned_to=? 
          AND o.advance_paid >= o.advance_required
          AND o.status='in_progress'`,
@@ -231,6 +233,20 @@ const uploadDeliverable = async (req, res) => {
          VALUES (?, ?, ?, 'operation', 'accounts', 'deliverable_uploaded', 'Deliverable uploaded and sent to Accounts for final payment', NOW())`,
         [order_id, operationId, account_id]
       );
+
+      // 🔔 Fetch customer details from customers table
+      const [customer] = await db.promise().query(
+        `SELECT c.email, c.name 
+           FROM customers c 
+           JOIN orders o ON c.id = o.customer_id 
+          WHERE o.id=?`,
+        [order_id]
+      );
+
+      if (customer.length > 0) {
+        const sendFinalPaymentMail = require("../../../utils/finalPaymentMail");
+        await sendFinalPaymentMail(customer[0].email, customer[0].name, order_id);
+      }
     } 
     else {
       // unpaid → keep with operation as draft
@@ -261,7 +277,13 @@ const getDeliverablesForOrder = async (req, res) => {
     }
 
     const [rows] = await db.promise().query(
-      `SELECT * FROM deliverables WHERE order_id=? ORDER BY versions ASC`,
+      `SELECT d.*, c.name AS customer_name, s.name AS service_name
+         FROM deliverables d
+         JOIN orders o ON d.order_id = o.id
+         JOIN customers c ON o.customer_id = c.id
+         JOIN services s ON o.service_id = s.id
+        WHERE d.order_id=?
+        ORDER BY d.versions ASC`,
       [order_id]
     );
 
@@ -307,4 +329,35 @@ const getDeliverableById = async (req, res) => {
   }
 };
 
-module.exports = { getAssignedOrdersForOperations, uploadDeliverable, getDeliverablesForOrder, getDeliverableById };
+// ========================
+// Get All Deliverables with Customer ID, Name, and Service Name
+// ========================
+const getAllDeliverablesWithCustomerAndService = async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT 
+          d.*, 
+          c.id AS customer_id, 
+          c.name AS customer_name, 
+          s.id AS service_id, 
+          s.name AS service_name
+        FROM deliverables d
+        JOIN orders o ON d.order_id = o.id
+        JOIN customers c ON o.customer_id = c.id
+        JOIN services s ON o.service_id = s.id
+        ORDER BY d.created_at DESC`
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error("Error fetching deliverables with customer and service:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+module.exports = { 
+  getAssignedOrdersForOperations, 
+  uploadDeliverable, 
+  getDeliverablesForOrder, 
+  getDeliverableById,
+  getAllDeliverablesWithCustomerAndService // <-- export the new function
+};
