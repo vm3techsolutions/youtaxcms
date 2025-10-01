@@ -11,7 +11,7 @@ const db = require("../../config/db");
  */
 const createServiceDocument = async (req, res) => {
   try {
-    const { service_id, doc_code, doc_name, doc_type, is_mandatory, allow_multiple, sort_order } = req.body;
+    const { service_id, doc_code, doc_name, doc_type, is_mandatory, allow_multiple } = req.body;
     const created_by = req.user ? req.user.id : null;
 
     if (!service_id || !doc_code || !doc_name) {
@@ -36,6 +36,13 @@ const createServiceDocument = async (req, res) => {
       return res.status(409).json({ message: "Document code already exists for this service" });
     }
 
+    // Get max sort_order for this service
+    const [maxSort] = await db.promise().query(
+      "SELECT MAX(sort_order) AS max_order FROM service_documents WHERE service_id = ?",
+      [service_id]
+    );
+    const sort_order = (maxSort[0].max_order || 0) + 1;
+
     const sql = `
       INSERT INTO service_documents 
       (service_id, doc_code, doc_name, doc_type, is_mandatory, allow_multiple, sort_order) 
@@ -48,7 +55,7 @@ const createServiceDocument = async (req, res) => {
       doc_type || "other",
       is_mandatory ?? true,
       allow_multiple ?? false,
-      sort_order || 0,
+      sort_order,
     ]);
 
     res.status(201).json({ message: "Service document created successfully", id: result.insertId });
