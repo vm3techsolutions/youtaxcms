@@ -16,6 +16,9 @@ import operationOrdersReducer from "./slices/operationsSlice";
 import adminUserSecondReducer from "./slices/adminUserSliceSecond";
 import operationDocumentsReducer from "./slices/operationDeliverableSlice";
 import deliverablesReducer from "./slices/deliverableSlice";
+import supportTicketsReducer from "./slices/supportTicketsSlice";
+import adminOrdersReducer from "./slices/adminOrdersSlice";
+
 export const store = configureStore({
   reducer: {
     admin: adminReducer,
@@ -36,5 +39,7 @@ export const store = configureStore({
     operationDeliverables: operationDocumentsReducer,
     deliverables: deliverablesReducer,
     
+    supportTickets: supportTicketsReducer,
+    adminOrders: adminOrdersReducer,
   },
 });

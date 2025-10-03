@@ -37,7 +37,7 @@ export const updateServiceDocument = createAsyncThunk(
   async ({ id, data, serviceId }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await axiosInstance.put(`/service-documents/${id}`, data, {
+      const res = await axiosInstance.put(`/service-document/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { updatedDoc: res.data, serviceId, id };
@@ -53,7 +53,7 @@ export const deleteServiceDocument = createAsyncThunk(
   async ({ id, serviceId }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await axiosInstance.delete(`/service-documents/${id}`, {
+      const res = await axiosInstance.delete(`/service-document/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { id, serviceId, message: res.data.message };

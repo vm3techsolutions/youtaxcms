@@ -192,7 +192,14 @@ const deleteServiceDocument = async (req, res) => {
 
     res.json({ message: "Service document deleted successfully" });
   } catch (err) {
+    if (err.code === "ER_ROW_IS_REFERENCED_2") {
+      return res.status(400).json({
+        success: false,
+        message: "This document is linked to existing orders and cannot be deleted."
+      });
+    }
     console.error("DB Error (deleteServiceDocument):", err);
+
     res.status(500).json({ message: "Database error" });
   }
 };

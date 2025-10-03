@@ -18,7 +18,7 @@ import {
 const menuConfig = {
   Admin: [
     { name: "Overview", path: "/admin/dashboard", icon: Cog6ToothIcon },
-    { name: "Reports", path: "/admin/reports", icon: BanknotesIcon },
+    { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
     { name: "Tasks", path: "/admin/tasks", icon: IdentificationIcon },
     { name: "Manage Users", path: "/admin/manage-users", icon: UsersIcon },
