@@ -129,7 +129,7 @@ export default function OperationsOrdersPage() {
               <th className="py-2 px-4 border">Service</th>
               <th className="py-2 px-4 border">Total Amount</th>
               <th className="py-2 px-4 border">Advance Required</th>
-              <th className="py-2 px-4 border">Advance Paid</th>
+              <th className="py-2 px-4 border">Amount Paid</th>
               <th className="py-2 px-4 border">Pending Amount</th>
               <th className="py-2 px-4 border">Payment Status</th>
               <th className="py-2 px-4 border">Order Status</th>
@@ -172,16 +172,15 @@ export default function OperationsOrdersPage() {
           </tbody>
         </table>
       </div>
-<<<<<<< Updated upstream
-=======
+
       {/* Upload Modal */}
-    {selectedOrder && (
-  <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded shadow-lg w-1/3">
-      <h2 className="text-lg font-bold mb-4">
-        Upload Deliverable for Order #{selectedOrder}
-      </h2>
->>>>>>> Stashed changes
+  {/* //   {selectedOrder && ( */}
+  {/* // <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center">
+  //   <div className="bg-white p-6 rounded shadow-lg w-1/3">
+  //     <h2 className="text-lg font-bold mb-4">
+  //       Upload Deliverable for Order #{selectedOrder}
+  //     </h2> */}
+
 
       {/* Upload Modal */}
       {selectedOrder && (() => {
