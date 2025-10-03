@@ -185,6 +185,7 @@ export default function ServicesFlex() {
 
 
      {/* Checkout Side Panel */}
+{/* Checkout Side Panel */}
 {modalService && (
   <div className="fixed inset-0 z-50 flex">
     {/* Overlay */}
@@ -302,9 +303,6 @@ export default function ServicesFlex() {
     </div>
   </div>
 )}
-
-
-
 
 
 
