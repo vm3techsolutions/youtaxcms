@@ -1,5 +1,28 @@
 const db = require("../../../config/db");
 
+const { PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const s3 = require("../../../config/aws");
+
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+const REGION = process.env.AWS_REGION;
+const SIGNED_URL_EXPIRY = 3600; // 1 hour
+
+// ========================
+// Helper: Generate Signed URL
+// ========================
+const generateSignedUrl = async (fileUrl) => {
+  try {
+    const baseUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/`;
+    const fileKey = fileUrl.replace(baseUrl, "");
+    const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: fileKey });
+    return await getSignedUrl(s3, command, { expiresIn: SIGNED_URL_EXPIRY });
+  } catch (err) {
+    console.error("❌ Error generating signed URL:", err);
+    return null;
+  }
+};
+
 // Get orders pending payment check (assigned to this account user), with customer and service name
 const getPendingOrdersForAccounts = async (req, res) => {
   try {
@@ -40,12 +63,22 @@ const getOrderPayments = async (req, res) => {
     const { id } = req.params;
 
     const [payments] = await db.promise().query(
-      `SELECT id, payment_type, payment_mode, amount, status, created_at
+      `SELECT id, payment_type, payment_mode, amount, status, txn_ref, created_at, receipt_url
        FROM payments WHERE order_id=?`,
       [id]
     );
 
-    res.json({ success: true, data: payments });
+    // Add signed receipt_url if present
+    const paymentsWithSignedReceipt = await Promise.all(
+      payments.map(async (p) => ({
+        ...p,
+        signed_receipt_url: p.receipt_url
+          ? await generateSignedUrl(p.receipt_url)
+          : null,
+      }))
+    );
+
+    res.json({ success: true, data: paymentsWithSignedReceipt });
   } catch (err) {
     console.error("Error fetching order payments:", err);
     res.status(500).json({ message: "Database error" });
