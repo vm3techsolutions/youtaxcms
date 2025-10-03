@@ -179,6 +179,11 @@ const qcDeliverable = async (req, res) => {
            VALUES (?, ?, ?, 'admin', 'operation', 'qc_rejected', ?, NOW())`,
           [order_id, adminId, generated_by, remarks || "Deliverable rejected & sent back to Operation"]
         );
+        // 🔹 Update order: assign back to operation and set status to 'in_progress'
+        await db.promise().query(
+          `UPDATE orders SET assigned_to=?, status='in_progress', updated_at=NOW() WHERE id=?`,
+          [generated_by, order_id]
+        );
       }
     }
 
