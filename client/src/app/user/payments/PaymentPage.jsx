@@ -112,142 +112,142 @@
 
 
 
-"use client";
+// "use client";
 
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { createOrder } from "@/store/slices/orderSlice";
-import { useRouter, useSearchParams } from "next/navigation";
+// import { useState, useEffect } from "react";
+// import { useDispatch, useSelector } from "react-redux";
+// import { createOrder } from "@/store/slices/orderSlice";
+// import { useRouter, useSearchParams } from "next/navigation";
 
-export default function PaymentPage() {
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const serviceId = searchParams.get("serviceId"); // get serviceId from URL
+// export default function PaymentPage() {
+//   const dispatch = useDispatch();
+//   const router = useRouter();
+//   const searchParams = useSearchParams();
+//   const serviceId = searchParams.get("serviceId"); // get serviceId from URL
 
-  const { userInfo } = useSelector((state) => state.user);
-  const { order, loading: orderLoading, error: orderError } = useSelector(
-    (state) => state.order
-  );
+//   const { userInfo } = useSelector((state) => state.user);
+//   const { order, loading: orderLoading, error: orderError } = useSelector(
+//     (state) => state.order
+//   );
 
-  const [service, setService] = useState(null);
-  const [paymentOption, setPaymentOption] = useState("full"); // full or advance
-  const [advanceAmount, setAdvanceAmount] = useState(500);
+//   const [service, setService] = useState(null);
+//   const [paymentOption, setPaymentOption] = useState("full"); // full or advance
+//   const [advanceAmount, setAdvanceAmount] = useState(500);
 
-  // Fetch service details based on serviceId
-  useEffect(() => {
-    if (!serviceId) return;
+//   // Fetch service details based on serviceId
+//   useEffect(() => {
+//     if (!serviceId) return;
 
-    const fetchService = async () => {
-      try {
-        const res = await fetch(`/api/services/${serviceId}`);
-        const data = await res.json();
-        setService(data);
-        setAdvanceAmount(data.advance_price || 500);
-      } catch (err) {
-        console.error("Failed to fetch service", err);
-      }
-    };
+//     const fetchService = async () => {
+//       try {
+//         const res = await fetch(`/api/services/${serviceId}`);
+//         const data = await res.json();
+//         setService(data);
+//         setAdvanceAmount(data.advance_price || 500);
+//       } catch (err) {
+//         console.error("Failed to fetch service", err);
+//       }
+//     };
 
-    fetchService();
-  }, [serviceId]);
+//     fetchService();
+//   }, [serviceId]);
 
-  if (!service) return <p className="text-center mt-8">Loading service...</p>;
+//   if (!service) return <p className="text-center mt-8">Loading service...</p>;
 
-  const totalAmount = service.base_price + (service.service_charges || 0);
+//   const totalAmount = service.base_price + (service.service_charges || 0);
 
-  const handleConfirmPayment = async () => {
-    if (!userInfo?.id) return alert("Please login first!");
+//   const handleConfirmPayment = async () => {
+//     if (!userInfo?.id) return alert("Please login first!");
 
-    const option = paymentOption === "advance" ? "advance" : "full";
+//     const option = paymentOption === "advance" ? "advance" : "full";
 
-    if (option === "advance" && advanceAmount < 500) {
-      return alert("Minimum advance payment is ₹500");
-    }
+//     if (option === "advance" && advanceAmount < 500) {
+//       return alert("Minimum advance payment is ₹500");
+//     }
 
-    const paymentData = {
-      service_id: service.id,
-      customer_name: userInfo.name,
-      customer_email: userInfo.email,
-      customer_contact: userInfo.phone,
-      payment_option: option,
-    };
+//     const paymentData = {
+//       service_id: service.id,
+//       customer_name: userInfo.name,
+//       customer_email: userInfo.email,
+//       customer_contact: userInfo.phone,
+//       payment_option: option,
+//     };
 
-    const resultAction = await dispatch(createOrder(paymentData));
+//     const resultAction = await dispatch(createOrder(paymentData));
 
-    if (createOrder.fulfilled.match(resultAction)) {
-      const url = resultAction.payload.razorpay?.payment_link;
-      if (url) {
-        // Open payment link in the same window or new tab
-        window.location.href = url;
-      } else {
-        alert("Payment link not available. Try again.");
-      }
-    } else {
-      alert(resultAction.payload || "Failed to create order");
-    }
-  };
+//     if (createOrder.fulfilled.match(resultAction)) {
+//       const url = resultAction.payload.razorpay?.payment_link;
+//       if (url) {
+//         // Open payment link in the same window or new tab
+//         window.location.href = url;
+//       } else {
+//         alert("Payment link not available. Try again.");
+//       }
+//     } else {
+//       alert(resultAction.payload || "Failed to create order");
+//     }
+//   };
 
-  return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow-md mt-8">
-      <h2 className="text-2xl font-bold mb-4">{service.name}</h2>
-      <p className="mb-4">{service.description || "No description available"}</p>
+//   return (
+//     <div className="max-w-md mx-auto p-6 bg-white rounded shadow-md mt-8">
+//       <h2 className="text-2xl font-bold mb-4">{service.name}</h2>
+//       <p className="mb-4">{service.description || "No description available"}</p>
 
-      <div className="mb-4">
-        <p>Total Price: ₹{totalAmount}</p>
-        {service.advance_price > 0 && <p>Advance Price: ₹{service.advance_price}</p>}
-      </div>
+//       <div className="mb-4">
+//         <p>Total Price: ₹{totalAmount}</p>
+//         {service.advance_price > 0 && <p>Advance Price: ₹{service.advance_price}</p>}
+//       </div>
 
-      {service.advance_price > 0 && (
-        <div className="mb-4">
-          <label className="mr-2">
-            <input
-              type="radio"
-              name="paymentOption"
-              value="full"
-              checked={paymentOption === "full"}
-              onChange={() => setPaymentOption("full")}
-            />{" "}
-            Full Payment
-          </label>
-          <label className="ml-4">
-            <input
-              type="radio"
-              name="paymentOption"
-              value="advance"
-              checked={paymentOption === "advance"}
-              onChange={() => setPaymentOption("advance")}
-            />{" "}
-            Advance Payment
-          </label>
+//       {service.advance_price > 0 && (
+//         <div className="mb-4">
+//           <label className="mr-2">
+//             <input
+//               type="radio"
+//               name="paymentOption"
+//               value="full"
+//               checked={paymentOption === "full"}
+//               onChange={() => setPaymentOption("full")}
+//             />{" "}
+//             Full Payment
+//           </label>
+//           <label className="ml-4">
+//             <input
+//               type="radio"
+//               name="paymentOption"
+//               value="advance"
+//               checked={paymentOption === "advance"}
+//               onChange={() => setPaymentOption("advance")}
+//             />{" "}
+//             Advance Payment
+//           </label>
 
-          {paymentOption === "advance" && (
-            <div className="mt-2">
-              <input
-                type="number"
-                value={advanceAmount}
-                min={500}
-                max={totalAmount}
-                onChange={(e) => setAdvanceAmount(Number(e.target.value))}
-                className="border p-1 rounded w-32"
-              />
-              <p className="text-sm text-gray-500">
-                Minimum ₹500, max ₹{totalAmount}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+//           {paymentOption === "advance" && (
+//             <div className="mt-2">
+//               <input
+//                 type="number"
+//                 value={advanceAmount}
+//                 min={500}
+//                 max={totalAmount}
+//                 onChange={(e) => setAdvanceAmount(Number(e.target.value))}
+//                 className="border p-1 rounded w-32"
+//               />
+//               <p className="text-sm text-gray-500">
+//                 Minimum ₹500, max ₹{totalAmount}
+//               </p>
+//             </div>
+//           )}
+//         </div>
+//       )}
 
-      <button
-        onClick={handleConfirmPayment}
-        disabled={orderLoading}
-        className="px-6 py-2 bg-green-500 text-white rounded-lg"
-      >
-        {orderLoading ? "Processing..." : "Proceed to Payment"}
-      </button>
+//       <button
+//         onClick={handleConfirmPayment}
+//         disabled={orderLoading}
+//         className="px-6 py-2 bg-green-500 text-white rounded-lg"
+//       >
+//         {orderLoading ? "Processing..." : "Proceed to Payment"}
+//       </button>
 
-      {orderError && <p className="text-red-500 mt-2">{orderError}</p>}
-    </div>
-  );
-}
+//       {orderError && <p className="text-red-500 mt-2">{orderError}</p>}
+//     </div>
+//   );
+// }
