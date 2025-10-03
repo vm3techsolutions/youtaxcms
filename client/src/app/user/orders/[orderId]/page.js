@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   fetchOrdersByCustomerId,
   fetchUserOrderDocuments,
+  fetchOrderPayments,
 } from "@/store/slices/userOrdersSlice";
 import { fetchServices } from "@/store/slices/servicesSlice";
 
@@ -14,9 +15,17 @@ export default function OrderDetailPage() {
   const { orderId } = useParams();
   const dispatch = useDispatch();
 
-  const { orders, orderDocuments, loadingOrders, loadingDocuments } =
-    useSelector((state) => state.userOrders);
-  const { services, serviceDocuments } = useSelector((state) => state.services);
+  const {
+    orders = [],
+    orderDocuments = {},
+    orderPayments = {},
+    loadingOrders,
+    loadingDocuments,
+    loadingPayments,
+  } = useSelector((state) => state.userOrders);
+  const { services = [], serviceDocuments = {} } = useSelector(
+    (state) => state.services
+  );
 
   const [order, setOrder] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
@@ -29,23 +38,24 @@ export default function OrderDetailPage() {
     }
   }, [orders.length, dispatch]);
 
-  // Set current order & fetch documents/services
+  // Set current order & fetch docs/services/payments
   useEffect(() => {
-    if (!orders || orders.length === 0) return;
-    const o = orders.find((o) => o.id === parseInt(orderId));
-    setOrder(o);
+    if (!orders.length || !orderId) return;
+    const o = orders.find((o) => o.id === Number(orderId));
+    if (!o) return;
 
-    if (o) {
-      dispatch(fetchUserOrderDocuments(o.id));
-      dispatch(fetchServices());
-    }
+    setOrder(o);
+    dispatch(fetchUserOrderDocuments(o.id));
+    dispatch(fetchServices());
+    dispatch(fetchOrderPayments(o.id));
   }, [orders, orderId, dispatch]);
 
   if (loadingOrders || !order) return <p>Loading order details...</p>;
   if (loadingDocuments) return <p>Loading documents...</p>;
 
   const service = services.find((s) => s.id === order.service_id);
-  const documents = orderDocuments[order.id] || [];
+  const documents = orderDocuments[order?.id] || [];
+  const payments = orderPayments[order?.id] || [];
 
   // ================= Steps Logic =================
   const orderSteps = [
@@ -60,34 +70,23 @@ export default function OrderDetailPage() {
   const renderSteps = (order) => {
     const completedSteps = [];
 
-    // Step 1: Initial Payment
     if (order.payment_status === "paid") completedSteps.push("awaiting_payment");
 
-    // Step 2: Documents
-    const docsForService = (serviceDocuments?.[order.service_id]) || [];
+    const docsForService = serviceDocuments?.[order.service_id] || [];
     const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
     const uploaded = orderDocuments[order.id] || [];
-    const allDocsUploaded = mandatoryDocs.every((doc) =>
-      uploaded.some((f) => f.service_doc_id === doc.id)
-    );
-    if (allDocsUploaded) completedSteps.push("awaiting_docs");
+    if (mandatoryDocs.every((doc) => uploaded.some((f) => f.service_doc_id === doc.id))) {
+      completedSteps.push("awaiting_docs");
+    }
 
-    // Step 3: Verification
-    if (["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status)) {
+    if (["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status))
       completedSteps.push("under_review");
-    }
 
-    // Step 4: In Progress
-    if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status)) {
+    if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
       completedSteps.push("in_progress");
-    }
 
-    // Step 5: Final Payment
-    if (order.payment_status === "paid") {
-  completedSteps.push("awaiting_final_payment");
-}
+    if (order.payment_status === "paid") completedSteps.push("awaiting_final_payment");
 
-    // Step 6: Completed
     if (order.status === "completed") completedSteps.push("completed");
 
     return (
@@ -129,74 +128,125 @@ export default function OrderDetailPage() {
     );
   };
 
-  // ================= Render =================
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Order #{order.id}</h2>
       <p><strong>Service:</strong> {service?.name || "Unknown"}</p>
       <p>
         <strong>Status:</strong>{" "}
-        <span className="px-2 py-1 rounded text-white bg-blue-600">
-          {order.status}
-        </span>
+        <span className="px-2 py-1 rounded text-white bg-blue-600">{order.status}</span>
       </p>
       <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString()}</p>
 
-      {/* Render Steps */}
       {renderSteps(order)}
 
+      {/* ================= Documents ================= */}
       <h3 className="mt-6 font-semibold text-lg border-b pb-2">Documents</h3>
       {documents.length === 0 ? (
         <p className="text-gray-500 mt-2">No documents uploaded yet.</p>
       ) : (
-        <table className="w-full border border-gray-300 rounded mt-2 text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 border">Document Name</th>
-              <th className="p-2 border">Type</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Preview</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((doc) => (
-              <tr key={doc.id} className="text-center">
-                <td className="p-2 border">{doc.doc_name}</td>
-                <td className="p-2 border">{doc.doc_type}</td>
-                <td className="p-2 border">
-                  {doc.status === "verified" ? (
-                    <span className="text-green-600 font-semibold">Verified</span>
-                  ) : (
-                    <span className="text-yellow-600 font-semibold">
-                      {doc.status === "submitted" ? "Submitted" : "Pending"}
-                    </span>
-                  )}
-                </td>
-                <td className="p-2 border">
-                  {doc.signed_url ? (
-                    <div
-                      className="cursor-pointer hover:opacity-80"
-                      onClick={() => setPreviewImage(doc.signed_url)}
-                    >
-                      <Image
-                        src={doc.signed_url}
-                        alt={doc.doc_name}
-                        width={100}
-                        height={100}
-                        className="object-cover mx-auto rounded-md shadow"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-red-500">No Preview</span>
-                  )}
-                </td>
+        <div className="overflow-x-auto mt-2">
+          <table className="w-full border border-gray-300 rounded text-sm">
+            <thead className="bg-gray-100">
+              <tr className="text-center">
+                <th className="p-2 border">Document Name</th>
+                <th className="p-2 border">Type</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Preview</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {documents.map((doc) => (
+                <tr key={doc.id} className="text-center hover:bg-gray-50">
+                  <td className="p-2 border">{doc.doc_name}</td>
+                  <td className="p-2 border">{doc.doc_type}</td>
+                  <td className="p-2 border">
+                    {doc.status === "verified" ? (
+                      <span className="text-green-600 font-semibold">Verified</span>
+                    ) : (
+                      <span className="text-yellow-600 font-semibold">
+                        {doc.status === "submitted" ? "Submitted" : "Pending"}
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-2 border">
+                    {doc.signed_url ? (
+                      <div
+                        className="cursor-pointer hover:opacity-80"
+                        onClick={() => setPreviewImage(doc.signed_url)}
+                      >
+                        <Image
+                          src={doc.signed_url}
+                          alt={doc.doc_name}
+                          width={100}
+                          height={100}
+                          className="object-cover mx-auto rounded-md shadow"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-red-500">No Preview</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* Preview Modal */}
+      {/* ================= Payments / Invoices ================= */}
+      <h3 className="mt-6 font-semibold text-lg border-b pb-2">Invoices / Payments</h3>
+      {loadingPayments ? (
+        <p>Loading payments...</p>
+      ) : payments.length === 0 ? (
+        <p className="text-gray-500 mt-2">No payments found.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+          {payments.map((p) => (
+            <div
+              key={p.id}
+              className="p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">Payment ID:</span>
+                <span>{p.txn_ref}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">Type:</span>
+                <span>{p.payment_type}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">Amount:</span>
+                <span className="font-semibold text-green-600">₹{Number(p.amount)?.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">Mode:</span>
+                <span>{p.payment_mode}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">Status:</span>
+                <span
+                  className={`px-2 py-1 rounded text-white ${
+                    p.status === "success"
+                      ? "bg-green-500"
+                      : p.status === "initiated"
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}
+                >
+                  {p.status}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Date:</span>
+                <span>{new Date(p.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ================= Preview Modal ================= */}
       {previewImage && (
         <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-opacity-70">
           <div className="relative bg-white p-4 rounded-lg shadow-xl max-w-5xl w-auto">

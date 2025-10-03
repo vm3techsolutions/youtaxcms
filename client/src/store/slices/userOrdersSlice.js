@@ -70,11 +70,35 @@ export const fetchUserOrderDocuments = createAsyncThunk(
   }
 );
 
+// Fetch payments for a specific order
+export const fetchOrderPayments = createAsyncThunk(
+  "userOrders/fetchOrderPayments",
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const res = await axiosInstance.get(`/order/${orderId}/payments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // API returns { success, payments }
+      return { orderId, payments: res.data.payments || [] };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch order payments"
+      );
+    }
+  }
+);
+
+
 // --------------------- Slice ---------------------
 
 const initialState = {
   orders: [],
   orderDocuments: {}, // { orderId: [documents] }
+  orderPayments: {}, 
   loadingOrders: false,
   loadingDocuments: false,
   error: null,
@@ -135,7 +159,22 @@ const userOrdersSlice = createSlice({
       .addCase(fetchUserOrderDocuments.rejected, (state, action) => {
         state.loadingDocuments = false;
         state.error = action.payload;
+      })
+
+            // Fetch Order Payments
+      .addCase(fetchOrderPayments.pending, (state) => {
+        state.loadingPayments = true;
+        state.error = null;
+      })
+      .addCase(fetchOrderPayments.fulfilled, (state, action) => {
+        state.loadingPayments = false;
+        state.orderPayments[action.payload.orderId] = action.payload.payments;
+      })
+      .addCase(fetchOrderPayments.rejected, (state, action) => {
+        state.loadingPayments = false;
+        state.error = action.payload;
       });
+
   },
 });
 

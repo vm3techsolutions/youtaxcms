@@ -155,62 +155,82 @@ export default function AccountsOrdersPage() {
 
       {/* Payments Modal */}
       {showPayments && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow-lg w-2/3 max-h-[80vh] overflow-y-auto">
-            <h2 className="text-lg font-bold mb-4">Payments for Order #{selectedOrder}</h2>
-            <table className="min-w-full border rounded">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-2 px-4 border">Type</th>
-                  <th className="py-2 px-4 border">Mode</th>
-                  <th className="py-2 px-4 border">Amount</th>
-                  <th className="py-2 px-4 border">Status</th>
-                  <th className="py-2 px-4 border">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paymentsByOrder[selectedOrder]?.length > 0 ? (
-                  paymentsByOrder[selectedOrder].map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="py-2 px-4 border">{p.payment_type}</td>
-                      <td className="py-2 px-4 border">{p.payment_mode}</td>
-                      <td className="py-2 px-4 border">₹{p.amount}</td>
-                      <td className="py-2 px-4 border">
-                        <span
-                          className={`px-2 py-1 text-sm rounded ${
-                            p.status === "success"
-                              ? "bg-green-100 text-green-800"
-                              : p.status === "failed"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="py-2 px-4 border">
-                        {new Date(p.created_at).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="text-center py-4 text-gray-500">
-                      No payments found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            <button
-              onClick={() => setShowPayments(false)}
-              className="mt-4 px-3 py-1 bg-red-600 text-white rounded"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="bg-white p-6 rounded shadow-lg w-2/3 max-h-[80vh] overflow-y-auto">
+      <h2 className="text-lg font-bold mb-4">Payments for Order #{selectedOrder}</h2>
+      <table className="min-w-full border rounded">
+        <thead className="bg-gray-100">
+  <tr>
+    <th className="py-2 px-4 border">Type</th>
+    <th className="py-2 px-4 border">Mode</th>
+    <th className="py-2 px-4 border">Amount</th>
+    <th className="py-2 px-4 border">Status</th>
+    <th className="py-2 px-4 border">Txn Ref</th>
+    <th className="py-2 px-4 border">Receipt</th>
+    <th className="py-2 px-4 border">Date</th>
+  </tr>
+</thead>
+<tbody>
+  {paymentsByOrder[selectedOrder]?.length > 0 ? (
+    paymentsByOrder[selectedOrder].map((p) => (
+      <tr key={p.id} className="hover:bg-gray-50">
+        <td className="py-2 px-4 border">{p.payment_type}</td>
+        <td className="py-2 px-4 border">{p.payment_mode}</td>
+        <td className="py-2 px-4 border">₹{Number(p.amount).toLocaleString("en-IN")}</td>
+        <td className="py-2 px-4 border">
+          <span
+            className={`px-2 py-1 text-sm rounded ${
+              p.status === "success"
+                ? "bg-green-100 text-green-800"
+                : p.status === "failed"
+                ? "bg-red-100 text-red-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {p.status}
+          </span>
+        </td>
+        <td className="py-2 px-4 border">{p.txn_ref || "N/A"}</td>
+       <td className="py-2 px-4 border">
+  {p.signed_receipt_url ? (
+    <a
+      href={p.signed_receipt_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 underline"
+    >
+      View
+    </a>
+  ) : (
+    "N/A"
+  )}
+</td>
+
+        <td className="py-2 px-4 border">
+          {new Date(p.created_at).toLocaleString()}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="7" className="text-center py-4 text-gray-500">
+        No payments found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
+      </table>
+      <button
+        onClick={() => setShowPayments(false)}
+        className="mt-4 px-3 py-1 bg-red-600 text-white rounded"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
 
       {/* Forward Modal */}
       {showForward && selectedOrder && (
