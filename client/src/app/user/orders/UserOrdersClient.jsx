@@ -11,7 +11,9 @@ export default function UserOrdersClient() {
   const dispatch = useDispatch();
 
   const { token, userInfo } = useSelector((state) => state.user);
-  const { orders, orderDocuments, loadingOrders, error } = useSelector((state) => state.userOrders);
+  const { orders, orderDocuments, loadingOrders, error } = useSelector(
+    (state) => state.userOrders
+  );
   const { services } = useSelector((state) => state.services);
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
 
@@ -26,12 +28,26 @@ export default function UserOrdersClient() {
 
   const getStatusName = (status) => {
     switch (status) {
-      case "awaiting_docs": return "Pending Documents";
-      case "awaiting_payment": return "Pending Payment";
-      case "under_review": return "Under Review";
-      case "completed": return "Completed";
-      case "failed": return "Failed";
-      default: return "Unknown Status";
+      case "pending":
+        return "Pending";
+      case "in_progress":
+        return "In Progress";
+      case "awaiting_docs":
+        return "Pending Documents";
+      case "awaiting_payment":
+        return "Pending Payment";
+      case "awaiting_final_payment":
+        return "Pending Final Payment";
+      case "assigned":
+        return "Assigned";
+      case "under_review":
+        return "Under Review";
+      case "completed":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      default:
+        return "Unknown Status";
     }
   };
 
@@ -44,49 +60,10 @@ export default function UserOrdersClient() {
     const docsForService = serviceDocuments[order.service_id] || [];
     const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
     const uploaded = orderDocuments[order.id] || [];
-    return mandatoryDocs.every((doc) => uploaded.some((f) => f.service_doc_id === doc.id));
+    return mandatoryDocs.every((doc) =>
+      uploaded.some((f) => f.service_doc_id === doc.id)
+    );
   };
-
-  const orderSteps = [
-    { key: "awaiting_payment", label: "Payment" },
-    { key: "awaiting_docs", label: "Upload Documents" },
-    { key: "under_review", label: "Verification" },
-    { key: "completed", label: "Completed" },
-  ];
-
-  const renderSteps = (order) => (
-    <div className="flex flex-col items-center">
-      <div className="flex items-center w-full">
-        {orderSteps.map((step, index) => {
-          let statusClass = "bg-gray-300"; // pending
-          let textClass = "text-gray-500";
-          if (
-            (step.key === "awaiting_payment" && order.status !== "awaiting_payment") ||
-            (step.key === "awaiting_docs" && ["under_review", "completed"].includes(order.status)) ||
-            (step.key === "under_review" && order.status === "completed")
-          ) {
-            statusClass = "bg-green-500"; // completed
-            textClass = "text-green-600 font-semibold";
-          } else if (step.key === order.status) {
-            statusClass = "bg-blue-500"; // current
-            textClass = "text-blue-600 font-semibold";
-          }
-
-          return (
-            <div key={step.key} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}>
-                  {statusClass === "bg-green-500" && <span className="text-white text-xs font-bold">&#10003;</span>}
-                </div>
-                <span className={`text-xs mt-1 ${textClass}`}>{step.label}</span>
-              </div>
-              {index < orderSteps.length - 1 && <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 
   if (loadingOrders) return <p>Loading orders...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
@@ -103,7 +80,6 @@ export default function UserOrdersClient() {
             <th className="p-2 border text-center">Date</th>
             <th className="p-2 border text-center">Documents</th>
             <th className="p-2 border text-center">Action</th>
-            <th className="p-2 border text-center">Steps</th>
           </tr>
         </thead>
         <tbody>
@@ -118,7 +94,7 @@ export default function UserOrdersClient() {
             if (order.status === "awaiting_docs") {
               docButtonText = "Upload Documents";
               docButtonClass = "primary-btn";
-            } else if (order.status === "under_review" || order.status === "completed") {
+            } else if (order.status === "under_review" || order.status === "in_progress" || order.status === "completed") {
               docButtonText = "View Documents";
               docButtonClass = "primary-btn";
             } else if (order.status === "awaiting_payment") {
@@ -146,7 +122,11 @@ export default function UserOrdersClient() {
                     <ul className="text-sm text-gray-600 mt-1 list-disc list-inside">
                       {docsUploaded.map((doc) => (
                         <li key={doc.id}>
-                          <a href={doc.signed_url || doc.file_url} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={doc.signed_url || doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             {doc.file_url.split("/").pop()}
                           </a>
                         </li>
@@ -158,7 +138,11 @@ export default function UserOrdersClient() {
                     disabled={disabled}
                     onClick={() =>
                       !disabled &&
-                      router.push(`/user/documents?orderId=${order.id}&serviceId=${order.service_id}&serviceName=${getServiceName(order.service_id)}`)
+                      router.push(
+                        `/user/documents?orderId=${order.id}&serviceId=${order.service_id}&serviceName=${getServiceName(
+                          order.service_id
+                        )}`
+                      )
                     }
                   >
                     {docButtonText}
@@ -166,13 +150,12 @@ export default function UserOrdersClient() {
                 </td>
                 <td className="p-2 border">
                   <button
-                    className="px-2 py-1 rounded primary-btn text-white "
+                    className="px-2 py-1 rounded primary-btn text-white"
                     onClick={() => router.push(`/user/orders/${order.id}`)}
                   >
                     View
                   </button>
                 </td>
-                <td className="p-2 border">{renderSteps(order)}</td>
               </tr>
             );
           })}

@@ -26,6 +26,7 @@ const menuConfig = {
   Sale: [
     { name: "Overview", path: "/sales/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/sales/orders", icon: ChartBarIcon },
+    { name: "Verify KYC", path: "/sales/verify-kyc", icon: ChartBarIcon },
   ],
   Accounts: [
     { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },

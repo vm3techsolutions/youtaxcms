@@ -7,24 +7,38 @@ import {
   qcDeliverable,
   approveOrderCompletion,
 } from "@/store/slices/adminOrdersSlice";
+import { fetchAllCustomers } from "@/store/slices/customersSlice";
+import { fetchServices } from '@/store/slices/servicesSlice';
 
 export default function AdminOrdersPage() {
   const dispatch = useDispatch();
   const { orders, deliverables, loading, error, successMessage } = useSelector(
     (state) => state.adminOrders
   );
+  const { customers } = useSelector((state) => state.customers);
+  const { services } = useSelector((state) => state.services);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Fetch orders and customers
   useEffect(() => {
     dispatch(fetchAssignedOrders());
+    dispatch(fetchAllCustomers());
+    dispatch(fetchServices());
   }, [dispatch]);
+
+  // Map customer IDs to names for easy lookup
+  const customerMap = {};
+  customers.forEach((c) => (customerMap[c.id] = c.name));
+
+  const serviceMap = {};
+  services.forEach((s) => (serviceMap[s.id] = s.name));
 
   const handleFetchDeliverables = (orderId) => {
     setSelectedOrder(orderId);
     dispatch(fetchDeliverables(orderId));
-    setShowModal(true); // open popup
+    setShowModal(true);
   };
 
   const handleQC = (deliverableId, status) => {
@@ -47,6 +61,8 @@ export default function AdminOrdersPage() {
         <thead className="bg-gray-100">
           <tr>
             <th className="p-2 border">Order ID</th>
+            <th className="p-2 border">Customer</th>
+            <th className="p-2 border">Service</th>
             <th className="p-2 border">Status</th>
             <th className="p-2 border">Payment</th>
             <th className="p-2 border">Actions</th>
@@ -56,6 +72,8 @@ export default function AdminOrdersPage() {
           {orders.map((order) => (
             <tr key={order.id} className="text-center">
               <td className="p-2 border">{order.id}</td>
+              <td className="p-2 border">{customerMap[order.customer_id] || "N/A"}</td>
+              <td className="p-2 border">{serviceMap[order.service_id] || "N/A"}</td>
               <td className="p-2 border">{order.status}</td>
               <td className="p-2 border">{order.payment_status}</td>
               <td className="p-2 border">

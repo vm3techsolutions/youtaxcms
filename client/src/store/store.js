@@ -18,6 +18,8 @@ import operationDocumentsReducer from "./slices/operationDeliverableSlice";
 import deliverablesReducer from "./slices/deliverableSlice";
 import supportTicketsReducer from "./slices/supportTicketsSlice";
 import adminOrdersReducer from "./slices/adminOrdersSlice";
+import customersReducer from "./slices/customersSlice";
+import salesKycReducer from "./slices/salesKycSlice";
 
 export const store = configureStore({
   reducer: {
@@ -38,8 +40,9 @@ export const store = configureStore({
     adminUserSecond: adminUserSecondReducer,
     operationDeliverables: operationDocumentsReducer,
     deliverables: deliverablesReducer,
-    
     supportTickets: supportTicketsReducer,
     adminOrders: adminOrdersReducer,
+    customers: customersReducer,
+    salesKyc: salesKycReducer,
   },
 });
