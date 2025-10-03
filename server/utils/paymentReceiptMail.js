@@ -120,7 +120,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       .font("Noto-Bold")
       .fontSize(16)
       .fillColor("#4CAF50")
-      .text("Youtax Solutions Pvt. Ltd.", 200, 50, { align: "right" })
+      .text("Youtax India Consulting Pvt. Ltd.", 200, 50, { align: "right" })
       .fillColor("#333")
       .font("Noto")
       .fontSize(10)
@@ -146,6 +146,11 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       .fontSize(10)
       .text(`Invoice #: ${payment.payment_id}`, 400, invoiceTop + 20)
       .text(`Date: ${paidDate}`, 400, invoiceTop + 35);
+
+    // Add txn_ref to PDF if present
+    if (payment.txn_ref) {
+      doc.text(`Txn Ref: ${payment.txn_ref}`, 400, invoiceTop + 50);
+    }
 
     doc.moveDown(3);
 
@@ -239,6 +244,14 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
 
     const logoBase64 = imageToBase64(logoPath);
 
+    // Add txn_ref to the email content if present
+    const txnRefHtml = payment.txn_ref
+      ? `<tr>
+          <td style="padding: 8px; border: 1px solid #ddd;"><strong>Txn Ref</strong></td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${payment.txn_ref}</td>
+        </tr>`
+      : "";
+
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
         ${logoBase64 ? `<img src="${logoBase64}" width="120" style="display:block;margin-bottom:20px;" />` : ""}
@@ -269,6 +282,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
             <td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount Paid</strong></td>
             <td style="padding: 8px; border: 1px solid #ddd;">₹${amountPaid}</td>
           </tr>
+          ${txnRefHtml}
         </table>
         <p>You can download your official receipt attached below as a PDF.</p>
         <p>Best regards,<br/><strong>The Youtax Team</strong></p>
