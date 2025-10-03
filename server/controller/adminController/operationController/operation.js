@@ -347,7 +347,16 @@ const getAllDeliverablesWithCustomerAndService = async (req, res) => {
         JOIN services s ON o.service_id = s.id
         ORDER BY d.created_at DESC`
     );
-    res.json({ success: true, data: rows });
+
+    // Add signed_url for each deliverable
+    const deliverables = await Promise.all(
+      rows.map(async (d) => ({
+        ...d,
+        signed_url: await generateSignedUrl(d.file_url),
+      }))
+    );
+
+    res.json({ success: true, data: deliverables });
   } catch (err) {
     console.error("Error fetching deliverables with customer and service:", err);
     res.status(500).json({ message: "Database error" });
