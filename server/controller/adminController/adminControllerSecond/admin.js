@@ -24,15 +24,22 @@ const generateSignedUrl = async (fileUrl) => {
 
 
 // ========================
-// 3. Get Assigned Orders for Admin
+// 3. Get Assigned Orders for Admin (with customer name, number, and service name)
 // ========================
 const getAssignedOrdersForAdmin = async (req, res) => {
   try {
     const adminId = req.user.id; // logged-in admin
 
     const [orders] = await db.promise().query(
-      `SELECT o.* 
+      `SELECT 
+          o.*, 
+          c.name AS customer_name, 
+          c.phone AS customer_number, 
+          c.email AS customer_email,
+          s.name AS service_name
        FROM orders o
+       JOIN customers c ON o.customer_id = c.id
+       JOIN services s ON o.service_id = s.id
        WHERE o.assigned_to=? 
          AND o.status IN ('in_progress', 'under_review', 'assigned')`,
       [adminId]

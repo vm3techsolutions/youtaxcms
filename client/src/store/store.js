@@ -15,6 +15,7 @@ import adminUserReducer from "./slices/adminUserSlice";
 import operationOrdersReducer from "./slices/operationsSlice";
 import adminUserSecondReducer from "./slices/adminUserSliceSecond";
 import operationDocumentsReducer from "./slices/operationDeliverableSlice";
+import deliverablesReducer from "./slices/deliverableSlice";
 export const store = configureStore({
   reducer: {
     admin: adminReducer,
@@ -33,6 +34,7 @@ export const store = configureStore({
     operationOrders: operationOrdersReducer,
     adminUserSecond: adminUserSecondReducer,
     operationDeliverables: operationDocumentsReducer,
+    deliverables: deliverablesReducer,
     
   },
 });

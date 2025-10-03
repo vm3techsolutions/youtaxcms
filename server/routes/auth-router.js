@@ -10,6 +10,7 @@ const upload = require("../config/multer");
 const kycController = require("../controller/userMyprofile/kycUpload");
 const orderDocuments = require("../controller/orderDocument/orderDocuments");
 const supportController = require("../controller/supportTicket/support");
+const deliverablesController = require("../controller/deliverables/deliverables");
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -74,6 +75,10 @@ router.get("/receipts/:paymentId/signed-url", orderController.getSignedReceiptUr
 // Support Ticket Routes
 router.post("/support/ticket", verifyToken, supportController.createTicket);
 router.get("/support/tickets", verifyToken, supportController.listTickets);
+
+// Deliverables Routes
+router.get("/download/deliverables", verifyToken, deliverablesController.getDeliverablesByCustomerId);
+
 
 // ===========================================================================
 
