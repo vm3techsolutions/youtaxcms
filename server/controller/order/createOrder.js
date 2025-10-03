@@ -7,8 +7,23 @@ const { GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
-// const crypto = require("crypto");
+const REGION = process.env.AWS_REGION;
+const SIGNED_URL_EXPIRY = 3600; // 1 hour
 
+// const crypto = require("crypto");
+// Helper: Generate Signed URL
+// ========================
+const generateSignedUrl = async (fileUrl) => {
+  try {
+    const baseUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/`;
+    const fileKey = fileUrl.replace(baseUrl, "");
+    const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: fileKey });
+    return await getSignedUrl(s3, command, { expiresIn: SIGNED_URL_EXPIRY });
+  } catch (err) {
+    console.error("❌ Error generating signed URL:", err);
+    return null;
+  }
+};
 
 /**
  * Create a new order and Razorpay Payment Link (supports advance/full payment option)
@@ -364,9 +379,16 @@ const getOrderPayments = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const [payments] = await db.promise().query(
+      const [rows] = await db.promise().query(
       `SELECT * FROM payments WHERE order_id = ? AND customer_id = ? ORDER BY created_at DESC`,
       [order_id, customer_id]
+    );
+
+    const payments = await Promise.all(
+      rows.map(async (p) => ({
+        ...p,
+        signed_url: await generateSignedUrl(p.receipt_url),
+      }))
     );
 
     res.json({ success: true, payments });

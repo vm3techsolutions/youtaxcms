@@ -241,6 +241,18 @@ export default function OrderDetailPage() {
                 <span className="font-semibold">Date:</span>
                 <span>{new Date(p.created_at).toLocaleString()}</span>
               </div>
+              {p.signed_url && (
+                <div className="mt-3 text-right">
+                  <a
+                    href={p.signed_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  >
+                    View Invoice
+                  </a>
+                </div>
+              )}
             </div>
           ))}
         </div>
