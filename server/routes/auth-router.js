@@ -19,6 +19,7 @@ const serviceDocuments = require('../controller/services/serviceDocuments');
 const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
 const { isSales } = require('../middleware/auth');
 const salesController = require('../controller/adminController/salesController/sales');
+const salesKycController = require('../controller/adminController/salesController/salesKyc');
 const accountController = require('../controller/adminController/accountController/account');
 const { isAccount } = require('../middleware/auth');
 const operationController = require('../controller/adminController/operationController/operation');
@@ -115,7 +116,10 @@ router.get('/admin/customers', verifyToken, adminCoustomerController.getAllUsers
 router.get("/orders/pending",verifyToken, isSales, salesController.getPendingOrders);
 router.put("/orders/document/status",verifyToken, isSales, salesController.updateDocumentStatusByOrderDId);
 router.post("/orders/check-status",verifyToken, isSales, salesController.triggerOrderStatusCheck);
-
+// sales KYC routes
+router.get("/kyc/pending",verifyToken, isSales, salesKycController.getPendingKycDocuments);
+router.put("/kyc/verify/:kyc_id",verifyToken, isSales, salesKycController.verifyKycDocument);
+router.get("/kyc/reviewed",verifyToken, isSales, salesKycController.getReviewedKycDocuments);
 
 // router.put("/documents/verify",verifyToken, isSales, salesController.verifyDocument);
 // router.post("/orders/forward",verifyToken, isSales, salesController.forwardToAccounts);
