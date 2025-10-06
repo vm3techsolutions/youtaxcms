@@ -7,7 +7,7 @@ import axiosInstance from "@/api/axiosInstance";
 // ==================
 export const uploadKycDocument = createAsyncThunk(
   "kyc/upload",
-  async (formData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue, dispatch }) => {
     try {
       const res = await axiosInstance.post("/kyc/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },

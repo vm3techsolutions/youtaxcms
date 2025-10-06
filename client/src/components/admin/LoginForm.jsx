@@ -76,26 +76,26 @@ export default function AdminLoginForm() {
       const role = currentAdmin.role;
       switch (role) {
         case "Admin":
-          router.push("/admin/dashboard");
+          router.push("/admin/orders");
           break;
         case "Sales":
-          router.push("/sales/dashboard");
+          router.push("/sales/orders");
           break;
         case "Accountant":
-          router.push("/accounts/dashboard");
+          router.push("/accounts/orders");
           break;
         case "Operation":
-          router.push("/operations/dashboard");
+          router.push("/operations/orders");
           break;
         default:
-          router.push("/admin/dashboard");
+          router.push("/admin/orders");
       }
     }
   }, [currentAdmin, router]);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-7xl bg-white p-14 rounded-2xl shadow-md">
+      <div className="w-full md:w-[600px] bg-white p-14 rounded-2xl shadow-md">
         {/* Logo */}
         <div className="flex justify-center mb-4">
           <Image
@@ -108,7 +108,7 @@ export default function AdminLoginForm() {
 
         {/* Heading */}
         <h2 className="text-3xl font-bold my-6 text-center secondaryText">
-          Admin Login
+          Employee Login 
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
