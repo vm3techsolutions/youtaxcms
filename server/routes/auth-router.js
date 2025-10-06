@@ -107,8 +107,16 @@ router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceD
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
 
 //adminCustomerController
+//user
 router.get('/admin/customer/:id', verifyToken, adminCoustomerController.getUserById);
 router.get('/admin/customers', verifyToken, adminCoustomerController.getAllUsers);
+//orders
+router.get('/admin/customers/all/orders', verifyToken, adminCoustomerController.getAllOrders);
+router.get('/admin/customers/all/orders/service/:service_id', verifyToken, adminCoustomerController.getOrdersByServiceId);
+//order_logs
+router.get('/admin/customers/all/orders/logs', verifyToken, adminCoustomerController.getAllOrderLogs);
+router.get('/admin/customers/all/orders/logs/:order_id', verifyToken, adminCoustomerController.getOrderLogsByOrderId);
+
 
 
 // sales routes

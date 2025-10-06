@@ -29,6 +29,7 @@ const getAssignedOrdersForOperations = async (req, res) => {
   try {
     const operationId = req.user.id; // logged-in operations user
 
+    // Get assigned orders with customer and service name
     const [orders] = await db.promise().query(
       `SELECT o.*, c.name AS customer_name, s.name AS service_name
        FROM orders o
@@ -40,7 +41,33 @@ const getAssignedOrdersForOperations = async (req, res) => {
       [operationId]
     );
 
-    res.json({ success: true, data: orders });
+    // For each order, fetch its documents
+    const ordersWithDocuments = await Promise.all(
+      orders.map(async (order) => {
+        const [docs] = await db.promise().query(
+          `SELECT od.*, sd.doc_name, sd.doc_type
+           FROM order_documents od
+           JOIN service_documents sd ON od.service_doc_id = sd.id
+           WHERE od.order_id = ?`,
+          [order.id]
+        );
+
+        // Attach signed_url for each document
+        const documents = await Promise.all(
+          docs.map(async (doc) => ({
+            ...doc,
+            signed_url: await generateSignedUrl(doc.file_url),
+          }))
+        );
+
+        return {
+          ...order,
+          order_documents: documents,
+        };
+      })
+    );
+
+    res.json({ success: true, data: ordersWithDocuments });
   } catch (err) {
     console.error("Error fetching assigned orders for operations:", err);
     res.status(500).json({ message: "Database error" });
