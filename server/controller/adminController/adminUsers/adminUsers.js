@@ -172,9 +172,74 @@ const getAdminUsersByRole = async (req, res) => {
   }
 };
 
+/**
+ * Edit an admin user's name, email, password, and phone.
+ * Only Admin (role_id = 4) can edit other admin users.
+ * @param {Object} req - Express request object, expects req.user.id and req.body: id, name, email, password, phone
+ * @param {Object} res - Express response object
+ */
+const editAdminUser = async (req, res) => {
+  const { id, name, email, password, phone } = req.body;
+  const editorId = req.user ? req.user.id : null;
+
+  if (!id) {
+    return res.status(400).json({ message: "Admin user id is required" });
+  }
+
+  try {
+    // Check if editor is valid and has Admin role
+    const [editor] = await db.promise().query(
+      "SELECT role_id FROM admin_users WHERE id = ?",
+      [editorId]
+    );
+    if (editor.length === 0) {
+      return res.status(404).json({ message: "Editor admin not found" });
+    }
+    if (editor[0].role_id !== 4) {
+      return res.status(403).json({ message: "Only Admin can edit admin users" });
+    }
+
+    // Build update fields
+    const fields = [];
+    const values = [];
+    if (name) {
+      fields.push("name = ?");
+      values.push(name);
+    }
+    if (email) {
+      fields.push("email = ?");
+      values.push(email);
+    }
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      fields.push("password_hash = ?");
+      values.push(hashedPassword);
+    }
+    if (phone) {
+      fields.push("phone = ?");
+      values.push(phone);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(id);
+
+    const sql = `UPDATE admin_users SET ${fields.join(", ")} WHERE id = ?`;
+    await db.promise().query(sql, values);
+
+    res.json({ message: "Admin user updated successfully" });
+  } catch (err) {
+    console.error("Error updating admin user:", err);
+    res.status(500).json({ message: "Database error", error: err });
+  }
+};
+
 module.exports = {
   createAdminUser,
   adminLogin,
   getAdminUsers,
-  getAdminUsersByRole
+  getAdminUsersByRole,
+  editAdminUser
 };
