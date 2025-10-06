@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminRoles, registerAdmin, resetSuccess } from "@/store/slices/adminSlice";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterAdminForm() {
   const dispatch = useDispatch();
@@ -15,6 +16,9 @@ export default function RegisterAdminForm() {
     phone: "",
     role_id: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+
 
   // ✅ Reset success on component mount to prevent showing message immediately
   useEffect(() => {
@@ -88,8 +92,10 @@ export default function RegisterAdminForm() {
         {/* Password */}
         <div>
           <label className="block mb-1 font-medium">Password *</label>
+                  <div className="relative">
+
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             value={formData.password}
             onChange={handleChange}
@@ -97,7 +103,14 @@ export default function RegisterAdminForm() {
             placeholder="Password"
             required
           />
-        </div>
+          <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-4 flex items-center text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+        </div> </div>
 
         {/* Phone */}
         <div>

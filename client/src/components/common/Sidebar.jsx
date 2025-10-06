@@ -17,25 +17,25 @@ import {
 // 🔹 Menu config with icons
 const menuConfig = {
   Admin: [
-    { name: "Overview", path: "/admin/dashboard", icon: Cog6ToothIcon },
+    // { name: "Overview", path: "/admin/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
-    { name: "Tasks", path: "/admin/tasks", icon: IdentificationIcon },
+    // { name: "Tasks", path: "/admin/tasks", icon: IdentificationIcon },
     { name: "Manage Users", path: "/admin/manage-users", icon: UsersIcon },
   ],
   Sale: [
-    { name: "Overview", path: "/sales/dashboard", icon: Cog6ToothIcon },
+    // { name: "Overview", path: "/sales/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/sales/orders", icon: ChartBarIcon },
     { name: "Verify KYC", path: "/sales/verify-kyc", icon: ChartBarIcon },
   ],
   Accounts: [
-    { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
+    // { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/accounts/orders", icon: ArrowDownTrayIcon },
     { name: "Payment", path: "/accounts/payment", icon: ChartBarIcon },
     { name: "Invoice", path: "/accounts/invoice", icon: ChartBarIcon },
   ],
   Operation: [
-    { name: "Overview", path: "/operations/dashboard", icon: Cog6ToothIcon },
+    // { name: "Overview", path: "/operations/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/operations/orders", icon: UserCircleIcon },
     { name: "Deliverables", path: "/operations/deliverables", icon: UserCircleIcon },
   ],

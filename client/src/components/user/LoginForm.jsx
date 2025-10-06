@@ -6,6 +6,7 @@ import { loginUser } from "@/store/slices/userSlice";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const dispatch = useDispatch();
@@ -13,6 +14,8 @@ export default function LoginForm() {
   const { loading, error, successMessage, token } = useSelector(
     (state) => state.user
   );
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [credentials, setCredentials] = useState({
     email: "",
@@ -62,8 +65,8 @@ export default function LoginForm() {
   }, [token, successMessage, router]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-4xl bg-white p-14 rounded-2xl shadow-md">
+    <div className="flex  justify-center items-center min-h-screen bg-gray-50">
+      <div className="w-full md:w-[600px] bg-white p-14 rounded-2xl shadow-md">
         {/* Logo */}
         <div className="flex justify-center mb-4">
           <Image
@@ -92,15 +95,23 @@ export default function LoginForm() {
           />
 
           {/* Password */}
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={credentials.password}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={credentials.password}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span>
+          </div>
 
           {/* Remember Me + Forgot Password */}
           <div className="flex items-center justify-between text-sm">
@@ -124,11 +135,10 @@ export default function LoginForm() {
           {/* Button */}
           <button
             type="submit"
-            className={`w-[20%] mx-auto block p-3 rounded-xl text-white font-medium transition duration-200 ${
-              loading
+            className={`w-[20%] mx-auto block p-3 rounded-xl text-white font-medium transition duration-200 ${loading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "primaryBg hover:secondaryBg cursor-pointer"
-            }`}
+              }`}
             disabled={loading}
           >
             {loading ? "Logging in..." : "Sign In"}

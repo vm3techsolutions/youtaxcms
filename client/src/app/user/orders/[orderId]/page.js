@@ -63,70 +63,110 @@ export default function OrderDetailPage() {
     { key: "awaiting_docs", label: "Upload Documents" },
     { key: "under_review", label: "Verification" },
     { key: "in_progress", label: "In Progress" },
-    { key: "awaiting_final_payment", label: "Final Payment" },
+    // { key: "awaiting_final_payment", label: "Final Payment" },
     { key: "completed", label: "Completed" },
   ];
 
+  // ✅ If partial payment exists, keep Final Payment step
+  if (order.payment_status === "partial") {
+    orderSteps.splice(4, 0, { key: "awaiting_final_payment", label: "Final Payment" });
+  }
+
   const renderSteps = (order) => {
-    const completedSteps = [];
+  const completedSteps = [];
 
-    if (order.payment_status === "paid") completedSteps.push("awaiting_payment");
+  const payments = orderPayments[order.id] || [];
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const serviceCost = order.total_amount || 0; // make sure order.total_amount exists
 
-    const docsForService = serviceDocuments?.[order.service_id] || [];
-    const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
-    const uploaded = orderDocuments[order.id] || [];
-    if (mandatoryDocs.every((doc) => uploaded.some((f) => f.service_doc_id === doc.id))) {
-      completedSteps.push("awaiting_docs");
-    }
+  // --- Payment Step ---
+  if (totalPaid > 0) {
+    completedSteps.push("awaiting_payment");
+  }
 
-    if (["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status))
-      completedSteps.push("under_review");
+  // --- Docs Step ---
+  const docsForService = serviceDocuments?.[order.service_id] || [];
+  const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
+  const uploaded = orderDocuments[order.id] || [];
+  if (mandatoryDocs.every((doc) => uploaded.some((f) => f.service_doc_id === doc.id))) {
+    completedSteps.push("awaiting_docs");
+  }
 
-    if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
-      completedSteps.push("in_progress");
+  // --- Other Steps ---
+  if (["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status))
+    completedSteps.push("under_review");
 
-    if (order.payment_status === "paid") completedSteps.push("awaiting_final_payment");
+  if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
+    completedSteps.push("in_progress");
 
-    if (order.status === "completed") completedSteps.push("completed");
+  // --- Final Payment Step (if partial payment exists) ---
+  if (totalPaid > 0 && totalPaid < serviceCost) {
+    completedSteps.push("awaiting_final_payment");
+  }
 
-    return (
-      <div className="flex flex-col items-center mt-4">
-        <h3 className="font-semibold mb-2">Order Steps</h3>
-        <div className="flex items-center w-full">
-          {orderSteps.map((step, index) => {
-            let statusClass = "bg-gray-300";
-            let textClass = "text-gray-500";
+  if (order.status === "completed") completedSteps.push("completed");
 
-            if (completedSteps.includes(step.key)) {
+  return (
+    <div className="flex flex-col items-center mt-4">
+      <h3 className="font-semibold mb-2">Order Steps</h3>
+      <div className="flex items-center w-full">
+        {orderSteps.map((step, index) => {
+          let statusClass = "bg-gray-300";
+          let textClass = "text-gray-500";
+          let label = step.label;
+
+          // ✅ Dynamic label for Payment
+          if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
+            if (totalPaid > 0 && totalPaid < serviceCost) {
+              label = "Partially Paid";
+              statusClass = "bg-yellow-500";
+              textClass = "text-yellow-600 font-semibold";
+            } else if (totalPaid >= serviceCost) {
+              label = "Final Payment Done";
               statusClass = "bg-green-500";
               textClass = "text-green-600 font-semibold";
-            } else if (step.key === order.status) {
-              statusClass = "bg-blue-500";
-              textClass = "text-blue-600 font-semibold";
             }
+          }
 
-            return (
-              <div key={step.key} className="flex items-center flex-1">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}
-                  >
-                    {statusClass === "bg-green-500" && (
-                      <span className="text-white text-xs font-bold">&#10003;</span>
-                    )}
-                  </div>
-                  <span className={`text-xs mt-1 ${textClass}`}>{step.label}</span>
+          // ✅ Dynamic label for Final Payment
+          if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
+            label = "Final Payment Pending";
+            statusClass = "bg-yellow-500";
+            textClass = "text-yellow-600 font-semibold";
+          }
+
+          // ✅ Green tick for completed steps (except partial payment)
+          if (completedSteps.includes(step.key) && !["awaiting_payment", "awaiting_final_payment"].includes(step.key)) {
+            statusClass = "bg-green-500";
+            textClass = "text-green-600 font-semibold";
+          } else if (step.key === order.status) {
+            statusClass = "bg-blue-500";
+            textClass = "text-blue-600 font-semibold";
+          }
+
+          return (
+            <div key={step.key} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}
+                >
+                  {statusClass === "bg-green-500" && (
+                    <span className="text-white text-xs font-bold">&#10003;</span>
+                  )}
                 </div>
-                {index < orderSteps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>
-                )}
+                <span className={`text-xs mt-1 ${textClass}`}>{label}</span>
               </div>
-            );
-          })}
-        </div>
+              {index < orderSteps.length - 1 && (
+                <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>
+              )}
+            </div>
+          );
+        })}
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
