@@ -65,6 +65,7 @@ const verifyKycDocument = async (req, res) => {
             return res.status(400).json({ message: "Invalid status" });
         }
 
+        // Update KYC document status
         const [result] = await db
             .promise()
             .query(
@@ -76,6 +77,21 @@ const verifyKycDocument = async (req, res) => {
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "KYC document not found" });
+        }
+
+        // Get customer_id for this KYC document
+        const [[kycDoc]] = await db
+            .promise()
+            .query(`SELECT customer_id FROM kyc_documents WHERE id = ?`, [kyc_id]);
+
+        if (kycDoc && kycDoc.customer_id) {
+            // Update kyc_status in customers table
+            await db
+                .promise()
+                .query(
+                    `UPDATE customers SET kyc_status = ? WHERE id = ?`,
+                    [status, kycDoc.customer_id]
+                );
         }
 
         res.status(200).json({ message: `KYC document ${status} successfully` });

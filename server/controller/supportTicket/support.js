@@ -1,5 +1,7 @@
 // server/controller/supportTicket/support.js
 const db = require("../../config/db");
+const sendSupportTicketMail = require("../../utils/sendSupportTicketMail");
+
 
 // ---------------- Create Ticket ----------------
 const createTicket = async (req, res) => {
@@ -10,11 +12,28 @@ const createTicket = async (req, res) => {
     if (!subject || !description)
       return res.status(400).json({ message: "subject and description are required" });
 
+    // Get customer details (name, email, phone)
+    const [[customer]] = await db.promise().query(
+      "SELECT name, email, phone FROM customers WHERE id=? LIMIT 1",
+      [customer_id]
+    );
+
     const [result] = await db.promise().query(
       `INSERT INTO support_tickets (customer_id, order_id, subject, description)
        VALUES (?, ?, ?, ?)`,
       [customer_id, order_id || null, subject, description]
     );
+
+    // ✅ Send support email (to company/support team)
+     sendSupportTicketMail({
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone,
+      orderId: order_id,
+      subject,
+      description,
+      ticketId: result.insertId,
+    });
 
     res.status(201).json({
       message: "Support ticket created",
