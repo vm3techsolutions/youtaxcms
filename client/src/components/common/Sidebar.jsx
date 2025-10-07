@@ -20,7 +20,7 @@ const menuConfig = {
     // { name: "Overview", path: "/admin/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
-    // { name: "Tasks", path: "/admin/tasks", icon: IdentificationIcon },
+    { name: "Customers", path: "/admin/customers", icon: IdentificationIcon },
     { name: "Manage Users", path: "/admin/manage-users", icon: UsersIcon },
   ],
   Sale: [

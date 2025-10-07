@@ -7,35 +7,32 @@ import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 
 // Reusable Price Info Component
+
 function ServicePriceInfo({ service, paymentOption }) {
   const basePrice = Number(service.base_price || 0);
   const serviceCharges = Number(service.service_charges || 0);
   const totalPrice = basePrice + serviceCharges;
   const advancePrice = Number(service.advance_price || 0);
-  const remainingAmount = totalPrice - advancePrice;
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg">
+      {/* Total Service Price */}
       <div className="flex justify-between mb-2">
         <span className="font-medium">Service Price:</span>
         <span>₹{totalPrice.toLocaleString()}</span>
       </div>
 
+      {/* Show Advance Price only for display */}
       {paymentOption === "advance" && advancePrice > 0 && (
-        <>
-          <div className="flex justify-between mb-2 text-blue-600">
-            <span className="font-medium">Advance Amount:</span>
-            <span>₹{advancePrice.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between font-medium text-red-600 mt-1">
-            <span>Remaining Amount to Pay on Completion:</span>
-            <span>₹{remainingAmount.toLocaleString()}</span>
-          </div>
-        </>
+        <div className="flex justify-between mb-2 text-blue-600">
+          <span className="font-medium">Advance Amount:</span>
+          <span>₹{advancePrice.toLocaleString()}</span>
+        </div>
       )}
 
+      {/* Total to Pay Now */}
       <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-        <span>Total {paymentOption === "advance" ? "to Pay Now" : ""}</span>
+        <span>Total to Pay Now:</span>
         <span>
           ₹{paymentOption === "advance" && advancePrice > 0 ? advancePrice.toLocaleString() : totalPrice.toLocaleString()}
         </span>
@@ -43,6 +40,14 @@ function ServicePriceInfo({ service, paymentOption }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 export default function ServicesFlex() {
   const dispatch = useDispatch();
