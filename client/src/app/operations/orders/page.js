@@ -487,7 +487,7 @@ export default function OperationsOrdersPage() {
                 </td>
                 <td className="py-2 px-4 border">
                   <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 py-1 rounded primary-btn"
                     onClick={() => setSelectedOrder(order.id)}
                   >
                     Upload / Forward
@@ -495,7 +495,7 @@ export default function OperationsOrdersPage() {
                 </td>
                 <td className="py-2 px-4 border">
                   <button
-                    className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    className="px-3 py-1 rounded primary-btn"
                     onClick={() => setViewDocumentsOrder(order)}
                   >
                     View Documents
@@ -514,7 +514,7 @@ export default function OperationsOrdersPage() {
         const canSubmit = forwardWithoutChanges || hasDeliverables || files.length > 0;
 
         return (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center">
             <div className="bg-white p-6 rounded shadow-lg w-1/3">
               <h2 className="text-lg font-bold mb-4">
                 Upload / View Deliverable for Order #{selectedOrder}
@@ -617,7 +617,7 @@ export default function OperationsOrdersPage() {
                     }
                     handleUpload(selectedOrder);
                   }}
-                  className={`px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 ${
+                  className={`px-3 py-1 rounded primary-btn ${
                     !canSubmit ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   disabled={!canSubmit}
@@ -638,7 +638,7 @@ export default function OperationsOrdersPage() {
 
       {/* View Documents Popup */}
       {viewDocumentsOrder && (
-        <div className="fixed inset-0 backgrop-blur-sm bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-lg w-1/3">
             <h2 className="text-lg font-bold mb-4">
               Customer Documents for Order #{viewDocumentsOrder.id}
@@ -665,7 +665,7 @@ export default function OperationsOrdersPage() {
             <div className="flex justify-end mt-4">
               <button
                 onClick={() => setViewDocumentsOrder(null)}
-                className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                className="px-3 py-1 primary-btn rounded"
               >
                 Close
               </button>

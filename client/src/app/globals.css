@@ -49,10 +49,12 @@ button, a, link, Link:hover{
 
 .primary-btn{
   background-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-secondary);
+  font-weight: 600;
   transition: all .9s;
 }
 
 .primary-btn:hover{
   background-color: var(--color-secondary);
+  color: #fff;
 }
