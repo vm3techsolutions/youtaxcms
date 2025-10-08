@@ -7,6 +7,8 @@ export const fetchAssignedOrdersForOperations = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axiosInstance.get("/operations/orders/assigned");
+      console.log("✅ Assigned Orders API Response:", res.data);
+
       return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Error loading orders");

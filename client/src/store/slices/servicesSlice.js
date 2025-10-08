@@ -54,7 +54,7 @@ export const updateService = createAsyncThunk(
   async ({ id, updates }, { rejectWithValue }) => {
     try {
       const token = getToken();
-      const res = await axiosInstance.put(`/services/${id}`, updates, {
+      const res = await axiosInstance.put(`/service/${id}`, updates, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { id, ...updates, message: res.data.message };
