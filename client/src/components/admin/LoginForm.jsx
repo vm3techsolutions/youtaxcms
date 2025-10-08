@@ -50,19 +50,19 @@ export default function AdminLoginForm() {
 
         switch (role) {
           case "Admin":
-            router.push("/admin/dashboard");
+            router.push("/admin/orders");
             break;
           case "Sale":       // match DB
-            router.push("/sales/dashboard");
+            router.push("/sales/orders");
             break;
           case "Accounts":   // match DB
-            router.push("/accounts/dashboard");
+            router.push("/accounts/orders");
             break;
           case "Operation":
-            router.push("/operations/dashboard");
+            router.push("/operations/orders");
             break;
           default:
-            router.push("/admin/dashboard");
+            router.push("/admin/orders");
         }
       }
     } catch (err) {
@@ -78,10 +78,10 @@ export default function AdminLoginForm() {
         case "Admin":
           router.push("/admin/orders");
           break;
-        case "Sales":
+        case "Sale":
           router.push("/sales/orders");
           break;
-        case "Accountant":
+        case "Accounts":
           router.push("/accounts/orders");
           break;
         case "Operation":
