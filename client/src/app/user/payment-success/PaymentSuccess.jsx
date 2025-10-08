@@ -57,18 +57,17 @@
 
 
 "use client";
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { useRouter, useSearchParams } from "next/navigation";
-import { verifyPaymentLink } from "@/store/slices/orderSlice";
+import { verifyPaymentLink } from "@/store/slices/orderSlice"; // adjust import path if needed
 
 export default function PaymentSuccess() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [message, setMessage] = useState("Verifying payment...");
+  const alreadyCalled = useRef(false);
 
   useEffect(() => {
     const payment_id = searchParams.get("razorpay_payment_id");
@@ -81,6 +80,9 @@ export default function PaymentSuccess() {
     }
 
     const verify = async () => {
+      if (alreadyCalled.current) return; // ✅ Prevent duplicate verification
+      alreadyCalled.current = true;
+
       try {
         const resultAction = await dispatch(
           verifyPaymentLink({ payment_id, payment_link_id, signature })
@@ -88,9 +90,8 @@ export default function PaymentSuccess() {
 
         if (verifyPaymentLink.fulfilled.match(resultAction)) {
           if (resultAction.payload.success) {
-            setMessage("Payment verified ✅ Redirecting to orders page...");
-            // Redirect to the general orders page
-            router.push(`/user/orders`);
+            setMessage("Payment verified successfully ✅ Redirecting...");
+            setTimeout(() => router.push("/user/orders"), 2000);
           } else {
             setMessage("Payment verification failed ❌");
           }

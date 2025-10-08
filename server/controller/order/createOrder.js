@@ -182,6 +182,16 @@ const verifyPaymentLink = async (req, res) => {
   try {
     const { payment_link_id } = req.body;
 
+        // ✅ Check if already verified (idempotency)
+    const [existingPayment] = await db.promise().query(
+      "SELECT id FROM payments WHERE txn_ref = ? AND status = 'success'",
+      [payment_link_id]
+    );
+    if (existingPayment.length > 0) {
+      return res.status(200).json({ success: true, message: "Already verified" });
+    }
+
+
     const paymentLink = await razorpay.paymentLink.fetch(payment_link_id);
 
     if (paymentLink.status !== "paid") {
@@ -261,7 +271,7 @@ const verifyPaymentLink = async (req, res) => {
     // console.log("Orders update affectedRows:", orderResult.affectedRows);
 
     try {
-      await sendPaymentReceiptMail(payment.id); // Pass payment.id
+       sendPaymentReceiptMail(payment.id); // Pass payment.id
     } catch (mailErr) {
       console.error("Error sending payment email:", mailErr);
     }
