@@ -21,23 +21,27 @@ const menuConfig = {
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
     { name: "Customers", path: "/admin/customers", icon: IdentificationIcon },
+    { name: "Order History", path: "/admin/order-history", icon: IdentificationIcon },
     { name: "Manage Users", path: "/admin/manage-users", icon: UsersIcon },
   ],
   Sale: [
     // { name: "Overview", path: "/sales/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/sales/orders", icon: ChartBarIcon },
     { name: "Verify KYC", path: "/sales/verify-kyc", icon: ChartBarIcon },
+    { name: "Order History", path: "/sales/order-history", icon: IdentificationIcon },
   ],
   Accounts: [
     // { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/accounts/orders", icon: ArrowDownTrayIcon },
     { name: "Payment", path: "/accounts/payment", icon: ChartBarIcon },
     { name: "Invoice", path: "/accounts/invoice", icon: ChartBarIcon },
+    { name: "Order History", path: "/accounts/order-history", icon: IdentificationIcon },
   ],
   Operation: [
     // { name: "Overview", path: "/operations/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/operations/orders", icon: UserCircleIcon },
     { name: "Deliverables", path: "/operations/deliverables", icon: UserCircleIcon },
+    { name: "Order History", path: "/operations/order-history", icon: IdentificationIcon },
   ],
 };
 
