@@ -132,13 +132,13 @@ export default function AccountsOrdersPage() {
                 </td>
                 <td className="py-2 px-4 border flex gap-2">
                   <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 py-1 primary-btn rounded"
                     onClick={() => handleViewPayments(order.id)}
                   >
                     View Payments
                   </button>
                   <button
-                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
+                    className="px-3 py-1 primary-btn rounded"
                     onClick={() => {
                       setSelectedOrder(order.id);
                       setShowForward(true);
@@ -223,7 +223,7 @@ export default function AccountsOrdersPage() {
       </table>
       <button
         onClick={() => setShowPayments(false)}
-        className="mt-4 px-3 py-1 bg-red-600 text-white rounded"
+        className="mt-4 px-3 py-1 primary-btn rounded"
       >
         Close
       </button>

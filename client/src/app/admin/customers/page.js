@@ -44,7 +44,7 @@ const CustomersTab = () => {
                 <td className="px-6 py-4">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      u.kyc_status === "approved"
+                      u.kyc_status === "verified"
                         ? "bg-green-100 text-green-700"
                         : u.kyc_status === "pending"
                         ? "bg-yellow-100 text-yellow-700"

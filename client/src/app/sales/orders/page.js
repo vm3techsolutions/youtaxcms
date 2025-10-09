@@ -262,7 +262,7 @@ const handleAssignAccountant = async (orderId) => {
                             onClick={() =>
                               setExpandedOrder(expandedOrder === order.id ? null : order.id)
                             }
-                            className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                            className="px-3 py-1 text-sm primary-btn rounded"
                           >
                             {expandedOrder === order.id ? "Hide" : "View"} Documents
                           </button>

@@ -216,7 +216,7 @@ export default function ServiceCardsBookPopup() {
 
               <button
                 onClick={handleServiceUpdate}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
+                className="primary-btn px-4 py-2 rounded mb-4"
               >
                 Update Service
               </button>
@@ -243,7 +243,7 @@ export default function ServiceCardsBookPopup() {
                         ))}
                         <button
                           onClick={handleAddDocument}
-                          className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 mt-2"
+                          className="flex items-center gap-2 primary-btn px-4 py-2 rounded mt-2"
                         >
                           <Plus size={16} /> Add Document
                         </button>

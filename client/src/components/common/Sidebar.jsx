@@ -33,8 +33,8 @@ const menuConfig = {
   Accounts: [
     // { name: "Overview", path: "/accounts/dashboard", icon: Cog6ToothIcon },
     { name: "Orders", path: "/accounts/orders", icon: ArrowDownTrayIcon },
-    { name: "Payment", path: "/accounts/payment", icon: ChartBarIcon },
-    { name: "Invoice", path: "/accounts/invoice", icon: ChartBarIcon },
+    // { name: "Payment", path: "/accounts/payment", icon: ChartBarIcon },
+    // { name: "Invoice", path: "/accounts/invoice", icon: ChartBarIcon },
     { name: "Order History", path: "/accounts/order-history", icon: IdentificationIcon },
   ],
   Operation: [
