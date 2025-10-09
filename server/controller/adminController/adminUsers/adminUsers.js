@@ -4,8 +4,6 @@ const db = require("../../../config/db");
 
 // Register Admin User
 
-
-
 /**
  * Create a new admin user. Only users with Admin role (role_id = 4) can create new admin users.
  * @param {Object} req - Express request object, expects req.user.id and req.body: name, email, password, phone, role_id
@@ -14,7 +12,7 @@ const db = require("../../../config/db");
  */
 const createAdminUser = async (req, res) => {
   const { name, email, password, phone, role_id } = req.body;
-const created_by = req.user ? req.user.id : null;
+  const created_by = req.user ? req.user.id : null;
 
   if (!name || !email || !password || !role_id) {
     return res.status(400).json({ message: "Name, email, password, and role_id are required" });
@@ -22,7 +20,7 @@ const created_by = req.user ? req.user.id : null;
 
   try {
     // 🔹 Check if creator is valid and has Admin role
-    const [creator] = await db.promise().query(
+    const [creator] = await db.query(
       "SELECT role_id FROM admin_users WHERE id = ?",
       [created_by]
     );
@@ -37,7 +35,6 @@ const created_by = req.user ? req.user.id : null;
 
     // 🔹 Check if email already exists
     const [existing] = await db
-      .promise()
       .query("SELECT id FROM admin_users WHERE email = ?", [email]);
     if (existing.length > 0) {
       return res.status(409).json({ message: "Admin already exists" });
@@ -50,7 +47,6 @@ const created_by = req.user ? req.user.id : null;
       VALUES (?, ?, ?, ?, ?, ?)
     `;
     const [result] = await db
-      .promise()
       .query(sql, [name, email, hashedPassword, phone || null, role_id, created_by || null]);
 
     res.status(201).json({ message: "Admin user created", id: result.insertId });
@@ -98,14 +94,13 @@ const created_by = req.user ? req.user.id : null;
 
 // Login Admin
 
-
 /**
  * Login an admin user and return JWT token if credentials are valid.
  * @param {Object} req - Express request object, expects req.body: email, password
  * @param {Object} res - Express response object
  * @returns {void}
  */
-const adminLogin = (req, res) => {
+const adminLogin = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ message: "Email and password required" });
 
@@ -114,8 +109,8 @@ const adminLogin = (req, res) => {
                JOIN admin_roles ar ON au.role_id = ar.id
                WHERE au.email = ?`;
 
-  db.query(sql, [email], async (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error" });
+  try {
+    const [results] = await db.query(sql, [email]);
     if (results.length === 0) return res.status(401).json({ message: "Invalid email or password" });
 
     const admin = results[0];
@@ -129,7 +124,9 @@ const adminLogin = (req, res) => {
     );
 
     res.json({ message: "Login successful", token, admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role_name } });
-  });
+  } catch (err) {
+    res.status(500).json({ message: "Database error", error: err });
+  }
 };
 
 // Get All Admin Users
@@ -139,14 +136,16 @@ const adminLogin = (req, res) => {
  * @param {Object} res - Express response object
  * @returns {void}
  */
-const getAdminUsers = (req, res) => {
+const getAdminUsers = async (req, res) => {
   const sql = `SELECT au.id, au.name, au.email, au.phone, ar.name AS role, au.created_at
                FROM admin_users au
                JOIN admin_roles ar ON au.role_id = ar.id`;
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error" });
+  try {
+    const [results] = await db.query(sql);
     res.json(results);
-  });
+  } catch (err) {
+    res.status(500).json({ message: "Database error", error: err });
+  }
 };
 
 /**
@@ -157,7 +156,7 @@ const getAdminUsersByRole = async (req, res) => {
   try {
     const { roleId } = req.params;
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT u.id, u.name, u.email, r.name AS role_name, r.description
        FROM admin_users u
        JOIN admin_roles r ON u.role_id = r.id
@@ -188,7 +187,7 @@ const editAdminUser = async (req, res) => {
 
   try {
     // Check if editor is valid and has Admin role
-    const [editor] = await db.promise().query(
+    const [editor] = await db.query(
       "SELECT role_id FROM admin_users WHERE id = ?",
       [editorId]
     );
@@ -227,7 +226,7 @@ const editAdminUser = async (req, res) => {
     values.push(id);
 
     const sql = `UPDATE admin_users SET ${fields.join(", ")} WHERE id = ?`;
-    await db.promise().query(sql, values);
+    await db.query(sql, values);
 
     res.json({ message: "Admin user updated successfully" });
   } catch (err) {

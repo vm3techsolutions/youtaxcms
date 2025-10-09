@@ -13,12 +13,12 @@ const createTicket = async (req, res) => {
       return res.status(400).json({ message: "subject and description are required" });
 
     // Get customer details (name, email, phone)
-    const [[customer]] = await db.promise().query(
+    const [[customer]] = await db.query(
       "SELECT name, email, phone FROM customers WHERE id=? LIMIT 1",
       [customer_id]
     );
 
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       `INSERT INTO support_tickets (customer_id, order_id, subject, description)
        VALUES (?, ?, ?, ?)`,
       [customer_id, order_id || null, subject, description]
@@ -91,7 +91,7 @@ const listTickets = async (req, res) => {
 
     sql += " ORDER BY st.created_at DESC";
 
-    const [rows] = await db.promise().query(sql, params);
+    const [rows] = await db.query(sql, params);
     res.json(rows);
   } catch (err) {
     console.error("❌ List Tickets Error:", err);

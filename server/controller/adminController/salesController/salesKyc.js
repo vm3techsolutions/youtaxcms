@@ -28,14 +28,12 @@ const generateSignedUrl = async (fileUrl) => {
 // ========================
 const getPendingKycDocuments = async (req, res) => {
     try {
-        const [rows] = await db
-            .promise()
-            .query(
-                `SELECT k.*, c.name AS customer_name, c.email AS customer_email
+        const [rows] = await db.query(
+            `SELECT k.*, c.name AS customer_name, c.email AS customer_email
          FROM kyc_documents k
          JOIN customers c ON k.customer_id = c.id
          WHERE k.status = 'submitted'`
-            );
+        );
 
         // Add signed URLs
         const docsWithSigned = await Promise.all(
@@ -66,32 +64,26 @@ const verifyKycDocument = async (req, res) => {
         }
 
         // Update KYC document status
-        const [result] = await db
-            .promise()
-            .query(
-                `UPDATE kyc_documents 
+        const [result] = await db.query(
+            `UPDATE kyc_documents 
          SET status = ?, remarks = ?, verified_by = ?, uploaded_at = uploaded_at 
          WHERE id = ?`,
-                [status, remarks || null, salesId, kyc_id]
-            );
+            [status, remarks || null, salesId, kyc_id]
+        );
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "KYC document not found" });
         }
 
         // Get customer_id for this KYC document
-        const [[kycDoc]] = await db
-            .promise()
-            .query(`SELECT customer_id FROM kyc_documents WHERE id = ?`, [kyc_id]);
+        const [[kycDoc]] = await db.query(`SELECT customer_id FROM kyc_documents WHERE id = ?`, [kyc_id]);
 
         if (kycDoc && kycDoc.customer_id) {
             // Update kyc_status in customers table
-            await db
-                .promise()
-                .query(
-                    `UPDATE customers SET kyc_status = ? WHERE id = ?`,
-                    [status, kycDoc.customer_id]
-                );
+            await db.query(
+                `UPDATE customers SET kyc_status = ? WHERE id = ?`,
+                [status, kycDoc.customer_id]
+            );
         }
 
         res.status(200).json({ message: `KYC document ${status} successfully` });
@@ -106,7 +98,7 @@ const verifyKycDocument = async (req, res) => {
 // ========================
 const getReviewedKycDocuments = async (req, res) => {
     try {
-        const [rows] = await db.promise().query(
+        const [rows] = await db.query(
             `SELECT k.*, 
           c.name AS customer_name, 
           c.email AS customer_email, 

@@ -30,7 +30,7 @@ const getDeliverablesByCustomerId = async (req, res) => {
       return res.status(400).json({ message: "customer_id is required" });
     }
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT 
           d.*, 
           o.id AS order_id, 

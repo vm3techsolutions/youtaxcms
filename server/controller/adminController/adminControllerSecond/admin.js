@@ -30,7 +30,7 @@ const getAssignedOrdersForAdmin = async (req, res) => {
   try {
     const adminId = req.user.id; // logged-in admin
 
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT 
           o.*, 
           c.name AS customer_name, 
@@ -63,7 +63,7 @@ const getDeliverablesForAdmin = async (req, res) => {
     }
 
     // Ensure this order is assigned to logged-in admin
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT * FROM orders WHERE id=? AND assigned_to=?`,
       [order_id, adminId]
     );
@@ -73,7 +73,7 @@ const getDeliverablesForAdmin = async (req, res) => {
     }
 
     // Fetch deliverables for the order
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT * FROM deliverables WHERE order_id=? ORDER BY versions ASC`,
       [order_id]
     );
@@ -105,7 +105,7 @@ const getApprovedDeliverablesForOrder = async (req, res) => {
     }
 
     // Ensure this order is assigned to logged-in admin
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT * FROM orders WHERE id=? AND assigned_to=?`,
       [order_id, adminId]
     );
@@ -115,7 +115,7 @@ const getApprovedDeliverablesForOrder = async (req, res) => {
     }
 
     // Fetch only approved deliverables for the order
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT * FROM deliverables WHERE order_id=? AND qc_status='approved' ORDER BY versions ASC`,
       [order_id]
     );
@@ -147,7 +147,7 @@ const qcDeliverable = async (req, res) => {
     }
 
     // ✅ Update deliverable QC status
-    await db.promise().query(
+    await db.query(
       `UPDATE deliverables 
        SET qc_status=?, approved_by=?, approved_at=NOW() 
        WHERE id=?`,
@@ -155,7 +155,7 @@ const qcDeliverable = async (req, res) => {
     );
 
     // ✅ Fetch deliverable info (order_id + generated_by)
-    const [deliverable] = await db.promise().query(
+    const [deliverable] = await db.query(
       `SELECT order_id, generated_by FROM deliverables WHERE id=?`,
       [deliverable_id]
     );
@@ -165,7 +165,7 @@ const qcDeliverable = async (req, res) => {
 
       if (qc_status === "approved") {
         // 🔹 If approved → log approval
-        await db.promise().query(
+        await db.query(
           `INSERT INTO order_logs 
             (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
            VALUES (?, ?, NULL, 'admin', NULL, 'qc_approved', ?, NOW())`,
@@ -173,14 +173,14 @@ const qcDeliverable = async (req, res) => {
         );
       } else if (qc_status === "rejected") {
         // 🔹 If rejected → log rejection & send back to operation
-        await db.promise().query(
+        await db.query(
           `INSERT INTO order_logs 
             (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
            VALUES (?, ?, ?, 'admin', 'operation', 'qc_rejected', ?, NOW())`,
           [order_id, adminId, generated_by, remarks || "Deliverable rejected & sent back to Operation"]
         );
         // 🔹 Update order: assign back to operation and set status to 'in_progress'
-        await db.promise().query(
+        await db.query(
           `UPDATE orders SET assigned_to=?, status='in_progress', updated_at=NOW() WHERE id=?`,
           [generated_by, order_id]
         );
@@ -208,7 +208,7 @@ const approveOrderCompleted = async (req, res) => {
     }
 
       // ✅ Check order status & payment_status
-    const [order] = await db.promise().query(
+    const [order] = await db.query(
       `SELECT status, payment_status FROM orders WHERE id=?`,
       [order_id]
     );
@@ -225,12 +225,12 @@ const approveOrderCompleted = async (req, res) => {
       return res.status(400).json({ message: "Order must be fully paid before completion" });
     }
 
-    await db.promise().query(
+    await db.query(
       `UPDATE orders SET status='completed', updated_at=NOW() WHERE id=?`,
       [order_id]
     );
 
-    await db.promise().query(
+    await db.query(
       `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
        VALUES (?, ?, NULL, 'admin', NULL, 'completed_order_closed', ?, NOW())`,
       [order_id, adminId, remarks || "Order closed by Admin"]

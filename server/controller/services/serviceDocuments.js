@@ -19,7 +19,7 @@ const createServiceDocument = async (req, res) => {
     }
 
     // Admin validation
-    const [admin] = await db.promise().query("SELECT role_id FROM admin_users WHERE id = ?", [created_by]);
+    const [admin] = await db.query("SELECT role_id FROM admin_users WHERE id = ?", [created_by]);
     if (!admin || admin.length === 0) {
       return res.status(404).json({ message: "Admin user not found" });
     }
@@ -28,7 +28,7 @@ const createServiceDocument = async (req, res) => {
     }
 
     // Check duplicate doc_code for same service
-    const [existing] = await db.promise().query(
+    const [existing] = await db.query(
       "SELECT id FROM service_documents WHERE service_id = ? AND doc_code = ?",
       [service_id, doc_code]
     );
@@ -37,7 +37,7 @@ const createServiceDocument = async (req, res) => {
     }
 
     // Get max sort_order for this service
-    const [maxSort] = await db.promise().query(
+    const [maxSort] = await db.query(
       "SELECT MAX(sort_order) AS max_order FROM service_documents WHERE service_id = ?",
       [service_id]
     );
@@ -48,7 +48,7 @@ const createServiceDocument = async (req, res) => {
       (service_id, doc_code, doc_name, doc_type, is_mandatory, allow_multiple, sort_order) 
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    const [result] = await db.promise().query(sql, [
+    const [result] = await db.query(sql, [
       service_id,
       doc_code,
       doc_name,
@@ -80,7 +80,7 @@ const getDocumentsByService = async (req, res) => {
     console.log("Fetching documents for serviceId:", serviceId);
     
     const sql = "SELECT * FROM service_documents WHERE service_id = ? ORDER BY sort_order ASC, created_at ASC";
-    const [results] = await db.promise().query(sql, [serviceId]);
+    const [results] = await db.query(sql, [serviceId]);
     res.json(results);
   } catch (err) {
     console.error("DB Error (getDocumentsByService):", err);
@@ -100,7 +100,7 @@ const getDocumentsByService = async (req, res) => {
 const getServiceDocumentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const [results] = await db.promise().query("SELECT * FROM service_documents WHERE id = ?", [id]);
+    const [results] = await db.query("SELECT * FROM service_documents WHERE id = ?", [id]);
 
     if (results.length === 0) {
       return res.status(404).json({ message: "Service document not found" });
@@ -128,7 +128,7 @@ const updateServiceDocument = async (req, res) => {
     const updated_by = req.user ? req.user.id : null;
 
     // Admin validation
-    const [admin] = await db.promise().query("SELECT role_id FROM admin_users WHERE id = ?", [updated_by]);
+    const [admin] = await db.query("SELECT role_id FROM admin_users WHERE id = ?", [updated_by]);
     if (!admin || admin.length === 0) {
       return res.status(404).json({ message: "Admin user not found" });
     }
@@ -137,7 +137,7 @@ const updateServiceDocument = async (req, res) => {
     }
 
     // Get existing record
-    const [currentRows] = await db.promise().query("SELECT * FROM service_documents WHERE id = ?", [id]);
+    const [currentRows] = await db.query("SELECT * FROM service_documents WHERE id = ?", [id]);
     if (currentRows.length === 0) {
       return res.status(404).json({ message: "Service document not found" });
     }
@@ -159,7 +159,7 @@ const updateServiceDocument = async (req, res) => {
 
     values.push(id);
     const sql = `UPDATE service_documents SET ${fields.join(", ")}, created_at = created_at WHERE id = ?`;
-    await db.promise().query(sql, values);
+    await db.query(sql, values);
 
     res.json({ message: "Service document updated successfully" });
   } catch (err) {
@@ -177,7 +177,7 @@ const deleteServiceDocument = async (req, res) => {
     const deleted_by = req.user ? req.user.id : null;
 
     // Admin validation
-    const [admin] = await db.promise().query("SELECT role_id FROM admin_users WHERE id = ?", [deleted_by]);
+    const [admin] = await db.query("SELECT role_id FROM admin_users WHERE id = ?", [deleted_by]);
     if (!admin || admin.length === 0) {
       return res.status(404).json({ message: "Admin user not found" });
     }
@@ -185,7 +185,7 @@ const deleteServiceDocument = async (req, res) => {
       return res.status(403).json({ message: "Only Admin can delete service documents" });
     }
 
-    const [result] = await db.promise().query("DELETE FROM service_documents WHERE id = ?", [id]);
+    const [result] = await db.query("DELETE FROM service_documents WHERE id = ?", [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Service document not found" });
     }

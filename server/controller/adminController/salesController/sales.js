@@ -6,7 +6,7 @@ const db = require("../../../config/db"); // MySQL connection (mysql2)
 // ========================
 const getPendingOrders = async (req, res) => {
   try {
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT o.id, o.customer_id, o.service_id, o.status, c.name AS customer_name, s.name AS service_name
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
@@ -38,7 +38,7 @@ const updateDocumentStatusByOrderDId = async (req, res) => {
     }
 
     // Update exactly one document row
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       `UPDATE order_documents 
        SET status=?, remarks=?, verified_by=?, verified_at=NOW() 
        WHERE id=? AND order_id=?`,
@@ -52,12 +52,12 @@ const updateDocumentStatusByOrderDId = async (req, res) => {
     // If rejected → keep order "awaiting_docs" and log
     if (status === "rejected") {
       // Keep order as awaiting_docs
-      await db.promise().query(
+      await db.query(
         `UPDATE orders SET status='awaiting_docs' WHERE id=?`,
         [order_id]
       );
 
-      await db.promise().query(
+      await db.query(
         `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at)
          VALUES (?, ?, NULL, 'sale', NULL, 'document_rejected', ?, NOW())`,
         [order_id, salesId, remarks || "Document rejected"]
@@ -114,7 +114,7 @@ const updateDocumentStatusByOrderDId = async (req, res) => {
 const triggerOrderStatusCheckInternal = async (order_id,salesId,account_id) => {
   try {
     // Check all documents for this order
-    const [docs] = await db.promise().query(
+    const [docs] = await db.query(
       `SELECT COUNT(*) AS total,
               SUM(CASE WHEN status='verified' THEN 1 ELSE 0 END) AS verified_count
        FROM order_documents WHERE order_id=?`,
@@ -123,19 +123,19 @@ const triggerOrderStatusCheckInternal = async (order_id,salesId,account_id) => {
 
     if (docs[0].total > 0 && docs[0].total === Number(docs[0].verified_count)) {
       // Check current order status to avoid repeated update
-      const [orderStatus] = await db.promise().query(
+      const [orderStatus] = await db.query(
         `SELECT status FROM orders WHERE id=?`,
         [order_id]
       );
 
       if (orderStatus[0].status !== 'under_review') {
         // All docs verified → move order → under_review
-        await db.promise().query(
+        await db.query(
           `UPDATE orders SET status='under_review', assigned_to=? WHERE id=?`,
           [account_id,order_id]
         );
 
-        await db.promise().query(
+        await db.query(
           `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at)
            VALUES (?, ?, ?, 'sale', 'accounts', 'all_docs_verified', 'All documents verified, sent to Accounts', NOW())`,
           [order_id,salesId,account_id]

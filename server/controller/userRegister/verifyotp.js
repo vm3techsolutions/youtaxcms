@@ -29,44 +29,50 @@ async function sendSmsOtp(to, otp) {
   });
 }
 
-
+// Send OTP
 const sendOtp = async (req, res) => {
-    const { type } = req.body; // only email/phone from body
+  try {
+    const { type } = req.body;
     const customerId = req.user.id;
+
     if (!customerId || !['email', 'phone'].includes(type)) {
-        return res.status(400).json({ message: 'Invalid request' });
+      return res.status(400).json({ message: 'Invalid request' });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
-    const expiresAt = new Date(Date.now() + 5 * 60000); // 5 min validity
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60000);
 
-    const insertOtpSql = `INSERT INTO otps (customer_id, type, otp_code, expires_at) VALUES (?, ?, ?, ?)`;
-    db.query(insertOtpSql, [customerId, type, otp, expiresAt], (err) => {
-        if (err) return res.status(500).json({ message: 'Failed to generate OTP', error: err });
+    // Insert OTP record
+    await db.query(
+      "INSERT INTO otps (customer_id, type, otp_code, expires_at) VALUES (?, ?, ?, ?)",
+      [customerId, type, otp, expiresAt]
+    );
 
-        // TODO: send via email (Nodemailer) or SMS (Twilio/MSG91)
+    // Fetch user contact info
+    const [userRows] = await db.query(
+      type === 'email'
+        ? "SELECT email FROM customers WHERE id = ?"
+        : "SELECT phone FROM customers WHERE id = ?",
+      [customerId]
+    );
 
-        try {
-            if (type === "email") {
-                // Fetch user email from DB
-                db.query("SELECT email FROM customers WHERE id = ?", [customerId], async (e, r) => {
-                    if (e || r.length === 0) return res.status(404).json({ message: "User not found" });
-                    await sendEmailOtp(r[0].email, otp);
-                });
-            } else if (type === "phone") {
-                // Fetch user phone
-                db.query("SELECT phone FROM customers WHERE id = ?", [customerId], async (e, r) => {
-                    if (e || r.length === 0) return res.status(404).json({ message: "User not found" });
-                    await sendSmsOtp(r[0].phone, otp); // Or sendMsg91Otp
-                });
-            }
-            console.log(`OTP for ${type}: ${otp}`);
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-            return res.status(200).json({ message: `OTP sent to ${type}` });
-        } catch (sendErr) {
-            return res.status(500).json({ message: "Failed to send OTP", error: sendErr });
-        }
-    });
+    if (type === "email") {
+      await sendEmailOtp(userRows[0].email, otp);
+    } else {
+      await sendSmsOtp(userRows[0].phone, otp);
+    }
+
+    console.log(`OTP for ${type}: ${otp}`);
+    return res.status(200).json({ message: `OTP sent to ${type}` });
+
+  } catch (err) {
+    console.error("Error sending OTP:", err);
+    return res.status(500).json({ message: "Failed to send OTP", error: err.message });
+  }
 };
 
 
@@ -84,34 +90,45 @@ const sendOtp = async (req, res) => {
  * @param {Object} res - Express response object.
  * @returns {Promise<void>} Responds with appropriate status and message based on OTP verification result.
  */
-
+// Verify OTP
 const verifyOtp = async (req, res) => {
+  try {
     const { type, otp } = req.body;
     const customerId = req.user.id;
+
     if (!customerId || !otp || !['email', 'phone'].includes(type)) {
-        return res.status(400).json({ message: 'Invalid request' });
+      return res.status(400).json({ message: 'Invalid request' });
     }
 
-    const checkOtpSql = `SELECT * FROM otps WHERE customer_id = ? AND type = ? AND otp_code = ? AND verified = false ORDER BY created_at DESC LIMIT 1`;
+    const [rows] = await db.query(
+      `SELECT * FROM otps 
+       WHERE customer_id = ? AND type = ? AND otp_code = ? AND verified = false 
+       ORDER BY created_at DESC LIMIT 1`,
+      [customerId, type, otp]
+    );
 
-    db.query(checkOtpSql, [customerId, type, otp], (err, results) => {
-        if (err) return res.status(500).json({ message: 'Database error' });
-        if (results.length === 0) return res.status(400).json({ message: 'Invalid OTP' });
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
 
-        const record = results[0];
-        if (new Date(record.expires_at) < new Date()) {
-            return res.status(400).json({ message: 'OTP expired' });
-        }
+    const record = rows[0];
+    if (new Date(record.expires_at) < new Date()) {
+      return res.status(400).json({ message: 'OTP expired' });
+    }
 
-        // Mark OTP as used
-        db.query(`UPDATE otps SET verified = true WHERE id = ?`, [record.id]);
+    // Mark OTP as used
+    await db.query("UPDATE otps SET verified = true WHERE id = ?", [record.id]);
 
-        // Update customer verification field
-        const field = type === 'email' ? 'email_verified' : 'phone_verified';
-        db.query(`UPDATE customers SET ${field} = true WHERE id = ?`, [customerId]);
+    // Update customer verification
+    const field = type === 'email' ? 'email_verified' : 'phone_verified';
+    await db.query(`UPDATE customers SET ${field} = true WHERE id = ?`, [customerId]);
 
-        return res.status(200).json({ message: `${type} verified successfully` });
-    });
+    return res.status(200).json({ message: `${type} verified successfully` });
+
+  } catch (err) {
+    console.error("Error verifying OTP:", err);
+    return res.status(500).json({ message: "Database error", error: err.message });
+  }
 };
 
 /**
@@ -120,26 +137,28 @@ const verifyOtp = async (req, res) => {
  * @param {import('express').Response} res Express response object
  * @returns {Promise<void>}
  */
+// Get verification status
 const getVerificationStatus = async (req, res) => {
   try {
     const customerId = req.user.id;
-    if (!customerId) {
-      return res.status(400).json({ message: "Invalid request" });
-    }
-    const [rows] = await db.promise().query(
+    if (!customerId) return res.status(400).json({ message: "Invalid request" });
+
+    const [rows] = await db.query(
       "SELECT email_verified, phone_verified FROM customers WHERE id = ?",
       [customerId]
     );
+
     if (!rows || rows.length === 0) {
       return res.status(404).json({ message: "Customer not found" });
     }
+
     res.status(200).json({
       email_verified: !!rows[0].email_verified,
       phone_verified: !!rows[0].phone_verified,
     });
   } catch (err) {
     console.error("Error fetching verification status:", err);
-    res.status(500).json({ message: "Database error" });
+    res.status(500).json({ message: "Database error", error: err.message });
   }
 };
 

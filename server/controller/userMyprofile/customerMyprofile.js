@@ -25,12 +25,10 @@ const createMyProfile = async (req, res) => {
     }
 
     // ✅ Check if profile_field already exists for this user
-    const [existing] = await db
-      .promise()
-      .query(
-        "SELECT id FROM customer_profiles WHERE customer_id = ? AND profile_field = ?",
-        [customerId, profile_field]
-      );
+    const [existing] = await db.query(
+      "SELECT id FROM customer_profiles WHERE customer_id = ? AND profile_field = ?",
+      [customerId, profile_field]
+    );
 
     if (existing.length > 0) {
       return res
@@ -39,12 +37,10 @@ const createMyProfile = async (req, res) => {
     }
 
     // ✅ Insert new record
-    const [result] = await db
-      .promise()
-      .query(
-        "INSERT INTO customer_profiles (customer_id, profile_field, field_value) VALUES (?, ?, ?)",
-        [customerId, profile_field, field_value]
-      );
+    const [result] = await db.query(
+      "INSERT INTO customer_profiles (customer_id, profile_field, field_value) VALUES (?, ?, ?)",
+      [customerId, profile_field, field_value]
+    );
 
     res.status(201).json({
       message: "Profile field created successfully",
@@ -66,9 +62,7 @@ const getMyProfiles = async (req, res) => {
   try {
     const customerId = req.user.id;
 
-    const [results] = await db
-      .promise()
-      .query("SELECT * FROM customer_profiles WHERE customer_id = ?", [customerId]);
+    const [results] = await db.query("SELECT * FROM customer_profiles WHERE customer_id = ?", [customerId]);
 
     res.json(results);
   } catch (err) {
@@ -87,9 +81,7 @@ const getMyProfileById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [results] = await db
-      .promise()
-      .query("SELECT * FROM customer_profiles WHERE id = ?", [id]);
+    const [results] = await db.query("SELECT * FROM customer_profiles WHERE id = ?", [id]);
 
     if (results.length === 0) {
       return res.status(404).json({ message: "Profile field not found" });
@@ -127,12 +119,10 @@ const updateMyProfile = async (req, res) => {
     }
 
     // ✅ Check if the profile_field exists for this user
-    const [existing] = await db
-      .promise()
-      .query(
-        "SELECT id FROM customer_profiles WHERE customer_id = ? AND profile_field = ?",
-        [customerId, profile_field]
-      );
+    const [existing] = await db.query(
+      "SELECT id FROM customer_profiles WHERE customer_id = ? AND profile_field = ?",
+      [customerId, profile_field]
+    );
 
     if (existing.length === 0) {
       return res
@@ -141,12 +131,10 @@ const updateMyProfile = async (req, res) => {
     }
 
     // ✅ Update field_value + updated_at
-    await db
-      .promise()
-      .query(
-        "UPDATE customer_profiles SET field_value = ?, updated_at = CURRENT_TIMESTAMP WHERE customer_id = ? AND profile_field = ?",
-        [field_value, customerId, profile_field]
-      );
+    await db.query(
+      "UPDATE customer_profiles SET field_value = ?, updated_at = CURRENT_TIMESTAMP WHERE customer_id = ? AND profile_field = ?",
+      [field_value, customerId, profile_field]
+    );
 
     res.json({ message: "Profile field updated successfully" });
   } catch (err) {

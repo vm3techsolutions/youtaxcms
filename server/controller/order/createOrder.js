@@ -41,7 +41,7 @@ const createOrder = async (req, res) => {
     }
 
     // 1. fetch service pricing
-    const [services] = await db.promise().query(
+    const [services] = await db.query(
       "SELECT base_price, advance_price, service_charges, requires_advance FROM services WHERE id=?",
       [service_id]
     );
@@ -87,7 +87,7 @@ const createOrder = async (req, res) => {
     }
 
     // 2. insert order
-    const [ins] = await db.promise().query(
+    const [ins] = await db.query(
       `INSERT INTO orders 
         (customer_id, service_id, status, total_amount, advance_required, advance_paid) 
        VALUES (?, ?, 'awaiting_payment', ?, ?, 0)`,
@@ -144,7 +144,7 @@ try {
 }
 
     // insert payment record
-    await db.promise().query(
+    await db.query(
       `INSERT INTO payments 
        (order_id, customer_id, amount, payment_type, payment_mode, status, txn_ref) 
        VALUES (?, ?, ?, ?, 'razorpay', 'initiated', ?)`,
@@ -183,7 +183,7 @@ const verifyPaymentLink = async (req, res) => {
     const { payment_link_id } = req.body;
 
         // ✅ Check if already verified (idempotency)
-    const [existingPayment] = await db.promise().query(
+    const [existingPayment] = await db.query(
       "SELECT id FROM payments WHERE txn_ref = ? AND status = 'success'",
       [payment_link_id]
     );
@@ -208,7 +208,7 @@ const verifyPaymentLink = async (req, res) => {
     }
 
     // ✅ Update payments table
-    await db.promise().query(
+    await db.query(
       `UPDATE payments 
        SET status='success', 
            payment_mode=? 
@@ -217,7 +217,7 @@ const verifyPaymentLink = async (req, res) => {
     );
 
     // Fetch payment row
-    const [paymentRows] = await db.promise().query(`SELECT id, order_id, customer_id FROM payments WHERE txn_ref=?`, [payment_link_id]);
+    const [paymentRows] = await db.query(`SELECT id, order_id, customer_id FROM payments WHERE txn_ref=?`, [payment_link_id]);
     if (!paymentRows.length) return res.status(404).json({ message: "Payment not found after update" });
     const payment = paymentRows[0];
 
@@ -232,7 +232,7 @@ const verifyPaymentLink = async (req, res) => {
 
 
     // Fetch order
-    const [orderRows] = await db.promise().query(
+    const [orderRows] = await db.query(
       `SELECT total_amount, advance_paid, status FROM orders WHERE id=?`,
       [paymentLink.notes.order_id]
     );
@@ -253,7 +253,7 @@ const verifyPaymentLink = async (req, res) => {
 
     const newOrderStatus = order.status === 'awaiting_payment' ? 'awaiting_docs' : order.status;
 
-    await db.promise().query(
+    await db.query(
       `UPDATE orders 
        SET advance_paid=?, payment_status=?, status=? 
        WHERE id=?`,
@@ -295,7 +295,7 @@ const createPendingPaymentLink = async (req, res) => {
   try {
     const { order_id } = req.body;
 
-    const [orderRows] = await db.promise().query(
+    const [orderRows] = await db.query(
       `SELECT total_amount, advance_paid, pending_amount, customer_id FROM orders WHERE id=?`,
       [order_id]
     );
@@ -304,7 +304,7 @@ const createPendingPaymentLink = async (req, res) => {
       return res.status(400).json({ message: "No pending payment" });
     }
 
-    const [customerRows] = await db.promise().query(
+    const [customerRows] = await db.query(
       `SELECT name, email, phone FROM customers WHERE id=?`,
       [order.customer_id]
     );
@@ -321,7 +321,7 @@ const createPendingPaymentLink = async (req, res) => {
       callback_method: "get",
     });
 
-    await db.promise().query(
+    await db.query(
       `INSERT INTO payments 
        (order_id, customer_id, amount, payment_type, payment_mode, status, txn_ref) 
        VALUES (?, ?, ?, 'final', 'razorpay', 'initiated', ?)`,
@@ -347,7 +347,7 @@ const getMyOrders = async (req, res) => {
       return res.status(400).json({ message: "customer_id is required" });
     }
 
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC`,
       [customer_id]
     );
@@ -365,7 +365,7 @@ const getOrdersByCustomerId = async (req, res) => {
       return res.status(400).json({ message: "customer_id is required" });
     }
 
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC`,
       [customer_id]
     );
@@ -389,7 +389,7 @@ const getOrderPayments = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-      const [rows] = await db.promise().query(
+      const [rows] = await db.query(
       `SELECT * FROM payments WHERE order_id = ? AND customer_id = ? ORDER BY created_at DESC`,
       [order_id, customer_id]
     );
@@ -420,7 +420,7 @@ const getPendingPaymentsByCustomerId = async (req, res) => {
     }
 
     // Only collect orders with partial payment (not unpaid), include service name
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT o.id, o.total_amount, o.advance_paid, o.pending_amount, o.payment_status, o.status, s.name AS service_name
        FROM orders o
        JOIN services s ON o.service_id = s.id
@@ -441,7 +441,7 @@ const getSignedReceiptUrl = async (req, res) => {
   try {
     const { paymentId } = req.params;
 
-    const [rows] = await db.promise().query("SELECT receipt_url FROM payments WHERE id = ?", [paymentId]);
+    const [rows] = await db.query("SELECT receipt_url FROM payments WHERE id = ?", [paymentId]);
 
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: "Receipt not found" });

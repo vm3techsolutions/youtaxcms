@@ -9,12 +9,15 @@
 const db = require("../../../config/db");
 
 // Get all roles
-const getAdminRoles = (req, res) => {
-  const sql = "SELECT * FROM admin_roles";
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error", error: err });
+
+const getAdminRoles = async (req, res) => {
+  try {
+    const [results] = await db.query("SELECT * FROM admin_roles");
     res.json(results);
-  });
+  } catch (err) {
+    console.error("DB Error (getAdminRoles):", err);
+    res.status(500).json({ message: "Database error", error: err.message });
+  }
 };
 
 module.exports = { getAdminRoles };

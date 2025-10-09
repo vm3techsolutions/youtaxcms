@@ -63,7 +63,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       WHERE p.id = ?
       LIMIT 1
     `;
-    const [results] = await db.promise().query(query, [paymentId]);
+    const [results] = await db.query(query, [paymentId]);
     if (!results || results.length === 0) {
       console.error("❌ No payment found with ID:", paymentId);
       return;
@@ -217,12 +217,12 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const s3Url = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${s3Key}`;
 
     // Ensure receipt_url column exists
-    const [columns] = await db.promise().query("SHOW COLUMNS FROM payments LIKE 'receipt_url'");
+    const [columns] = await db.query("SHOW COLUMNS FROM payments LIKE 'receipt_url'");
     if (columns.length === 0) {
-      await db.promise().query("ALTER TABLE payments ADD COLUMN receipt_url VARCHAR(500)");
+      await db.query("ALTER TABLE payments ADD COLUMN receipt_url VARCHAR(500)");
     }
 
-    await db.promise().query(
+    await db.query(
       "UPDATE payments SET receipt_url = ? WHERE id = ?",
       [s3Url, payment.payment_id]
     );

@@ -39,9 +39,7 @@ const uploadOrderDocument = async (req, res) => {
     }
 
     // Fetch service document info
-    const [serviceDocRows] = await db
-      .promise()
-      .query("SELECT * FROM service_documents WHERE id = ? LIMIT 1", [service_doc_id]);
+    const [serviceDocRows] = await db.query("SELECT * FROM service_documents WHERE id = ? LIMIT 1", [service_doc_id]);
 
     if (serviceDocRows.length === 0) {
       return res.status(404).json({ message: "Service document not found" });
@@ -70,23 +68,19 @@ const uploadOrderDocument = async (req, res) => {
 
       // If only single allowed, delete existing before inserting
       if (!allowMultiple) {
-        await db
-          .promise()
-          .query(
-            "DELETE FROM order_documents WHERE order_id = ? AND service_doc_id = ?",
-            [order_id, service_doc_id]
-          );
+        await db.query(
+          "DELETE FROM order_documents WHERE order_id = ? AND service_doc_id = ?",
+          [order_id, service_doc_id]
+        );
       }
 
       // Insert record
-      const [inserted] = await db
-        .promise()
-        .query(
-          `INSERT INTO order_documents 
-          (order_id, service_doc_id, file_url, uploaded_by, status, remarks, uploaded_at) 
-          VALUES (?, ?, ?, ?, 'submitted', ?, NOW())`,
-          [order_id, service_doc_id, fileUrl, userId, null]
-        );
+      const [inserted] = await db.query(
+        `INSERT INTO order_documents 
+        (order_id, service_doc_id, file_url, uploaded_by, status, remarks, uploaded_at) 
+        VALUES (?, ?, ?, ?, 'submitted', ?, NOW())`,
+        [order_id, service_doc_id, fileUrl, userId, null]
+      );
 
       uploadedFiles.push({
         id: inserted.insertId,
@@ -116,15 +110,13 @@ const getOrderDocuments = async (req, res) => {
       return res.status(400).json({ message: "order_id is required" });
     }
 
-    const [rows] = await db
-      .promise()
-      .query(
-        `SELECT od.*, sd.doc_name, sd.doc_type 
-         FROM order_documents od
-         JOIN service_documents sd ON od.service_doc_id = sd.id
-         WHERE od.order_id = ?`,
-        [order_id]
-      );
+    const [rows] = await db.query(
+      `SELECT od.*, sd.doc_name, sd.doc_type 
+       FROM order_documents od
+       JOIN service_documents sd ON od.service_doc_id = sd.id
+       WHERE od.order_id = ?`,
+      [order_id]
+    );
 
     const documents = await Promise.all(
       rows.map(async (doc) => ({

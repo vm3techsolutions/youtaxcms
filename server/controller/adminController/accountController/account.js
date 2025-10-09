@@ -28,7 +28,7 @@ const getPendingOrdersForAccounts = async (req, res) => {
   try {
     const accountsId = req.user.id; // logged-in accounts user
 
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT 
         o.id, 
         o.customer_id, 
@@ -62,7 +62,7 @@ const getOrderPayments = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [payments] = await db.promise().query(
+    const [payments] = await db.query(
       `SELECT id, payment_type, payment_mode, amount, status, txn_ref, created_at, receipt_url
        FROM payments WHERE order_id=?`,
       [id]
@@ -97,7 +97,7 @@ const forwardToOperations = async (req, res) => {
     }
 
     // Check if order is under_review
-    const [orderRows] = await db.promise().query(
+    const [orderRows] = await db.query(
       `SELECT status FROM orders WHERE id=?`,
       [order_id]
     );
@@ -114,7 +114,7 @@ const forwardToOperations = async (req, res) => {
     }
 
     // Update order status + assign to operations user
-    await db.promise().query(
+    await db.query(
       `UPDATE orders 
        SET status='in_progress', assigned_to=?, updated_at=NOW() 
        WHERE id=?`,
@@ -122,7 +122,7 @@ const forwardToOperations = async (req, res) => {
     );
 
     // Insert into logs
-    await db.promise().query(
+    await db.query(
       `INSERT INTO order_logs 
         (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
        VALUES (?, ?, ?, 'accounts', 'operation', 'forwarded_to_operations', ?, NOW())`,

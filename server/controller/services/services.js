@@ -15,7 +15,7 @@ const createService = async (req, res) => {
       return res.status(400).json({ message: "Name, Base Price are required" });
     }
     // Check if creator is admin with role_id 4
-    const [creator] = await db.promise().query(
+    const [creator] = await db.query(
       "SELECT role_id FROM admin_users WHERE id = ?",
       [created_by]
     );
@@ -27,7 +27,7 @@ const createService = async (req, res) => {
     }
 
     // Check if service name already exists
-    const [existing] = await db.promise().query(
+    const [existing] = await db.query(
       "SELECT id FROM services WHERE name = ?",
       [name]
     );
@@ -42,7 +42,6 @@ const createService = async (req, res) => {
     `;
 
     const [result] = await db
-      .promise()
       .query(sql, [
         name,
         description || null,
@@ -70,7 +69,7 @@ const createService = async (req, res) => {
 const getAllServices = async (req, res) => {
   try {
     const sql = "SELECT * FROM services WHERE is_active = TRUE ORDER BY created_at DESC";
-    const [results] = await db.promise().query(sql);
+    const [results] = await db.query(sql);
     res.json(results);
   } catch (err) {
     console.error("DB Error (getAllServices):", err);
@@ -88,7 +87,7 @@ const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
     const sql = "SELECT * FROM services WHERE id = ?";
-    const [results] = await db.promise().query(sql, [id]);
+    const [results] = await db.query(sql, [id]);
 
     if (results.length === 0) {
       return res.status(404).json({ message: "Service not found" });
@@ -114,7 +113,7 @@ const updateService = async (req, res) => {
     const updated_by = req.user ? req.user.id : null;
 
     // Admin validation
-    const [admin] = await db.promise().query(
+    const [admin] = await db.query(
       "SELECT role_id FROM admin_users WHERE id = ?",
       [updated_by]
     );
@@ -126,7 +125,7 @@ const updateService = async (req, res) => {
     }
 
     // Get current service data
-    const [currentRows] = await db.promise().query("SELECT * FROM services WHERE id = ?", [id]);
+    const [currentRows] = await db.query("SELECT * FROM services WHERE id = ?", [id]);
     if (currentRows.length === 0) {
       return res.status(404).json({ message: "Service not found" });
     }
@@ -151,7 +150,7 @@ const updateService = async (req, res) => {
     values.push(id);
 
     const sql = `UPDATE services SET ${fields.join(", ")} WHERE id = ?`;
-    await db.promise().query(sql, values);
+    await db.query(sql, values);
 
     res.json({ message: "Service updated successfully" });
   } catch (err) {
@@ -172,7 +171,7 @@ const deleteService = async (req, res) => {
     const deleted_by = req.user ? req.user.id : null;
 
     // Admin validation
-    const [admin] = await db.promise().query(
+    const [admin] = await db.query(
       "SELECT role_id FROM admin_users WHERE id = ?",
       [deleted_by]
     );
@@ -184,7 +183,7 @@ const deleteService = async (req, res) => {
     }
 
     const sql = "DELETE FROM services WHERE id=?";
-    const [result] = await db.promise().query(sql, [id]);
+    const [result] = await db.query(sql, [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Service not found" });
     }

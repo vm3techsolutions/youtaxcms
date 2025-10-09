@@ -30,7 +30,7 @@ const getAssignedOrdersForOperations = async (req, res) => {
     const operationId = req.user.id; // logged-in operations user
 
     // Get assigned orders with customer and service name
-    const [orders] = await db.promise().query(
+    const [orders] = await db.query(
       `SELECT o.*, c.name AS customer_name, s.name AS service_name
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
@@ -44,7 +44,7 @@ const getAssignedOrdersForOperations = async (req, res) => {
     // For each order, fetch its documents
     const ordersWithDocuments = await Promise.all(
       orders.map(async (order) => {
-        const [docs] = await db.promise().query(
+        const [docs] = await db.query(
           `SELECT od.*, sd.doc_name, sd.doc_type
            FROM order_documents od
            JOIN service_documents sd ON od.service_doc_id = sd.id
@@ -175,7 +175,7 @@ const uploadDeliverable = async (req, res) => {
     }
 
     // Versioning
-    const [existing] = await db.promise().query(
+    const [existing] = await db.query(
       `SELECT * FROM deliverables WHERE order_id=? ORDER BY created_at DESC LIMIT 1`,
       [order_id]
     );
@@ -197,7 +197,7 @@ const uploadDeliverable = async (req, res) => {
 
         const fileUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${fileKey}`;
 
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
           `INSERT INTO deliverables (order_id, generated_by, file_url, versions) 
            VALUES (?, ?, ?, ?)`,
           [order_id, operationId, fileUrl, newVersion]
@@ -213,7 +213,7 @@ const uploadDeliverable = async (req, res) => {
     }
 
     // Fetch order status
-    const [order] = await db.promise().query(
+    const [order] = await db.query(
       `SELECT payment_status FROM orders WHERE id=?`,
       [order_id]
     );
@@ -227,22 +227,22 @@ const uploadDeliverable = async (req, res) => {
       // ✅ Fully paid → Operation forwards to Admin
       if (forward_without_changes && (!req.files || req.files.length === 0)) {
         // No new files → just forward
-        await db.promise().query(
+        await db.query(
           `UPDATE orders SET assigned_to=? WHERE id=?`,
           [admin_id, order_id]
         );
-        await db.promise().query(
+        await db.query(
           `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
            VALUES (?, ?, ?, 'operation', 'admin', 'forward_without_changes', 'Forwarded to Admin without new deliverables', NOW())`,
           [order_id, operationId, admin_id]
         );
       } else {
         // With new files
-        await db.promise().query(
+        await db.query(
           `UPDATE orders SET assigned_to=? WHERE id=?`,
           [admin_id, order_id]
         );
-        await db.promise().query(
+        await db.query(
           `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
            VALUES (?, ?, ?, 'operation', 'admin', 'deliverable_uploaded', 'Deliverable uploaded and forwarded to Admin', NOW())`,
           [order_id, operationId, admin_id]
@@ -251,18 +251,18 @@ const uploadDeliverable = async (req, res) => {
     } 
     else if (paymentStatus === "partially_paid") {
       // ✅ Partial payment → forward to Accounts for final payment
-      await db.promise().query(
+      await db.query(
         `UPDATE orders SET assigned_to=?, status='awaiting_final_payment' WHERE id=?`,
         [account_id, order_id]
       );
-      await db.promise().query(
+      await db.query(
         `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
          VALUES (?, ?, ?, 'operation', 'accounts', 'deliverable_uploaded', 'Deliverable uploaded and sent to Accounts for final payment', NOW())`,
         [order_id, operationId, account_id]
       );
 
       // 🔔 Fetch customer details from customers table
-      const [customer] = await db.promise().query(
+      const [customer] = await db.query(
         `SELECT c.email, c.name 
            FROM customers c 
            JOIN orders o ON c.id = o.customer_id 
@@ -277,7 +277,7 @@ const uploadDeliverable = async (req, res) => {
     } 
     else {
       // unpaid → keep with operation as draft
-      await db.promise().query(
+      await db.query(
         `INSERT INTO order_logs (order_id, from_user, from_role, action, remarks, created_at) 
          VALUES (?, ?, 'operation', 'draft_uploaded', 'Draft deliverable uploaded (unpaid)', NOW())`,
         [order_id, operationId]
@@ -303,7 +303,7 @@ const getDeliverablesForOrder = async (req, res) => {
       return res.status(400).json({ message: "order_id is required" });
     }
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT d.*, c.name AS customer_name, s.name AS service_name
          FROM deliverables d
          JOIN orders o ON d.order_id = o.id
@@ -335,7 +335,7 @@ const getDeliverableById = async (req, res) => {
       return res.status(400).json({ message: "deliverable id is required" });
     }
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT * FROM deliverables WHERE id=? LIMIT 1`,
       [id]
     );
@@ -361,7 +361,7 @@ const getDeliverableById = async (req, res) => {
 // ========================
 const getAllDeliverablesWithCustomerAndService = async (req, res) => {
   try {
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       `SELECT 
           d.*, 
           c.id AS customer_id, 

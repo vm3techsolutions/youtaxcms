@@ -67,20 +67,20 @@ exports.uploadKycDocument = async (req, res) => {
     const fileUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${fileKey}`;
 
     // ✅ Upsert logic (1 row per customer)
-    const [rows] = await db.promise().query(
+    const [rows] = await db.query(
       "SELECT id FROM kyc_documents WHERE customer_id = ? LIMIT 1",
       [customerId]
     );
 
     if (rows.length > 0) {
-      await db.promise().query(
+      await db.query(
         `UPDATE kyc_documents 
          SET doc_type = ?, file_url = ?, status = 'submitted', remarks = ?, uploaded_at = NOW()
          WHERE customer_id = ?`,
         [doc_type, fileUrl, remarks || null, customerId]
       );
     } else {
-      await db.promise().query(
+      await db.query(
         `INSERT INTO kyc_documents (customer_id, doc_type, file_url, status, remarks, uploaded_at)
          VALUES (?, ?, ?, 'submitted', ?, NOW())`,
         [customerId, doc_type, fileUrl, remarks || null]
@@ -108,11 +108,9 @@ exports.getMyKycDocuments = async (req, res) => {
   try {
     const customerId = req.user.id;
 
-    const [rows] = await db
-      .promise()
-      .query("SELECT * FROM kyc_documents WHERE customer_id = ? LIMIT 1", [
-        customerId,
-      ]);
+    const [rows] = await db.query("SELECT * FROM kyc_documents WHERE customer_id = ? LIMIT 1", [
+      customerId,
+    ]);
 
     if (rows.length === 0) {
       return res.status(200).json(null);
