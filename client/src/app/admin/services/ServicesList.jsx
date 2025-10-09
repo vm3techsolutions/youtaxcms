@@ -140,7 +140,7 @@ export default function ServiceCardsBookPopup() {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-lg shadow-xl w-full max-w-3xl p-6 relative origin-left"
+              className="bg-white rounded-lg shadow-xl w-full max-w-3xl p-6 relative origin-left max-h-[90vh] overflow-y-auto"
               initial={{ rotateY: -90 }}
               animate={{ rotateY: 0 }}
               exit={{ rotateY: 90 }}
