@@ -366,7 +366,9 @@ const getOrdersByCustomerId = async (req, res) => {
     }
 
     const [orders] = await db.query(
-      `SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC`,
+      `SELECT * FROM orders 
+       WHERE customer_id = ? AND status != 'awaiting_payment'
+       ORDER BY created_at DESC`,
       [customer_id]
     );
 
