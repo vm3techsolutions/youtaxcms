@@ -16,7 +16,7 @@ export default function ManageAdminsPage() {
         <h2 className="text-2xl font-bold primaryText">Manage Admins</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+          className="primary-btn px-4 py-2 rounded shadow"
         >
           Add New User
         </button>

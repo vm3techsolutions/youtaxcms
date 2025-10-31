@@ -57,7 +57,7 @@ export default function AdminsList() {
                     setSelectedAdmin(admin);
                     setShowForm(true);
                   }}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="primaryText hover:text-blue-800"
                   title="Edit"
                 >
                   <Edit size={18} />

@@ -26,10 +26,10 @@ export default function Topbar() {
       {/* Right side */}
       <div className="flex items-center gap-4">
         {/* Notification */}
-        <button className="relative p-2 rounded-full hover:bg-gray-100 transition">
+        {/* <button className="relative p-2 rounded-full hover:bg-gray-100 transition">
           <Bell size={24} />
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+        </button> */}
 
         {/* User Avatar with hover dropdown */}
         <div className="relative group">
