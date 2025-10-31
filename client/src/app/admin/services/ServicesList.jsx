@@ -21,6 +21,8 @@ export default function ServiceCardsBookPopup() {
   const [newDoc, setNewDoc] = useState(null);
   const [serviceUpdates, setServiceUpdates] = useState({});
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Fetch all services
   useEffect(() => {
     dispatch(fetchServices());
@@ -113,23 +115,47 @@ export default function ServiceCardsBookPopup() {
     alert("Service updated successfully!");
   };
 
+
+  // Filtered services
+const filteredServices = services.filter((service) =>
+  service.name.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
   if (servicesLoading) return <p>Loading services...</p>;
   if (servicesError) return <p className="text-red-600">{servicesError}</p>;
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <div
-            key={service.id}
-            className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
-            onClick={() => handleServiceClick(service)}
-          >
-            <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
-            <p className="text-gray-500 truncate">{service.description || "No description"}</p>
-          </div>
-        ))}
-      </div>
+
+      {/* Search Bar */}
+  <div className="mb-4 flex justify-start">
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search services..."
+      className="border border-gray-300 rounded-lg p-2 w-full max-w-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {filteredServices.length > 0 ? (
+      filteredServices.map((service) => (
+        <div
+          key={service.id}
+          className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
+          onClick={() => handleServiceClick(service)}
+        >
+          <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
+          <p className="text-gray-500 truncate">{service.description || "No description"}</p>
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500 col-span-full text-center">
+        No services found for “{searchQuery}”
+      </p>
+    )}
+  </div>
 
       <AnimatePresence>
         {selectedService && (

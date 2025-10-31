@@ -62,6 +62,7 @@ export default function ServicesFlex() {
   const [expanded, setExpanded] = useState(null);
   const [modalService, setModalService] = useState(null);
   const [paymentOption, setPaymentOption] = useState("full");
+  const [searchTerm, setSearchTerm] = useState(""); 
 
   useEffect(() => {
     dispatch(fetchServices());
@@ -118,6 +119,11 @@ export default function ServicesFlex() {
     }
   };
 
+   // ✅ Filter services based on search term
+  const filteredServices = services.filter((service) =>
+    service.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (servicesLoading)
     return <p className="text-center mt-8">Loading services...</p>;
   if (servicesError)
@@ -125,51 +131,66 @@ export default function ServicesFlex() {
 
   return (
     <div className="container mx-auto py-4 px-4">
+      {/* 🔍 Search Bar */}
+      <div className="flex justify-center mb-6">
+        <input
+          type="text"
+          placeholder="Search services by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
       {/* Services List */}
       <div className="flex flex-wrap justify-center gap-6 items-start">
-        {services.map((service) => {
-          const isExpanded = expanded === service.id;
-          const documents = serviceDocuments[service.id] || [];
+        {filteredServices.length === 0 ? (
+          <p className="text-gray-500">No services found.</p>
+        ) : (
+          filteredServices.map((service) => {
+            const isExpanded = expanded === service.id;
+            const documents = serviceDocuments[service.id] || [];
 
-          return (
-            <div
-              key={service.id}
-              className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-[300px]"
-            >
+            return (
               <div
-                className="p-6 text-center font-semibold text-xl secondaryText"
-                onClick={() => handleToggle(service.id)}
+                key={service.id}
+                className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-[300px]"
               >
-                {service.name}
-              </div>
-
-              {isExpanded && (
-                <div className="px-8 py-2">
-                  <h3 className="font-semibold mb-2 text-gray-800">
-                    Documents Required
-                  </h3>
-                  {documents.length === 0 ? (
-                    <p>Not Uploaded</p>
-                  ) : (
-                    <ol className="list-decimal list-inside text-gray-700 mb-4">
-                      {documents.map((doc) => (
-                        <li key={doc.id}>{doc.doc_name}</li>
-                      ))}
-                    </ol>
-                  )}
-                  <div className="flex justify-center mb-4">
-                    <button
-                      onClick={() => handleApplyNow(service)}
-                      className="px-4 py-2 primary-btn text-white rounded-lg"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
+                <div
+                  className="p-6 text-center font-semibold text-xl secondaryText"
+                  onClick={() => handleToggle(service.id)}
+                >
+                  {service.name}
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {isExpanded && (
+                  <div className="px-8 py-2">
+                    <h3 className="font-semibold mb-2 text-gray-800">
+                      Documents Required
+                    </h3>
+                    {documents.length === 0 ? (
+                      <p>Not Uploaded</p>
+                    ) : (
+                      <ol className="list-decimal list-inside text-gray-700 mb-4">
+                        {documents.map((doc) => (
+                          <li key={doc.id}>{doc.doc_name}</li>
+                        ))}
+                      </ol>
+                    )}
+                    <div className="flex justify-center mb-4">
+                      <button
+                        onClick={() => handleApplyNow(service)}
+                        className="px-4 py-2 primary-btn text-white rounded-lg"
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Payment Side Panel */}
