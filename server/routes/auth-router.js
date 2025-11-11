@@ -38,6 +38,9 @@ router.get("/customerprofile", verifyToken, userMyprofile.getMyProfiles);
 router.get("/customerprofile/:id", verifyToken, userMyprofile.getMyProfileById);
 router.put("/customerprofile", verifyToken, userMyprofile.updateMyProfile);
 
+// customer stats
+router.get("/user/stats", verifyToken, userRegister.getCustomerStats);
+
 // KYC Routes 
 router.post("/kyc/upload",verifyToken,upload.single("document"),kycController.uploadKycDocument);
 router.get("/kyc", verifyToken, kycController.getMyKycDocuments);

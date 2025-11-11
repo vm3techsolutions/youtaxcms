@@ -150,9 +150,49 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// ✅  customer stats
+
+const getCustomerStats = async (req, res) => {
+  try {
+    const customerId = req.user && req.user.id;
+    if (!customerId) return res.status(401).json({ message: "Unauthorized" });
+
+    const [[totalRows]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE customer_id = ?  AND status !='awaiting_payment'",
+      [customerId]
+    );
+    const [[completedRows]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE customer_id = ? AND status = 'completed'",
+      [customerId]
+    );
+    const [[inProgressRows]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE customer_id = ? AND status != 'completed' AND status !='awaiting_payment'",
+      [customerId]
+    );
+    const [[pendingPaymentRows]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE customer_id = ? AND payment_status = 'partially_paid'",
+      [customerId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalOrders: totalRows.count || 0,
+        completedOrders: completedRows.count || 0,
+        inProgressOrders: inProgressRows.count || 0,
+        pendingPayments: pendingPaymentRows.count || 0,
+      },
+    });
+  } catch (err) {
+    console.error("DB Error (getCustomerStats):", err);
+    res.status(500).json({ success: false, message: "Database error", error: err.message });
+  }
+};
+
 module.exports = {
   userSignUp,
   userLogin,
   forgotPassword,
   resetPassword,
+  getCustomerStats,
 };
