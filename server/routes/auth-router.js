@@ -15,6 +15,7 @@ const deliverablesController = require("../controller/deliverables/deliverables"
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
 const services = require('../controller/services/services');
+const categoryController = require('../controller/services/serviceCategory/categoryController');
 const serviceDocuments = require('../controller/services/serviceDocuments');
 const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
 const { isSales } = require('../middleware/auth');
@@ -98,9 +99,15 @@ router.put('/admin/users', verifyToken, adminUsers.editAdminUser);
 router.post("/services", verifyToken, services.createService);
 router.get("/services", services.getAllServices);
 router.get("/service/:id", services.getServiceById);
+router.get("/service-by-category/:category_id", services.getServiceByCategoryId);
 router.put("/service/:id", verifyToken, services.updateService);
 router.delete("/service/:id", verifyToken, services.deleteService);
-
+// Service Category Routes
+router.post("/service-categories", verifyToken, categoryController.createCategory);
+router.get("/service-categories", categoryController.getAllCategories);
+router.get("/service-category/:id", categoryController.getCategoryById);
+router.put("/service-category/:id", verifyToken, categoryController.updateCategory);
+router.delete("/service-category/:id", verifyToken, categoryController.deleteCategory);
 // Service Documents Routes
 router.post("/service-documents", verifyToken, serviceDocuments.createServiceDocument);
 router.get("/service-documents/service/:serviceId", serviceDocuments.getDocumentsByService);

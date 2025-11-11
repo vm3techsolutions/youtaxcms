@@ -8,7 +8,7 @@ const db = require("../../config/db");
  */
 const createService = async (req, res) => {
   try {
-    const { name, description, base_price, advance_price, service_charges, sla_days,requires_advance } = req.body;
+    const { name, description, base_price, advance_price, service_charges, sla_days, requires_advance, category_id } = req.body;
     const created_by = req.user ? req.user.id : null;
 
     if (!name || !base_price ) {
@@ -37,21 +37,20 @@ const createService = async (req, res) => {
 
     const sql = `
       INSERT INTO services 
-      (name, description, base_price, advance_price, service_charges, sla_days,requires_advance, created_by) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (name, category_id, description, base_price, advance_price, service_charges, sla_days, requires_advance, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-
-    const [result] = await db
-      .query(sql, [
-        name,
-        description || null,
-        base_price,
-        advance_price || null,
-        service_charges || null,
-        sla_days || null,
-        requires_advance ? 1 : 0,
-        created_by,
-      ]);
+    const [result] = await db.query(sql, [
+      name,
+      category_id || null,
+      description || null,
+      base_price,
+      advance_price || null,
+      service_charges || null,
+      sla_days || null,
+      requires_advance ? 1 : 0,
+      created_by,
+    ]);
 
     res.status(201).json({ message: "Service created successfully", id: result.insertId });
   } catch (err) {
@@ -61,14 +60,20 @@ const createService = async (req, res) => {
 };
 
 /**
- * Get all active services, ordered by creation date descending.
+ * Get all active services with their category names, ordered by creation date descending.
  * @param {import('express').Request} req Express request object
  * @param {import('express').Response} res Express response object
  * @returns {Promise<void>}
  */
 const getAllServices = async (req, res) => {
   try {
-    const sql = "SELECT * FROM services WHERE is_active = TRUE ORDER BY created_at DESC";
+    const sql = `
+      SELECT s.*, c.name AS category_name
+      FROM services s
+      LEFT JOIN categories c ON s.category_id = c.id
+      WHERE s.is_active = TRUE
+      ORDER BY s.created_at DESC
+    `;
     const [results] = await db.query(sql);
     res.json(results);
   } catch (err) {
@@ -129,25 +134,32 @@ const updateService = async (req, res) => {
     if (currentRows.length === 0) {
       return res.status(404).json({ message: "Service not found" });
     }
-    const current = currentRows[0];
 
-    // Build update fields dynamically
+    // Validate category if provided
+    if (req.body.category_id) {
+      const [cat] = await db.query("SELECT id FROM categories WHERE id = ? AND is_active = 1", [req.body.category_id]);
+      if (cat.length === 0) {
+        return res.status(400).json({ message: "Invalid or inactive category" });
+      }
+    }
+
+    const allowed = ["name", "description", "base_price", "advance_price", "service_charges", "sla_days", "is_active", "category_id"];
     const fields = [];
     const values = [];
-    const allowed = ["name", "description", "base_price", "advance_price", "service_charges", "sla_days", "is_active"];
+
     for (const key of allowed) {
       if (Object.prototype.hasOwnProperty.call(req.body, key)) {
         fields.push(`${key} = ?`);
         values.push(req.body[key]);
       }
     }
-    fields.push("updated_at = CURRENT_TIMESTAMP");
-    fields.push("updated_by = ?");
-    values.push(updated_by);
-    if (fields.length === 2) { // Only updated_at and updated_by, no other fields
+
+    if (fields.length === 0) {
       return res.status(400).json({ message: "No valid fields provided for update" });
     }
-    values.push(id);
+
+    fields.push("updated_at = CURRENT_TIMESTAMP", "updated_by = ?");
+    values.push(updated_by, id);
 
     const sql = `UPDATE services SET ${fields.join(", ")} WHERE id = ?`;
     await db.query(sql, values);
@@ -194,11 +206,55 @@ const deleteService = async (req, res) => {
   }
 };
 
+/**
+ * Get all services by category ID with category name.
+ * @param {import('express').Request} req Express request object, expects req.params.category_id
+ * @param {import('express').Response} res Express response object
+ * @returns {Promise<void>}
+ */
+const getServiceByCategoryId = async (req, res) => {
+  try {
+    const { category_id } = req.params;
+
+    if (!category_id) {
+      return res.status(400).json({ message: "category_id is required" });
+    }
+
+    // Validate category exists and is active
+    const [categoryRows] = await db.query(
+      "SELECT id FROM categories WHERE id = ? AND is_active = 1",
+      [category_id]
+    );
+    if (categoryRows.length === 0) {
+      return res.status(404).json({ message: "Category not found or inactive" });
+    }
+
+    const sql = `
+      SELECT s.*, c.name AS category_name
+      FROM services s
+      LEFT JOIN categories c ON s.category_id = c.id
+      WHERE s.category_id = ? AND s.is_active = TRUE
+      ORDER BY s.created_at DESC
+    `;
+    const [results] = await db.query(sql, [category_id]);
+
+    res.json({
+      success: true,
+      count: results.length,
+      data: results
+    });
+  } catch (err) {
+    console.error("DB Error (getServiceByCategoryId):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
 // ✅ Export all functions
 module.exports = {
   createService,
   getAllServices,
   getServiceById,
+  getServiceByCategoryId,
   updateService,
   deleteService,
 };
