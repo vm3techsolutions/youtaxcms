@@ -5,12 +5,15 @@ import Link from "next/link";
 
 // ✅ Heroicons (solid)
 import {
+  HomeIcon,
   Cog6ToothIcon,
+  ClipboardDocumentListIcon,
   BanknotesIcon,
   ArrowDownTrayIcon,
   IdentificationIcon,
   UserCircleIcon,
   LifebuoyIcon,
+DocumentTextIcon,
 } from "@heroicons/react/24/solid";
 
 export default function Sidebar() {
@@ -20,11 +23,20 @@ export default function Sidebar() {
     <div className="h-full bg-white flex flex-col justify-between">
       {/* Navigation */}
       <nav className="mt-6 space-y-1">
+
+        <Link
+          href="/user/dashboard"
+          className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
+        >
+          <HomeIcon className="w-5 h-5" />
+          <span>Dashboard</span>
+        </Link>
+
         <Link
           href="/user/services"
           className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
         >
-          <Cog6ToothIcon className="w-5 h-5" />
+          <DocumentTextIcon  className="w-5 h-5" />
           <span>Service</span>
         </Link>
 
@@ -32,7 +44,7 @@ export default function Sidebar() {
           href="/user/orders"
           className="flex items-center gap-3 px-6 py-2 hover:bg-gray-100 rounded-md text-gray-700"
         >
-          <Cog6ToothIcon className="w-5 h-5" />
+          <ClipboardDocumentListIcon className="w-5 h-5" />
           <span>Orders</span>
         </Link>
 

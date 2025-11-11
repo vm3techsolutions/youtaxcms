@@ -2,52 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import axiosInstance from "@/api/axiosInstance";
+import { useDispatch, useSelector } from "react-redux";
+import { resetPassword, clearPasswordMessages } from "@/store/slices/passwordResetSlice";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  const { loading, successMessage, error } = useSelector((state) => state.passwordReset);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-
-  // ✅ Get token from query params
   const token = searchParams.get("token");
 
   useEffect(() => {
     if (!token) {
-      setError("Invalid or missing token");
+      dispatch(clearPasswordMessages());
     }
-  }, [token]);
+  }, [token, dispatch]);
+
+  useEffect(() => {
+    if (successMessage) {
+      setTimeout(() => {
+        router.push("/user/login");
+        dispatch(clearPasswordMessages());
+      }, 2000);
+    }
+  }, [successMessage, router, dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      alert("Passwords do not match");
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await axiosInstance.post("/user/reset-password", {
-        token,
-        newPassword,
-      });
-
-      setSuccessMessage(response.data.message);
-      setTimeout(() => {
-        router.push("/user/login"); // redirect to login after success
-      }, 2000);
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to reset password");
-    } finally {
-      setLoading(false);
-    }
+    dispatch(resetPassword({ token, newPassword }));
   };
 
   return (

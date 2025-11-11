@@ -176,7 +176,7 @@ export default function OrderDetailPage() {
         <strong>Status:</strong>{" "}
         <span className="px-2 py-1 rounded text-white bg-blue-600">{order.status}</span>
       </p>
-      <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString()}</p>
+      <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString('en-GB')}</p>
 
       {renderSteps(order)}
 
@@ -209,24 +209,61 @@ export default function OrderDetailPage() {
                       </span>
                     )}
                   </td>
-                  <td className="p-2 border">
-                    {doc.signed_url ? (
-                      <div
-                        className="cursor-pointer hover:opacity-80"
-                        onClick={() => setPreviewImage(doc.signed_url)}
-                      >
-                        <Image
-                          src={doc.signed_url}
-                          alt={doc.doc_name}
-                          width={100}
-                          height={100}
-                          className="object-cover mx-auto rounded-md shadow"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-red-500">No Preview</span>
-                    )}
-                  </td>
+                  <td className="p-2 border text-center">
+  { doc.status === "rejected" ? (
+    // 📤 Show upload button when rejected
+    <button
+      onClick={() => alert(`Re-upload functionality for ${doc.doc_name} coming soon`)}
+      className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-semibold"
+    >
+      Upload Document
+    </button>
+  ) : doc.signed_url ? (
+    (() => {
+      // 🧠 Extract only the part before query parameters
+      const cleanUrl = doc.signed_url.split('?')[0];
+
+      // Check if file is image
+      const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(cleanUrl);
+
+      // Extract correct file extension safely
+      const match = cleanUrl.match(/\.([a-zA-Z0-9]+)$/);
+      const fileExtension = match ? match[1].toUpperCase() : 'FILE';
+
+      if (isImage) {
+        // 🖼️ Show image preview
+        return (
+          <div
+            className="cursor-pointer hover:opacity-80"
+            onClick={() => setPreviewImage(doc.signed_url)}
+          >
+            <Image
+              src={doc.signed_url}
+              alt={doc.doc_name}
+              width={100}
+              height={100}
+              className="object-cover mx-auto rounded-md shadow"
+            />
+          </div>
+        );
+      } else {
+        // 📄 Show extension thumbnail box
+        return (
+          <div
+            className="w-20 h-20 flex flex-col items-center justify-center bg-gray-100 border rounded-md shadow mx-auto cursor-pointer hover:bg-gray-200"
+            onClick={() => window.open(doc.signed_url, "_blank")}
+          >
+            <span className="text-sm font-bold text-gray-700">{fileExtension}</span>
+          </div>
+        );
+      }
+    })()
+  ) : (
+    <span className="text-red-500">No Preview</span>
+  )}
+</td>
+
+
                 </tr>
               ))}
             </tbody>

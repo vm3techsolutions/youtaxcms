@@ -116,7 +116,7 @@ export default function UserOrdersClient() {
                     {getStatusName(order.status)}
                   </span>
                 </td>
-                <td className="p-2 border">{new Date(order.created_at).toLocaleDateString()}</td>
+                <td className="p-2 border">{new Date(order.created_at).toLocaleDateString('en-GB')}</td>
                 <td className="p-2 border">
                   {docsUploaded.length > 0 && (
                     <ul className="text-sm text-gray-600 mt-1 list-disc list-inside">

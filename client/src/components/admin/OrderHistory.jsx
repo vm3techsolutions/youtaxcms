@@ -149,7 +149,7 @@ const OrderHistory = () => {
                     {order.status.replace("_", " ")}
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleDateString()}
+                    {new Date(order.created_at).toLocaleDateString('en-GB')}
                   </td>
                 </tr>
               ))

@@ -96,7 +96,7 @@ export default function DeliverablesPage() {
                     "-"
                   )}
                 </td>
-                <td className="py-2 px-4 border">{new Date(d.created_at).toLocaleString()}</td>
+                <td className="py-2 px-4 border">{new Date(d.created_at).toLocaleString('en-GB')}</td>
               </tr>
             ))}
           </tbody>

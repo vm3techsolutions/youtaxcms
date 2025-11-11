@@ -207,7 +207,7 @@ export default function AccountsOrdersPage() {
 </td>
 
         <td className="py-2 px-4 border">
-          {new Date(p.created_at).toLocaleString()}
+          {new Date(p.created_at).toLocaleString('en-GB')}
         </td>
       </tr>
     ))

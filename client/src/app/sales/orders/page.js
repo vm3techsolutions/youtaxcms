@@ -15,7 +15,7 @@ import axiosInstance from "@/api/axiosInstance";
 export default function SalesOrdersPage() {
   const dispatch = useDispatch();
 
-  // Sales state  
+  // Sales state
   const { pendingOrders, loadingFetch, loadingUpdate, error, success } =
     useSelector((state) => state.sales);
 
@@ -62,9 +62,12 @@ export default function SalesOrdersPage() {
       const updatedOrders = await Promise.all(
         pendingOrders.map(async (order) => {
           try {
-            const res = await axiosInstance.get(`/order-documents/${order.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await axiosInstance.get(
+              `/order-documents/${order.id}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
             return { ...order, documents: res.data };
           } catch (err) {
             console.error("❌ Error fetching docs for order", order.id, err);
@@ -112,35 +115,31 @@ export default function SalesOrdersPage() {
   //   // TODO: Add API call here
   // };
 
-const handleAssignAccountant = async (orderId) => {
-  const accountantId = Number(assignedAccountant[orderId]); // convert to number
-  if (!accountantId) return alert("Select an accountant first");
+  const handleAssignAccountant = async (orderId) => {
+    const accountantId = Number(assignedAccountant[orderId]); // convert to number
+    if (!accountantId) return alert("Select an accountant first");
 
-  try {
-    // Send both order_id and account_id to the backend
-    await dispatch(
-      triggerOrderStatusCheck({ order_id: orderId, account_id: accountantId })
-    ).unwrap();
+    try {
+      // Send both order_id and account_id to the backend
+      await dispatch(
+        triggerOrderStatusCheck({ order_id: orderId, account_id: accountantId })
+      ).unwrap();
 
-    // Find accountant name
-    const accountant = accountants.find((a) => a.id === accountantId);
+      // Find accountant name
+      const accountant = accountants.find((a) => a.id === accountantId);
 
-    // Update forwardedAccountants state
-    setForwardedAccountants((prev) => ({
-      ...prev,
-      [orderId]: accountant?.name || "Unknown",
-    }));
+      // Update forwardedAccountants state
+      setForwardedAccountants((prev) => ({
+        ...prev,
+        [orderId]: accountant?.name || "Unknown",
+      }));
 
-    alert(`Order #${orderId} forwarded to Accounts: ${accountant?.name}`);
-  } catch (err) {
-    console.error("Failed to forward order:", err);
-    alert("Failed to forward order. Try again.");
-  }
-};
-
-
-
-
+      alert(`Order #${orderId} forwarded to Accounts: ${accountant?.name}`);
+    } catch (err) {
+      console.error("Failed to forward order:", err);
+      alert("Failed to forward order. Try again.");
+    }
+  };
 
   // Preview documents
   const renderDocumentPreview = (doc) => {
@@ -181,9 +180,15 @@ const handleAssignAccountant = async (orderId) => {
 
     if (filter === "pending_docs" && displayStatus !== "Pending Documents")
       return false;
-    if (filter === "pending_verification" && displayStatus !== "Pending Verification")
+    if (
+      filter === "pending_verification" &&
+      displayStatus !== "Pending Verification"
+    )
       return false;
-    if (filter === "completed" && displayStatus !== "Completed / All Docs Verified")
+    if (
+      filter === "completed" &&
+      displayStatus !== "Completed / All Docs Verified"
+    )
       return false;
 
     return true;
@@ -214,7 +219,9 @@ const handleAssignAccountant = async (orderId) => {
       {rolesLoading && <p className="text-blue-600">Loading roles...</p>}
       {loadingAdmins && <p className="text-blue-600">Loading accountants...</p>}
       {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-green-600 mb-4">✅ Action completed successfully</p>}
+      {success && (
+        <p className="text-green-600 mb-4">✅ Action completed successfully</p>
+      )}
 
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
         <table className="w-full border-collapse">
@@ -231,7 +238,10 @@ const handleAssignAccountant = async (orderId) => {
           <tbody>
             {filteredOrders.length === 0 && !loadingFetch ? (
               <tr>
-                <td colSpan="6" className="text-center text-gray-500 p-4 italic">
+                <td
+                  colSpan="6"
+                  className="text-center text-gray-500 p-4 italic"
+                >
                   No orders found 🎉
                 </td>
               </tr>
@@ -239,13 +249,16 @@ const handleAssignAccountant = async (orderId) => {
               filteredOrders.map((order) => {
                 const totalDocs = order.documents?.length || 0;
                 const verifiedDocs =
-                  order.documents?.filter((d) => d.status === "verified").length || 0;
+                  order.documents?.filter((d) => d.status === "verified")
+                    .length || 0;
                 const allDocsUploaded = totalDocs > 0;
-                const allDocsVerified = allDocsUploaded && totalDocs === verifiedDocs;
+                const allDocsVerified =
+                  allDocsUploaded && totalDocs === verifiedDocs;
 
                 let displayStatus = "Pending Documents";
                 if (!allDocsUploaded) displayStatus = "Pending Documents";
-                else if (!allDocsVerified) displayStatus = "Pending Verification";
+                else if (!allDocsVerified)
+                  displayStatus = "Pending Verification";
                 else displayStatus = "Completed / All Docs Verified";
 
                 return (
@@ -260,11 +273,14 @@ const handleAssignAccountant = async (orderId) => {
                         {allDocsUploaded ? (
                           <button
                             onClick={() =>
-                              setExpandedOrder(expandedOrder === order.id ? null : order.id)
+                              setExpandedOrder(
+                                expandedOrder === order.id ? null : order.id
+                              )
                             }
                             className="px-3 py-1 text-sm primary-btn rounded"
                           >
-                            {expandedOrder === order.id ? "Hide" : "View"} Documents
+                            {expandedOrder === order.id ? "Hide" : "View"}{" "}
+                            Documents
                           </button>
                         ) : (
                           <span className="text-gray-500">No Docs</span>
@@ -272,53 +288,57 @@ const handleAssignAccountant = async (orderId) => {
                       </td>
 
                       <td className="p-3">
-  {forwardedAccountants[order.id] ? (
-    <span className="font-medium text-gray-700">
-      Forwarded to {forwardedAccountants[order.id]}
-    </span>
-  ) : (
-    <>
-      <select
-        className="border p-1 rounded mr-2"
-        value={assignedAccountant[order.id] || ""}
-        onChange={(e) =>
-          setAssignedAccountant({
-            ...assignedAccountant,
-            [order.id]: e.target.value,
-          })
-        }
-        disabled={!allDocsVerified || accountants.length === 0}
-      >
-        <option value="">Select Accountant</option>
-        {accountants.map((acc) => (
-          <option key={acc.id} value={acc.id}>
-            {acc.name}
-          </option>
-        ))}
-      </select>
+                        {forwardedAccountants[order.id] ? (
+                          <span className="font-medium text-gray-700">
+                            Forwarded to {forwardedAccountants[order.id]}
+                          </span>
+                        ) : (
+                          <>
+                            <select
+                              className="border p-1 rounded mr-2"
+                              value={assignedAccountant[order.id] || ""}
+                              onChange={(e) =>
+                                setAssignedAccountant({
+                                  ...assignedAccountant,
+                                  [order.id]: e.target.value,
+                                })
+                              }
+                              disabled={
+                                !allDocsVerified || accountants.length === 0
+                              }
+                            >
+                              <option value="">Select Accountant</option>
+                              {accountants.map((acc) => (
+                                <option key={acc.id} value={acc.id}>
+                                  {acc.name}
+                                </option>
+                              ))}
+                            </select>
 
-      <button
-        onClick={() => handleAssignAccountant(order.id)}
-        disabled={!allDocsVerified || accountants.length === 0}
-        className={`px-3 py-1 text-sm rounded ${
-          allDocsVerified && accountants.length > 0
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : "bg-gray-400 text-gray-700 cursor-not-allowed"
-        }`}
-      >
-        Assign
-      </button>
-    </>
-  )}
-</td>
-
-
+                            <button
+                              onClick={() => handleAssignAccountant(order.id)}
+                              disabled={
+                                !allDocsVerified || accountants.length === 0
+                              }
+                              className={`px-3 py-1 text-sm rounded ${
+                                allDocsVerified && accountants.length > 0
+                                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                                  : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                              }`}
+                            >
+                              Assign
+                            </button>
+                          </>
+                        )}
+                      </td>
                     </tr>
 
                     {expandedOrder === order.id && allDocsUploaded && (
                       <tr>
                         <td colSpan="6" className="bg-gray-50 p-4">
-                          <h3 className="text-lg font-semibold mb-2">Documents</h3>
+                          <h3 className="text-lg font-semibold mb-2">
+                            Documents
+                          </h3>
                           <div className="flex flex-wrap gap-4">
                             {order.documents.map((doc) => (
                               <div
@@ -329,7 +349,9 @@ const handleAssignAccountant = async (orderId) => {
                                 <p className="font-medium text-sm mt-2 text-center">
                                   {doc.doc_name || "Unnamed Document"}
                                 </p>
-                                <p className="text-xs text-gray-500">{doc.doc_type}</p>
+                                <p className="text-xs text-gray-500">
+                                  {doc.doc_type}
+                                </p>
                                 <p
                                   className={`text-xs ${
                                     doc.status === "verified"
@@ -345,7 +367,11 @@ const handleAssignAccountant = async (orderId) => {
                                 <div className="flex gap-2 mt-2">
                                   <button
                                     onClick={() =>
-                                      handleVerifyReject(order.id, doc.id, "verified")
+                                      handleVerifyReject(
+                                        order.id,
+                                        doc.id,
+                                        "verified"
+                                      )
                                     }
                                     disabled={loadingUpdate}
                                     className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
@@ -354,7 +380,11 @@ const handleAssignAccountant = async (orderId) => {
                                   </button>
                                   <button
                                     onClick={() =>
-                                      handleVerifyReject(order.id, doc.id, "rejected")
+                                      handleVerifyReject(
+                                        order.id,
+                                        doc.id,
+                                        "rejected"
+                                      )
                                     }
                                     disabled={loadingUpdate}
                                     className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
