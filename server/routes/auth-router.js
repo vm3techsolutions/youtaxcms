@@ -17,6 +17,8 @@ const adminUsers = require('../controller/adminController/adminUsers/adminUsers'
 const services = require('../controller/services/services');
 const categoryController = require('../controller/services/serviceCategory/categoryController');
 const serviceDocuments = require('../controller/services/serviceDocuments');
+const serviceInput = require('../controller/services/serviceInput/serviceInputController');
+const serviceOrderInput = require('../controller/services/serviceInput/orderInputController');
 const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
 const { isSales } = require('../middleware/auth');
 const salesController = require('../controller/adminController/salesController/sales');
@@ -115,6 +117,16 @@ router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
 
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
+
+// service inpute
+router.post("/service-input", verifyToken, serviceInput.createServiceInput);
+router.get("/service-inputs/service/:serviceId", serviceInput.getServiceInputsByService);
+router.get("/service-input/:id", serviceInput.getServiceInputById);
+router.put("/service-input/:id", verifyToken, serviceInput.updateServiceInput);
+router.delete("/service-input/:id", verifyToken, serviceInput.deleteServiceInput);
+// service order input
+router.post("/order-input", verifyToken, serviceOrderInput.submitOrderInput);
+router.get("/order-inputs/order/:order_id", verifyToken, serviceOrderInput.getOrderInputs);
 
 //adminCustomerController
 //user
