@@ -11,7 +11,7 @@ const getPendingOrders = async (req, res) => {
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
        JOIN services s ON o.service_id = s.id
-       WHERE o.status = 'awaiting_docs'`
+       WHERE (o.status = 'awaiting_docs' OR o.status = 'pending')`
     );
     res.json(rows);
   } catch (err) {

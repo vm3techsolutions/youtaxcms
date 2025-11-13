@@ -89,6 +89,23 @@ const uploadOrderDocument = async (req, res) => {
       });
     }
 
+     // --- NEW: mark order as pending and add order log ---
+    try {
+      await db.query(
+        `UPDATE orders SET status = 'pending', updated_at = NOW() WHERE id = ?`,
+        [order_id]
+      );
+
+      await db.query(
+        `INSERT INTO order_logs (order_id, from_role, to_role, action, remarks, created_at)
+         VALUES (?,  'system', 'sale', 'documents_uploaded', 'Documents uploaded, awaiting verification', NOW())`,
+        [order_id, ]
+      );
+    } catch (err) {
+      console.error("❌ Error updating order status / inserting order log after document upload:", err);
+      // don't block response on logging failure
+    }
+
     res.status(201).json({
       message: "Order document uploaded successfully",
       files: uploadedFiles,
