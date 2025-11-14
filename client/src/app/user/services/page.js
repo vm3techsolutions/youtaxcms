@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchServices, fetchServiceById } from "@/store/slices/servicesSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
+import { fetchCategories } from "@/store/slices/categorySlice";
 
 // Reusable Price Info Component
 
@@ -41,14 +42,6 @@ function ServicePriceInfo({ service, paymentOption }) {
   );
 }
 
-
-
-
-
-
-
-
-
 export default function ServicesFlex() {
   const dispatch = useDispatch();
 
@@ -58,14 +51,16 @@ export default function ServicesFlex() {
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
   const { userInfo } = useSelector((state) => state.user);
   const { loading: orderLoading } = useSelector((state) => state.order);
-
+  const { categories } = useSelector((s) => s.category);
   const [expanded, setExpanded] = useState(null);
   const [modalService, setModalService] = useState(null);
   const [paymentOption, setPaymentOption] = useState("full");
   const [searchTerm, setSearchTerm] = useState(""); 
+  const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
     dispatch(fetchServices());
+    dispatch(fetchCategories());
   }, [dispatch]);
 
   const handleToggle = (serviceId) => {
@@ -120,9 +115,16 @@ export default function ServicesFlex() {
   };
 
    // ✅ Filter services based on search term
-  const filteredServices = services.filter((service) =>
-    service.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredServices = services.filter((service) => {
+    const matchesSearch =
+      service.name.toLowerCase().includes(searchTerm.toLowerCase());
+  
+    const matchesCategory =
+      activeCategory === "all" ||
+      Number(service.category_id) === Number(activeCategory);
+  
+    return matchesSearch && matchesCategory;
+  });
 
   if (servicesLoading)
     return <p className="text-center mt-8">Loading services...</p>;
@@ -140,6 +142,34 @@ export default function ServicesFlex() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
+      </div>
+
+      {/* ⭐ Horizontal Category Filter Bar */}
+      <div className="flex gap-3 overflow-x-auto pb-2 mb-6 justify-center">
+        <button
+          onClick={() => setActiveCategory("all")}
+          className={`px-4 py-2 rounded-full border whitespace-nowrap text-md font-bold ${
+            activeCategory === "all"
+              ? "primaryBg secondaryText border-yellow-200"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          All
+        </button>
+
+        {categories?.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`px-4 py-2 rounded-full border whitespace-nowrap text-md font-bold ${
+              activeCategory === cat.id
+                ? "primaryBg secondaryText border-yellow-200"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {cat.name}
+          </button>
+        ))}
       </div>
 
       {/* Services List */}

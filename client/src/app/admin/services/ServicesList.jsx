@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchServices, updateService, resetSuccess, toggleServiceStatus  } from "@/store/slices/servicesSlice";
+import { fetchServices, updateService, resetSuccess, toggleServiceStatus } from "@/store/slices/servicesSlice";
 import {
   fetchDocumentsByService,
   createServiceDocument,
   deleteServiceDocument,
 } from "@/store/slices/serviceDocumentsSlice";
+import { fetchCategories } from "@/store/slices/categorySlice";
 import { Plus, X, Trash2, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,17 +16,18 @@ export default function ServiceCardsBookPopup() {
   const dispatch = useDispatch();
   const { services, loading: servicesLoading, error: servicesError, success } = useSelector((s) => s.services);
   const { serviceDocuments, loading: docsLoading, error: docsError } = useSelector((s) => s.serviceDocuments);
-
+  const { categories } = useSelector((s) => s.category);
   const [selectedService, setSelectedService] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [newDoc, setNewDoc] = useState(null);
   const [serviceUpdates, setServiceUpdates] = useState({});
-
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
 
   // Fetch all services
   useEffect(() => {
     dispatch(fetchServices());
+    dispatch(fetchCategories());
   }, [dispatch]);
 
   // Fetch documents for selected service
@@ -51,21 +53,33 @@ export default function ServiceCardsBookPopup() {
   }, [success, dispatch]);
 
   const handleToggleService = (id, currentStatus) => {
-  dispatch(toggleServiceStatus({ id, is_active: !currentStatus }));
-};
+    dispatch(toggleServiceStatus({ id, is_active: !currentStatus }));
+  };
 
   const handleServiceClick = (service) => {
     setSelectedService(service);
     setNewDoc(null);
     // Initialize editable fields
+    // setServiceUpdates({
+    //   name: service.name || "",
+    //   category_id: service.category_id || "",
+    //   description: service.description || "",
+    //   base_price: service.base_price || "",
+    //   advance_price: service.advance_price || "",
+    //   service_charges: service.service_charges || "",
+    //   sla_days: service.sla_days || "",
+    // });
+
     setServiceUpdates({
-      name: service.name || "",
-      description: service.description || "",
-      base_price: service.base_price || "",
-      advance_price: service.advance_price || "",
-      service_charges: service.service_charges || "",
-      sla_days: service.sla_days || "",
-    });
+  name: service.name ?? "",
+  category_id: service.category_id ?? "",
+  description: service.description ?? "",
+  base_price: service.base_price ?? "",
+  advance_price: service.advance_price ?? "",
+  service_charges: service.service_charges ?? "",
+  sla_days: service.sla_days ?? "",
+});
+
   };
 
   const handleAddDocument = () => {
@@ -117,9 +131,22 @@ export default function ServiceCardsBookPopup() {
 
 
   // Filtered services
-const filteredServices = services.filter((service) =>
-  service.name.toLowerCase().includes(searchQuery.toLowerCase())
-);
+  const filteredServices = services.filter((service) => {
+  const matchesSearch =
+    service.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const matchesCategory =
+    activeCategory === "all" ||
+    Number(service.category_id) === Number(activeCategory);
+
+  return matchesSearch && matchesCategory;
+});
+
+const selectedCategoryName =
+  activeCategory === "all"
+    ? "All Categories"
+    : categories?.find((c) => c.id === activeCategory)?.name || "";
+
 
   if (servicesLoading) return <p>Loading services...</p>;
   if (servicesError) return <p className="text-red-600">{servicesError}</p>;
@@ -128,34 +155,63 @@ const filteredServices = services.filter((service) =>
     <div className="p-6">
 
       {/* Search Bar */}
-  <div className="mb-4 flex justify-start">
-    <input
-      type="text"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      placeholder="Search services..."
-      className="border border-gray-300 rounded-lg p-2 w-full max-w-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
+      <div className="mb-4 flex justify-start">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search services..."
+          className="border border-gray-300 rounded-lg p-2 w-full max-w-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {filteredServices.length > 0 ? (
-      filteredServices.map((service) => (
-        <div
-          key={service.id}
-          className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
-          onClick={() => handleServiceClick(service)}
+      {/* ⭐ Horizontal Category Filter Bar */}
+      <div className="flex gap-3 overflow-x-auto pb-2 mb-6">
+        <button
+          onClick={() => setActiveCategory("all")}
+          className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${
+            activeCategory === "all"
+              ? "primaryBg secondaryText border-yellow-200"
+              : "bg-gray-100 text-gray-700"
+          }`}
         >
-          <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
-          <p className="text-gray-500 truncate">{service.description || "No description"}</p>
-        </div>
-      ))
-    ) : (
-      <p className="text-gray-500 col-span-full text-center">
-        No services found for “{searchQuery}”
-      </p>
-    )}
-  </div>
+          All
+        </button>
+
+        {categories?.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${
+              activeCategory === cat.id
+                ? "primaryBg secondaryText border-yellow-200"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
+
+        {/* Services Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredServices.length > 0 ? (
+          filteredServices.map((service) => (
+            <div
+              key={service.id}
+              className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
+              onClick={() => handleServiceClick(service)}
+            >
+              <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
+              <p className="text-gray-500 truncate">{service.description || "No description"}</p>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 col-span-full text-center">
+            No services found for “{searchQuery || selectedCategoryName}”
+          </p>
+        )}
+      </div>
 
       <AnimatePresence>
         {selectedService && (
@@ -189,6 +245,30 @@ const filteredServices = services.filter((service) =>
                 className="border rounded p-2 w-full mb-2"
                 placeholder="Service Name"
               />
+
+              {/* Category Dropdown */}
+              <div className="mb-4">
+                <label className="block font-semibold mb-1">Category</label>
+
+                <select
+                  value={serviceUpdates.category_id}
+                  onChange={(e) =>
+                    setServiceUpdates({ ...serviceUpdates, category_id: Number(e.target.value) })
+                  }
+                  className="border rounded p-2 w-full"
+                >
+                  <option value="">Select Category</option>
+
+                  {categories && categories.length > 0 &&
+                    categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
 
               <textarea
                 value={serviceUpdates.description}
@@ -246,7 +326,7 @@ const filteredServices = services.filter((service) =>
               >
                 Update Service
               </button>
-              
+
 
               {/* Documents Section */}
               <div className="mb-4">

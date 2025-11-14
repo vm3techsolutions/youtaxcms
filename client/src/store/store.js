@@ -22,6 +22,7 @@ import customersReducer from "./slices/customersSlice";
 import salesKycReducer from "./slices/salesKycSlice";
 import adminCustomerReducer from "./slices/adminCustomerSlice";
 import customerStatsReducer from "./slices/customerStatsSlice";
+import categoryReducer from "./slices/categorySlice";
 
 export const store = configureStore({
   reducer: {
@@ -48,5 +49,6 @@ export const store = configureStore({
     salesKyc: salesKycReducer,
     adminCustomer: adminCustomerReducer,
     customerStats: customerStatsReducer,
+    category: categoryReducer,
   },
 });
