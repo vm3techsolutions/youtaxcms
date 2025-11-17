@@ -10,6 +10,11 @@ import {
   fetchOrderPayments,
 } from "@/store/slices/userOrdersSlice";
 import { fetchServices } from "@/store/slices/servicesSlice";
+import {
+  fetchOrderInputs,
+  submitOrderInputs,
+  resetOrderInputsState,
+} from "@/store/slices/orderInputsSlice";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -27,8 +32,13 @@ export default function OrderDetailPage() {
     (state) => state.services
   );
 
+  const { items: orderInputs, loading: loadingInputs } = useSelector(
+    (state) => state.orderInputs
+  );
+
   const [order, setOrder] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [editableInputs, setEditableInputs] = useState({});
 
   // Load orders if not loaded
   useEffect(() => {
@@ -48,7 +58,49 @@ export default function OrderDetailPage() {
     dispatch(fetchUserOrderDocuments(o.id));
     dispatch(fetchServices());
     dispatch(fetchOrderPayments(o.id));
+    dispatch(fetchOrderInputs(o.id));
   }, [orders, orderId, dispatch]);
+
+  // Pre-fill editableInputs when orderInputs are loaded
+  useEffect(() => {
+    if (orderInputs.length) {
+      const initialValues = {};
+      orderInputs.forEach((input) => {
+        const key = `field_${input.service_input_id}`;
+        initialValues[key] =
+          input.text_value || input.selected_option || "";
+      });
+      setEditableInputs(initialValues);
+    }
+  }, [orderInputs]);
+
+   const handleInputChange = (fieldKey, value) => {
+    setEditableInputs((prev) => ({ ...prev, [fieldKey]: value }));
+  };
+
+  const handleSaveInputs = async () => {
+    try {
+      const inputsPayload = Object.entries(editableInputs).map(
+        ([key, value]) => ({
+          service_input_id: Number(key.replace("field_", "")),
+          text_value: typeof value === "string" ? value : null,
+          selected_option: typeof value === "string" || Array.isArray(value)
+            ? value
+            : null,
+        })
+      );
+
+      await dispatch(
+        submitOrderInputs({ order_id: order.id, inputs: inputsPayload })
+      ).unwrap();
+
+      alert("Order inputs updated successfully!");
+      dispatch(fetchOrderInputs(order.id)); // Refresh
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update inputs");
+    }
+  };
 
   if (loadingOrders || !order) return <p>Loading order details...</p>;
   if (loadingDocuments) return <p>Loading documents...</p>;
@@ -317,6 +369,45 @@ export default function OrderDetailPage() {
           </table>
         </div>
       )}
+
+      {/* ================= Order Inputs / Custom Fields ================= */}
+      <h3 className="mt-6 font-semibold text-lg border-b pb-2">
+        Custom Fields
+      </h3>
+      {loadingInputs ? (
+        <p>Loading inputs...</p>
+      ) : orderInputs.length === 0 ? (
+        <p className="text-gray-500 mt-2">No custom fields defined for this order.</p>
+      ) : (
+        <div className="mt-2 space-y-4">
+          {orderInputs.map((input) => {
+            const fieldKey = `field_${input.service_input_id}`;
+            const value = editableInputs[fieldKey] || "";
+
+            return (
+              <div key={input.id} className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <label className="w-full md:w-1/3 font-medium">{input.label_name}</label>
+                <input
+                  type="text"
+                  value={value}
+                  onChange={(e) => handleInputChange(fieldKey, e.target.value)}
+                  className="border p-2 rounded w-full md:w-2/3"
+                />
+              </div>
+            );
+          })}
+
+          <div className="text-right mt-2">
+            <button
+              onClick={handleSaveInputs}
+              className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* ================= Payments / Invoices ================= */}
       <h3 className="mt-6 font-semibold text-lg border-b pb-2">
