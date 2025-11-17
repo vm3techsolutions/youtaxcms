@@ -145,7 +145,7 @@ export default function ServicesFlex() {
       </div>
 
       {/* ⭐ Horizontal Category Filter Bar */}
-      <div className="flex gap-3 overflow-x-auto pb-2 mb-6 justify-center">
+      <div className="flex flex-wrap gap-3 pb-2 mb-6 justify-center">
         <button
           onClick={() => setActiveCategory("all")}
           className={`px-4 py-2 rounded-full border whitespace-nowrap text-md font-bold ${

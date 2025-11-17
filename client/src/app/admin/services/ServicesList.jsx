@@ -189,7 +189,7 @@ export default function ServiceCardsBookPopup() {
       </div>
 
       {/* ⭐ Horizontal Category Filter Bar */}
-      <div className="flex gap-3 overflow-x-auto pb-2 mb-6">
+      <div className="flex gap-3 flex-wrap pb-2 mb-6">
         <button
           onClick={() => setActiveCategory("all")}
           className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${activeCategory === "all"

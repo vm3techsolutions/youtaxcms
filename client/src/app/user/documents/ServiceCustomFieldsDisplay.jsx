@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getServiceInputsByService } from "@/store/slices/serviceInputSlice";
 
-export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
+export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly = false, initialValues = {} }) {
     const dispatch = useDispatch();
     const { items: serviceInputs } = useSelector((state) => state.serviceInput);
     const [formValues, setFormValues] = useState({});
@@ -14,6 +14,11 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
         }
     }, [serviceId, dispatch]);
 
+    useEffect(() => {
+        // Set initial values whenever they change
+        setFormValues(initialValues);
+    }, [initialValues]);
+
     const handleChange = (fieldId, value) => {
         setFormValues((prev) => ({
             ...prev,
@@ -23,6 +28,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
+        if (readOnly) return;
         console.log("Submitting custom fields:", formValues);
         if (onSubmit) onSubmit(formValues); // callback to parent
         setFormValues({}); // clear fields after submit
@@ -37,6 +43,16 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
             {serviceInputs.map((field) => {
                 const fieldKey = `field_${field.id}`;
                 const value = formValues[fieldKey] || "";
+
+                // Read-only view
+                if (readOnly) {
+                    return (
+                        <div key={field.id} className="mb-4">
+                            <label className="block font-medium mb-1">{field.label_name}:</label>
+                            <p className="p-2 bg-gray-100 rounded border">{Array.isArray(value) ? value.join(", ") : value || "-"}</p>
+                        </div>
+                    );
+                }
 
                 return (
                     <div key={field.id} className="mb-4">
@@ -70,17 +86,6 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
                             />
                         )}
 
-                        {/* Number */}
-                        {field.input_type === "number" && (
-                            <input
-                                type="number"
-                                required={field.is_mandatory}
-                                placeholder={field.placeholder || ""}
-                                value={value}
-                                onChange={(e) => handleChange(fieldKey, e.target.value)}
-                                className="border p-2 w-full rounded"
-                            />
-                        )}
 
                         {/* Radio, Checkbox, Dropdown */}
                         {["radio", "checkbox", "dropdown"].includes(field.input_type) && (

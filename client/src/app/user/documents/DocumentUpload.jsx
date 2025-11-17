@@ -75,14 +75,14 @@ export default function DocumentUpload() {
   };
 
   const openPreview = (file) => {
-  setPreviewPopup({
-    url: file.url || file.signed_url || file.file_url,
-    name: file.name || file.file_url?.split("/").pop(),
-  });
-};
+    setPreviewPopup({
+      url: file.url || file.signed_url || file.file_url,
+      name: file.name || file.file_url?.split("/").pop(),
+    });
+  };
 
 
-// =========================
+  // =========================
   // Handle custom fields submit
   // =========================
   const handleCustomFieldsSubmit = async (formValues) => {
@@ -225,19 +225,19 @@ export default function DocumentUpload() {
                         >
                           {isImage ? (
                             <img
-          src={url}
-          alt={file.name}
-          className="w-full h-full object-cover"
-          onClick={() => openPreview({ url, name: file.name })}
-        />
+                              src={url}
+                              alt={file.name}
+                              className="w-full h-full object-cover"
+                              onClick={() => openPreview({ url, name: file.name })}
+                            />
 
                           ) : (
                             <p
-          className="text-xs text-center p-1 cursor-pointer underline"
-          onClick={() => openPreview({ url, name: file.name })}
-        >
-          {file.name}
-        </p>
+                              className="text-xs text-center p-1 cursor-pointer underline"
+                              onClick={() => openPreview({ url, name: file.name })}
+                            >
+                              {file.name}
+                            </p>
                           )}
 
                           <button
@@ -258,16 +258,27 @@ export default function DocumentUpload() {
         })}
 
         <div className="text-right mt-4">
-          <button
-            type="submit"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            disabled={loading}
-          >
-            {loading ? "Uploading..." : "Submit Documents"}
-          </button>
+          {uploadedDocs?.some((doc) => documents.map(d => d.id).includes(doc.service_doc_id)) ? (
+            <button
+              type="button"
+              onClick={() => router.push(`/order-documents?orderId=${orderId}&serviceId=${serviceId}&serviceName=${serviceName}`)}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Submitted Documents
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="px-6 py-3 secondaryBg text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={loading}
+            >
+              {loading ? "Uploading..." : "Submit Documents"}
+            </button>
+          )}
         </div>
+
       </form>
-{/* =========================
+      {/* =========================
           Custom Fields Form
       ========================= */}
       <div className="mt-10">

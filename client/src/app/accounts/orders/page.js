@@ -104,6 +104,7 @@ export default function AccountsOrdersPage() {
             <tr>
               <th className="py-2 px-4 border">Order ID</th>
               <th className="py-2 px-4 border">Customer</th>
+              <th className="py-2 px-4 border">Service</th>
               <th className="py-2 px-4 border">Total</th>
               <th className="py-2 px-4 border">Paid</th>
               <th className="py-2 px-4 border">Status</th>
@@ -123,6 +124,7 @@ export default function AccountsOrdersPage() {
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="py-2 px-4 border">{order.id}</td>
                 <td className="py-2 px-4 border">{order.customer_name || order.customer_id}</td>
+                <td className="py-2 px-4 border">{order.service_name || "N/A"}</td> 
                 <td className="py-2 px-4 border">₹{order.total_amount}</td>
                 <td className="py-2 px-4 border">₹{order.paid_amount || 0}</td>
                 <td className="py-2 px-4 border">
