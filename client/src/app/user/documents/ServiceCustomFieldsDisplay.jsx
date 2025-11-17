@@ -4,140 +4,143 @@ import { useDispatch, useSelector } from "react-redux";
 import { getServiceInputsByService } from "@/store/slices/serviceInputSlice";
 
 export default function ServiceCustomFieldsForm({ serviceId, onSubmit }) {
-  const dispatch = useDispatch();
-  const { items: serviceInputs } = useSelector((state) => state.serviceInput);
-  const [formValues, setFormValues] = useState({});
+    const dispatch = useDispatch();
+    const { items: serviceInputs } = useSelector((state) => state.serviceInput);
+    const [formValues, setFormValues] = useState({});
 
-  useEffect(() => {
-    if (serviceId) {
-      dispatch(getServiceInputsByService(serviceId));
-    }
-  }, [serviceId, dispatch]);
+    useEffect(() => {
+        if (serviceId) {
+            dispatch(getServiceInputsByService(serviceId));
+        }
+    }, [serviceId, dispatch]);
 
-  const handleChange = (fieldId, value) => {
-    setFormValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
-  };
+    const handleChange = (fieldId, value) => {
+        setFormValues((prev) => ({
+            ...prev,
+            [fieldId]: value,
+        }));
+    };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    console.log("Submitting custom fields:", formValues);
-    if (onSubmit) onSubmit(formValues); // callback to parent
-    setFormValues({}); // clear fields after submit
-  };
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        console.log("Submitting custom fields:", formValues);
+        if (onSubmit) onSubmit(formValues); // callback to parent
+        setFormValues({}); // clear fields after submit
+    };
 
-  if (!serviceInputs.length) return null;
+    if (!serviceInputs.length) return null;
 
-  return (
-    <form onSubmit={handleFormSubmit} className="max-w-2xl mx-auto p-6 bg-white rounded shadow">
-      <h3 className="text-xl font-semibold mb-4">Additional Service Fields</h3>
+    return (
+        <form onSubmit={handleFormSubmit} className="max-w-2xl mx-auto p-6 bg-white rounded shadow">
+            <h3 className="text-xl font-semibold mb-4">Additional Service Fields</h3>
 
-      {serviceInputs.map((field) => {
-        const fieldKey = `field_${field.id}`;
-        const value = formValues[fieldKey] || "";
+            {serviceInputs.map((field) => {
+                const fieldKey = `field_${field.id}`;
+                const value = formValues[fieldKey] || "";
 
-        return (
-          <div key={field.id} className="mb-4">
-            <label className="block font-medium mb-1">
-              {field.label_name} {field.is_mandatory && <span className="text-red-500">*</span>}
-            </label>
+                return (
+                    <div key={field.id} className="mb-4">
+                        <label className="block font-medium mb-1">
+                            {field.label_name}
+                            {field.is_mandatory ? (
+                                <span className="text-red-500 ml-1">*</span>
+                            ) : null}
+                        </label>
 
-            {/* Text */}
-            {field.input_type === "text" && (
-              <input
-                type="text"
-                required={field.is_mandatory}
-                placeholder={field.placeholder || ""}
-                value={value}
-                onChange={(e) => handleChange(fieldKey, e.target.value)}
-                className="border p-2 w-full rounded"
-              />
-            )}
+                        {/* Text */}
+                        {field.input_type === "text" && (
+                            <input
+                                type="text"
+                                required={field.is_mandatory}
+                                placeholder={field.placeholder || ""}
+                                value={value}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                className="border p-2 w-full rounded"
+                            />
+                        )}
 
-            {/* Textarea */}
-            {field.input_type === "textarea" && (
-              <textarea
-                required={field.is_mandatory}
-                placeholder={field.placeholder || ""}
-                value={value}
-                onChange={(e) => handleChange(fieldKey, e.target.value)}
-                className="border p-2 w-full rounded"
-              />
-            )}
+                        {/* Textarea */}
+                        {field.input_type === "textarea" && (
+                            <textarea
+                                required={field.is_mandatory}
+                                placeholder={field.placeholder || ""}
+                                value={value}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                className="border p-2 w-full rounded"
+                            />
+                        )}
 
-            {/* Number */}
-            {field.input_type === "number" && (
-              <input
-                type="number"
-                required={field.is_mandatory}
-                placeholder={field.placeholder || ""}
-                value={value}
-                onChange={(e) => handleChange(fieldKey, e.target.value)}
-                className="border p-2 w-full rounded"
-              />
-            )}
+                        {/* Number */}
+                        {field.input_type === "number" && (
+                            <input
+                                type="number"
+                                required={field.is_mandatory}
+                                placeholder={field.placeholder || ""}
+                                value={value}
+                                onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                className="border p-2 w-full rounded"
+                            />
+                        )}
 
-            {/* Radio, Checkbox, Dropdown */}
-            {["radio", "checkbox", "dropdown"].includes(field.input_type) && (
-              <div className="flex flex-col gap-2 mt-1">
-                {field.options?.split(",").map((opt, idx) => {
-                  if (field.input_type === "dropdown") {
-                    return (
-                      <select
-                        key={idx}
-                        required={field.is_mandatory}
-                        value={value}
-                        onChange={(e) => handleChange(fieldKey, e.target.value)}
-                        className="border p-2 w-full rounded"
-                      >
-                        <option value="">{field.placeholder || "Select"}</option>
-                        <option value={opt}>{opt}</option>
-                      </select>
-                    );
-                  }
+                        {/* Radio, Checkbox, Dropdown */}
+                        {["radio", "checkbox", "dropdown"].includes(field.input_type) && (
+                            <div className="flex flex-col gap-2 mt-1">
+                                {field.options?.split(",").map((opt, idx) => {
+                                    if (field.input_type === "dropdown") {
+                                        return (
+                                            <select
+                                                key={idx}
+                                                required={field.is_mandatory}
+                                                value={value}
+                                                onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                                className="border p-2 w-full rounded"
+                                            >
+                                                <option value="">{field.placeholder || "Select"}</option>
+                                                <option value={opt}>{opt}</option>
+                                            </select>
+                                        );
+                                    }
 
-                  return (
-                    <label key={idx} className="flex items-center gap-2">
-                      <input
-                        type={field.input_type}
-                        name={fieldKey}
-                        value={opt}
-                        checked={
-                          field.input_type === "checkbox"
-                            ? Array.isArray(value) && value.includes(opt)
-                            : value === opt
-                        }
-                        onChange={(e) => {
-                          if (field.input_type === "checkbox") {
-                            const newVal = Array.isArray(value) ? [...value] : [];
-                            if (e.target.checked) newVal.push(opt);
-                            else newVal.splice(newVal.indexOf(opt), 1);
-                            handleChange(fieldKey, newVal);
-                          } else {
-                            handleChange(fieldKey, opt);
-                          }
-                        }}
-                      />
-                      {opt}
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                                    return (
+                                        <label key={idx} className="flex items-center gap-2">
+                                            <input
+                                                type={field.input_type}
+                                                name={fieldKey}
+                                                value={opt}
+                                                checked={
+                                                    field.input_type === "checkbox"
+                                                        ? Array.isArray(value) && value.includes(opt)
+                                                        : value === opt
+                                                }
+                                                onChange={(e) => {
+                                                    if (field.input_type === "checkbox") {
+                                                        const newVal = Array.isArray(value) ? [...value] : [];
+                                                        if (e.target.checked) newVal.push(opt);
+                                                        else newVal.splice(newVal.indexOf(opt), 1);
+                                                        handleChange(fieldKey, newVal);
+                                                    } else {
+                                                        handleChange(fieldKey, opt);
+                                                    }
+                                                }}
+                                            />
+                                            {opt}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
 
-      <div className="text-right mt-4">
-        <button
-          type="submit"
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          Submit
-        </button>
-      </div>
-    </form>
-  );
+            <div className="text-right mt-4">
+                <button
+                    type="submit"
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                    Submit
+                </button>
+            </div>
+        </form>
+    );
 }
