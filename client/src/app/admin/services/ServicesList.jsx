@@ -9,8 +9,10 @@ import {
   deleteServiceDocument,
 } from "@/store/slices/serviceDocumentsSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
-import { Plus, X, Trash2, Save } from "lucide-react";
+import { Plus, X, Trash2, Save, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createServiceInput, getServiceInputsByService, updateServiceInput, deleteServiceInput } from "@/store/slices/serviceInputSlice";
+import ServiceCustomFields from "./ServiceCustomFields";
 
 export default function ServiceCardsBookPopup() {
   const dispatch = useDispatch();
@@ -23,6 +25,9 @@ export default function ServiceCardsBookPopup() {
   const [serviceUpdates, setServiceUpdates] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const { items: serviceInputs } = useSelector((s) => s.serviceInput);
+  const [editField, setEditField] = useState(null);
+
 
   // Fetch all services
   useEffect(() => {
@@ -71,16 +76,34 @@ export default function ServiceCardsBookPopup() {
     // });
 
     setServiceUpdates({
-  name: service.name ?? "",
-  category_id: service.category_id ?? "",
-  description: service.description ?? "",
-  base_price: service.base_price ?? "",
-  advance_price: service.advance_price ?? "",
-  service_charges: service.service_charges ?? "",
-  sla_days: service.sla_days ?? "",
-});
+      name: service.name ?? "",
+      category_id: service.category_id ?? "",
+      description: service.description ?? "",
+      base_price: service.base_price ?? "",
+      advance_price: service.advance_price ?? "",
+      service_charges: service.service_charges ?? "",
+      sla_days: service.sla_days ?? "",
+    });
 
+    // ⬇️ NEW: fetch service custom fields
+    dispatch(getServiceInputsByService(service.id));
   };
+
+  // Edit Custom field
+  const handleEditCustomField = (field) => {
+    setEditField({
+      id: field.id,
+      label: field.label_name,
+      type: field.input_type,
+      placeholder: field.placeholder,
+      required: field.is_mandatory,
+      options: field.options ? field.options.split(",") : [],
+    });
+
+    // Auto-fill into the ServiceCustomFields component
+    console.log("Editing field:", field);
+  };
+
 
   const handleAddDocument = () => {
     setNewDoc({
@@ -132,20 +155,20 @@ export default function ServiceCardsBookPopup() {
 
   // Filtered services
   const filteredServices = services.filter((service) => {
-  const matchesSearch =
-    service.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      service.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const matchesCategory =
-    activeCategory === "all" ||
-    Number(service.category_id) === Number(activeCategory);
+    const matchesCategory =
+      activeCategory === "all" ||
+      Number(service.category_id) === Number(activeCategory);
 
-  return matchesSearch && matchesCategory;
-});
+    return matchesSearch && matchesCategory;
+  });
 
-const selectedCategoryName =
-  activeCategory === "all"
-    ? "All Categories"
-    : categories?.find((c) => c.id === activeCategory)?.name || "";
+  const selectedCategoryName =
+    activeCategory === "all"
+      ? "All Categories"
+      : categories?.find((c) => c.id === activeCategory)?.name || "";
 
 
   if (servicesLoading) return <p>Loading services...</p>;
@@ -169,11 +192,10 @@ const selectedCategoryName =
       <div className="flex gap-3 overflow-x-auto pb-2 mb-6">
         <button
           onClick={() => setActiveCategory("all")}
-          className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${
-            activeCategory === "all"
-              ? "primaryBg secondaryText border-yellow-200"
-              : "bg-gray-100 text-gray-700"
-          }`}
+          className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${activeCategory === "all"
+            ? "primaryBg secondaryText border-yellow-200"
+            : "bg-gray-100 text-gray-700"
+            }`}
         >
           All
         </button>
@@ -182,18 +204,17 @@ const selectedCategoryName =
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${
-              activeCategory === cat.id
-                ? "primaryBg secondaryText border-yellow-200"
-                : "bg-gray-100 text-gray-700"
-            }`}
+            className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${activeCategory === cat.id
+              ? "primaryBg secondaryText border-yellow-200"
+              : "bg-gray-100 text-gray-700"
+              }`}
           >
             {cat.name}
           </button>
         ))}
       </div>
 
-        {/* Services Card */}
+      {/* Services Card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredServices.length > 0 ? (
           filteredServices.map((service) => (
@@ -422,6 +443,83 @@ const selectedCategoryName =
                     )}
                   </>
                 )}
+
+                <ServiceCustomFields
+                  service={selectedService}
+                  editField={editField}
+                  onSave={async (fields) => {
+
+                    console.log("Formatted data received:", fields);
+
+                    await dispatch(
+                      createServiceInput({
+                        service_id: selectedService.id,
+                        fields: fields,   // ❗ send array properly
+                      })
+                    );
+
+                    // Reload list after adding
+                    dispatch(getServiceInputsByService(selectedService.id));
+
+
+                  }}
+                />
+
+                {/* Custom Fields List */}
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-2">Custom Fields</h4>
+
+                  {serviceInputs.length === 0 ? (
+                    <p className="text-gray-500">No custom fields added yet.</p>
+                  ) : (
+                    serviceInputs.map((field) => (
+                      <div
+                        key={field.id}
+                        className="border rounded p-2 mb-2 flex justify-between items-center"
+                      >
+                        <div>
+                          <p className="font-semibold">{field.label_name}</p>
+                          <p className="text-sm text-gray-500">
+                            Type: {field.input_type}
+                          </p>
+
+                          {field.options && (
+                            <p className="text-xs text-gray-400">
+                              Options: {field.options}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-3">
+
+                          {/* ✏ Edit Button */}
+                          {/* <button
+                            onClick={() => handleEditCustomField(field)}
+                            className="text-blue-600"
+                          >
+                            <Pencil size={18} />
+                          </button> */}
+
+                          {/* 🗑 Delete Button */}
+                          <button
+                            onClick={() => {
+                              if (confirm("Are you sure you want to delete this custom field?")) {
+                                dispatch(deleteServiceInput(field.id));
+                              }
+                            }}
+                            className="text-red-600"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+
+                        </div>
+
+
+                      </div>
+                    ))
+                  )}
+                </div>
+
 
                 {docsError && <p className="text-red-600 mt-2">{docsError}</p>}
               </div>

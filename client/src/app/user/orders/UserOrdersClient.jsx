@@ -94,7 +94,7 @@ export default function UserOrdersClient() {
             if (order.status === "awaiting_docs") {
               docButtonText = "Upload Documents";
               docButtonClass = "primary-btn";
-            } else if (order.status === "under_review" || order.status === "in_progress" || order.status === "completed") {
+            } else if (order.status === "under_review" || order.status === "pending" || order.status === "in_progress" || order.status === "completed") {
               docButtonText = "View Documents";
               docButtonClass = "primary-btn";
             } else if (order.status === "awaiting_payment") {

@@ -21,6 +21,7 @@ export default function AddService() {
     requires_advance: false,
   });
 
+
   /* =====================================================
      FETCH ALL CATEGORIES ON LOAD
   =====================================================*/
@@ -40,26 +41,13 @@ export default function AddService() {
     });
   };
 
-  /* =====================================================
-     HANDLE CATEGORY CHECKBOX CLICK
-  =====================================================*/
-  // const toggleCategory = (id) => {
-  //   let selected = [...form.category_ids];
-
-  //   if (selected.includes(id)) {
-  //     selected = selected.filter((c) => c !== id);
-  //   } else {
-  //     selected.push(id);
-  //   }
-
-  //   setForm({ ...form, category_ids: selected });
-  // };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const res = await dispatch(createService(form));
     if (res.meta.requestStatus === "fulfilled") {
+      
       setForm({
         name: "",
         description: "",
@@ -168,6 +156,10 @@ export default function AddService() {
           Requires Advance Payment
         </label>
       </div>
+
+      
+
+        
 
       <button
         type="submit"

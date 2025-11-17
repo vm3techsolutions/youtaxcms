@@ -11,6 +11,7 @@ import {
 } from "@/store/slices/orderDocumentsSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import axiosInstance from "@/api/axiosInstance";
+import ServiceCustomFieldsDisplay from "./ServiceCustomFieldsDisplay";
 
 export default function DocumentUpload() {
   const dispatch = useDispatch();
@@ -20,6 +21,7 @@ export default function DocumentUpload() {
   const serviceId = searchParams.get("serviceId");
   const serviceName = searchParams.get("serviceName");
   const orderId = searchParams.get("orderId");
+  const [formValues, setFormValues] = useState({});
 
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
   const documents = serviceDocuments[serviceId] || [];
@@ -30,6 +32,8 @@ export default function DocumentUpload() {
 
   const [newFiles, setNewFiles] = useState({});
   const [previews, setPreviews] = useState({});
+
+  const [previewPopup, setPreviewPopup] = useState(null);
 
   useEffect(() => {
     if (!serviceId || !orderId) {
@@ -69,6 +73,45 @@ export default function DocumentUpload() {
     await axiosInstance.delete(`/order-document/${fileId}`);
     dispatch(fetchOrderDocuments(orderId));
   };
+
+  const openPreview = (file) => {
+  setPreviewPopup({
+    url: file.url || file.signed_url || file.file_url,
+    name: file.name || file.file_url?.split("/").pop(),
+  });
+};
+
+
+// =========================
+  // Handle custom fields submit
+  // =========================
+  const handleCustomFieldsSubmit = async (formValues) => {
+    try {
+      // Transform formValues to backend format
+      const inputs = Object.entries(formValues).map(([key, value]) => {
+        const service_input_id = parseInt(key.replace("field_", ""));
+        return {
+          service_input_id,
+          text_value: typeof value === "string" ? value : null,
+          selected_option:
+            typeof value === "string" || Array.isArray(value) ? value : null,
+        };
+      });
+
+      if (!inputs.length) return;
+
+      await axiosInstance.post("/order-input", {
+        order_id: orderId,
+        inputs,
+      });
+
+      alert("Custom fields saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save custom fields");
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -182,12 +225,19 @@ export default function DocumentUpload() {
                         >
                           {isImage ? (
                             <img
-                              src={url}
-                              alt="Preview"
-                              className="w-full h-full object-cover"
-                            />
+          src={url}
+          alt={file.name}
+          className="w-full h-full object-cover"
+          onClick={() => openPreview({ url, name: file.name })}
+        />
+
                           ) : (
-                            <p className="text-xs text-center p-1">{file.name}</p>
+                            <p
+          className="text-xs text-center p-1 cursor-pointer underline"
+          onClick={() => openPreview({ url, name: file.name })}
+        >
+          {file.name}
+        </p>
                           )}
 
                           <button
@@ -217,6 +267,46 @@ export default function DocumentUpload() {
           </button>
         </div>
       </form>
+{/* =========================
+          Custom Fields Form
+      ========================= */}
+      <div className="mt-10">
+        <ServiceCustomFieldsDisplay
+          serviceId={serviceId}
+          onSubmit={handleCustomFieldsSubmit}
+        />
+      </div>
+      {previewPopup && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+          <div className="bg-white p-4 rounded-lg max-w-3xl w-full relative">
+
+            <button
+              onClick={() => setPreviewPopup(null)}
+              className="absolute -top-3 -right-3 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-semibold mb-3 text-center">
+              {previewPopup.name}
+            </h3>
+
+            {previewPopup.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+              <img
+                src={previewPopup.url}
+                className="max-h-[70vh] mx-auto rounded"
+              />
+            ) : (
+              <iframe
+                src={previewPopup.url}
+                className="w-full h-[70vh] rounded"
+              ></iframe>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -69,114 +69,149 @@ export default function OrderDetailPage() {
 
   // ✅ If partial payment exists, keep Final Payment step
   if (order.payment_status === "partial") {
-    orderSteps.splice(4, 0, { key: "awaiting_final_payment", label: "Final Payment" });
+    orderSteps.splice(4, 0, {
+      key: "awaiting_final_payment",
+      label: "Final Payment",
+    });
   }
 
   const renderSteps = (order) => {
-  const completedSteps = [];
+    const completedSteps = [];
 
-  const payments = orderPayments[order.id] || [];
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const serviceCost = order.total_amount || 0; // make sure order.total_amount exists
+    const payments = orderPayments[order.id] || [];
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const serviceCost = order.total_amount || 0; // make sure order.total_amount exists
 
-  // --- Payment Step ---
-  if (totalPaid > 0) {
-    completedSteps.push("awaiting_payment");
-  }
+    // --- Payment Step ---
+    if (totalPaid > 0) {
+      completedSteps.push("awaiting_payment");
+    }
 
-  // --- Docs Step ---
-  const docsForService = serviceDocuments?.[order.service_id] || [];
-  const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
-  const uploaded = orderDocuments[order.id] || [];
-  if (mandatoryDocs.every((doc) => uploaded.some((f) => f.service_doc_id === doc.id))) {
-    completedSteps.push("awaiting_docs");
-  }
+    // --- Docs Step ---
+    const docsForService = serviceDocuments?.[order.service_id] || [];
+    const mandatoryDocs = docsForService.filter((doc) => doc.is_mandatory);
+    const uploaded = orderDocuments[order.id] || [];
+    if (
+      mandatoryDocs.every((doc) =>
+        uploaded.some((f) => f.service_doc_id === doc.id)
+      )
+    ) {
+      completedSteps.push("awaiting_docs");
+    }
 
-  // --- Other Steps ---
-  if (["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status))
-    completedSteps.push("under_review");
+    // --- Other Steps ---
+    if (
+      [
+        "under_review",
+        "in_progress",
+        "awaiting_final_payment",
+        "completed",
+      ].includes(order.status)
+    )
+      completedSteps.push("under_review");
 
-  if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
-    completedSteps.push("in_progress");
+    if (
+      ["in_progress", "awaiting_final_payment", "completed"].includes(
+        order.status
+      )
+    )
+      completedSteps.push("in_progress");
 
-  // --- Final Payment Step (if partial payment exists) ---
-  if (totalPaid > 0 && totalPaid < serviceCost) {
-    completedSteps.push("awaiting_final_payment");
-  }
+    // --- Final Payment Step (if partial payment exists) ---
+    if (totalPaid > 0 && totalPaid < serviceCost) {
+      completedSteps.push("awaiting_final_payment");
+    }
 
-  if (order.status === "completed") completedSteps.push("completed");
+    if (order.status === "completed") completedSteps.push("completed");
 
-  return (
-    <div className="flex flex-col items-center mt-4">
-      <h3 className="font-semibold mb-2">Order Steps</h3>
-      <div className="flex items-center w-full">
-        {orderSteps.map((step, index) => {
-          let statusClass = "bg-gray-300";
-          let textClass = "text-gray-500";
-          let label = step.label;
+    return (
+      <div className="flex flex-col items-center mt-4">
+        <h3 className="font-semibold mb-2">Order Steps</h3>
+        <div className="flex items-center w-full">
+          {orderSteps.map((step, index) => {
+            let statusClass = "bg-gray-300";
+            let textClass = "text-gray-500";
+            let label = step.label;
 
-          // ✅ Dynamic label for Payment
-          if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
-            if (totalPaid > 0 && totalPaid < serviceCost) {
-              label = "Partially Paid";
+            // ✅ Dynamic label for Payment
+            if (
+              step.key === "awaiting_payment" &&
+              completedSteps.includes(step.key)
+            ) {
+              if (totalPaid > 0 && totalPaid < serviceCost) {
+                label = "Partially Paid";
+                statusClass = "bg-yellow-500";
+                textClass = "text-yellow-600 font-semibold";
+              } else if (totalPaid >= serviceCost) {
+                label = "Final Payment Done";
+                statusClass = "bg-green-500";
+                textClass = "text-green-600 font-semibold";
+              }
+            }
+
+            // ✅ Dynamic label for Final Payment
+            if (
+              step.key === "awaiting_final_payment" &&
+              completedSteps.includes(step.key)
+            ) {
+              label = "Final Payment Pending";
               statusClass = "bg-yellow-500";
               textClass = "text-yellow-600 font-semibold";
-            } else if (totalPaid >= serviceCost) {
-              label = "Final Payment Done";
+            }
+
+            // ✅ Green tick for completed steps (except partial payment)
+            if (
+              completedSteps.includes(step.key) &&
+              !["awaiting_payment", "awaiting_final_payment"].includes(step.key)
+            ) {
               statusClass = "bg-green-500";
               textClass = "text-green-600 font-semibold";
+            } else if (step.key === order.status) {
+              statusClass = "bg-blue-500";
+              textClass = "text-blue-600 font-semibold";
             }
-          }
 
-          // ✅ Dynamic label for Final Payment
-          if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
-            label = "Final Payment Pending";
-            statusClass = "bg-yellow-500";
-            textClass = "text-yellow-600 font-semibold";
-          }
-
-          // ✅ Green tick for completed steps (except partial payment)
-          if (completedSteps.includes(step.key) && !["awaiting_payment", "awaiting_final_payment"].includes(step.key)) {
-            statusClass = "bg-green-500";
-            textClass = "text-green-600 font-semibold";
-          } else if (step.key === order.status) {
-            statusClass = "bg-blue-500";
-            textClass = "text-blue-600 font-semibold";
-          }
-
-          return (
-            <div key={step.key} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}
-                >
-                  {statusClass === "bg-green-500" && (
-                    <span className="text-white text-xs font-bold">&#10003;</span>
-                  )}
+            return (
+              <div key={step.key} className="flex items-center flex-1">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}
+                  >
+                    {statusClass === "bg-green-500" && (
+                      <span className="text-white text-xs font-bold">
+                        &#10003;
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-xs mt-1 ${textClass}`}>{label}</span>
                 </div>
-                <span className={`text-xs mt-1 ${textClass}`}>{label}</span>
+                {index < orderSteps.length - 1 && (
+                  <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>
+                )}
               </div>
-              {index < orderSteps.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-};
-
+    );
+  };
 
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Order #{order.id}</h2>
-      <p><strong>Service:</strong> {service?.name || "Unknown"}</p>
+      <p>
+        <strong>Service:</strong> {service?.name || "Unknown"}
+      </p>
       <p>
         <strong>Status:</strong>{" "}
-        <span className="px-2 py-1 rounded text-white bg-blue-600">{order.status}</span>
+        <span className="px-2 py-1 rounded text-white bg-blue-600">
+          {order.status}
+        </span>
       </p>
-      <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString('en-GB')}</p>
+      <p>
+        <strong>Created At:</strong>{" "}
+        {new Date(order.created_at).toLocaleString("en-GB")}
+      </p>
 
       {renderSteps(order)}
 
@@ -202,7 +237,9 @@ export default function OrderDetailPage() {
                   <td className="p-2 border">{doc.doc_type}</td>
                   <td className="p-2 border">
                     {doc.status === "verified" ? (
-                      <span className="text-green-600 font-semibold">Verified</span>
+                      <span className="text-green-600 font-semibold">
+                        Verified
+                      </span>
                     ) : (
                       <span className="text-yellow-600 font-semibold">
                         {doc.status === "submitted" ? "Submitted" : "Pending"}
@@ -210,60 +247,70 @@ export default function OrderDetailPage() {
                     )}
                   </td>
                   <td className="p-2 border text-center">
-  { doc.status === "rejected" ? (
-    // 📤 Show upload button when rejected
-    <button
-      onClick={() => alert(`Re-upload functionality for ${doc.doc_name} coming soon`)}
-      className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-semibold"
-    >
-      Upload Document
-    </button>
-  ) : doc.signed_url ? (
-    (() => {
-      // 🧠 Extract only the part before query parameters
-      const cleanUrl = doc.signed_url.split('?')[0];
+                    {doc.status === "rejected" ? (
+                      // 📤 Show upload button when rejected
+                      <button
+                        onClick={() =>
+                          alert(
+                            `Re-upload functionality for ${doc.doc_name} coming soon`
+                          )
+                        }
+                        className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-semibold"
+                      >
+                        Upload Document
+                      </button>
+                    ) : doc.signed_url ? (
+                      (() => {
+                        // 🧠 Extract only the part before query parameters
+                        const cleanUrl = doc.signed_url.split("?")[0];
 
-      // Check if file is image
-      const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(cleanUrl);
+                        // Check if file is image
+                        const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                          cleanUrl
+                        );
 
-      // Extract correct file extension safely
-      const match = cleanUrl.match(/\.([a-zA-Z0-9]+)$/);
-      const fileExtension = match ? match[1].toUpperCase() : 'FILE';
+                        // Extract correct file extension safely
+                        const match = cleanUrl.match(/\.([a-zA-Z0-9]+)$/);
+                        const fileExtension = match
+                          ? match[1].toUpperCase()
+                          : "FILE";
 
-      if (isImage) {
-        // 🖼️ Show image preview
-        return (
-          <div
-            className="cursor-pointer hover:opacity-80"
-            onClick={() => setPreviewImage(doc.signed_url)}
-          >
-            <Image
-              src={doc.signed_url}
-              alt={doc.doc_name}
-              width={100}
-              height={100}
-              className="object-cover mx-auto rounded-md shadow"
-            />
-          </div>
-        );
-      } else {
-        // 📄 Show extension thumbnail box
-        return (
-          <div
-            className="w-20 h-20 flex flex-col items-center justify-center bg-gray-100 border rounded-md shadow mx-auto cursor-pointer hover:bg-gray-200"
-            onClick={() => window.open(doc.signed_url, "_blank")}
-          >
-            <span className="text-sm font-bold text-gray-700">{fileExtension}</span>
-          </div>
-        );
-      }
-    })()
-  ) : (
-    <span className="text-red-500">No Preview</span>
-  )}
-</td>
-
-
+                        if (isImage) {
+                          // 🖼️ Show image preview
+                          return (
+                            <div
+                              className="cursor-pointer hover:opacity-80"
+                              onClick={() => setPreviewImage(doc.signed_url)}
+                            >
+                              <Image
+                                src={doc.signed_url}
+                                alt={doc.doc_name}
+                                width={100}
+                                height={100}
+                                className="object-cover mx-auto rounded-md shadow"
+                              />
+                            </div>
+                          );
+                        } else {
+                          // 📄 Show extension thumbnail box
+                          return (
+                            <div
+                              className="w-20 h-20 flex flex-col items-center justify-center bg-gray-100 border rounded-md shadow mx-auto cursor-pointer hover:bg-gray-200"
+                              onClick={() =>
+                                window.open(doc.signed_url, "_blank")
+                              }
+                            >
+                              <span className="text-sm font-bold text-gray-700">
+                                {fileExtension}
+                              </span>
+                            </div>
+                          );
+                        }
+                      })()
+                    ) : (
+                      <span className="text-red-500">No Preview</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -272,7 +319,9 @@ export default function OrderDetailPage() {
       )}
 
       {/* ================= Payments / Invoices ================= */}
-      <h3 className="mt-6 font-semibold text-lg border-b pb-2">Invoices / Payments</h3>
+      <h3 className="mt-6 font-semibold text-lg border-b pb-2">
+        Invoices / Payments
+      </h3>
       {loadingPayments ? (
         <p>Loading payments...</p>
       ) : payments.length === 0 ? (
@@ -294,7 +343,9 @@ export default function OrderDetailPage() {
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold">Amount:</span>
-                <span className="font-semibold text-green-600">₹{Number(p.amount)?.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">
+                  ₹{Number(p.amount)?.toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold">Mode:</span>
