@@ -72,6 +72,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                                 value={value}
                                 onChange={(e) => handleChange(fieldKey, e.target.value)}
                                 className="border p-2 w-full rounded"
+                                disabled={readOnly}
                             />
                         )}
 
@@ -83,6 +84,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                                 value={value}
                                 onChange={(e) => handleChange(fieldKey, e.target.value)}
                                 className="border p-2 w-full rounded"
+                                disabled={readOnly}
                             />
                         )}
 
@@ -98,6 +100,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                                                 required={field.is_mandatory}
                                                 value={value}
                                                 onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                                disabled={readOnly}
                                                 className="border p-2 w-full rounded"
                                             >
                                                 <option value="">{field.placeholder || "Select"}</option>
@@ -127,6 +130,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                                                         handleChange(fieldKey, opt);
                                                     }
                                                 }}
+                                                disabled={readOnly}
                                             />
                                             {opt}
                                         </label>
@@ -142,6 +146,7 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                 <button
                     type="submit"
                     className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    disabled={readOnly}
                 >
                     Submit
                 </button>

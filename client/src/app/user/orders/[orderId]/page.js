@@ -309,7 +309,7 @@ export default function OrderDetailPage() {
       {/* Keep the existing Custom Fields, Payments, and Preview Modal code unchanged */}
 
       {/* Custom Fields */}
-      <h3 className="mt-6 font-semibold text-lg border-b pb-2">Custom Fields</h3>
+      {/* <h3 className="mt-6 font-semibold text-lg border-b pb-2">Custom Fields</h3>
       {loadingInputs ? (
         <p>Loading inputs...</p>
       ) : orderInputs.length === 0 ? (
@@ -341,7 +341,32 @@ export default function OrderDetailPage() {
             </button>
           </div>
         </div>
-      )}
+      )} */}
+
+      {/* Custom Fields */}
+<h3 className="mt-6 font-semibold text-lg border-b pb-2">Custom Fields</h3>
+{loadingInputs ? (
+  <p>Loading inputs...</p>
+) : orderInputs.length === 0 ? (
+  <p className="text-gray-500 mt-2">No custom fields defined for this order.</p>
+) : (
+  <div className="mt-2 space-y-4">
+    {orderInputs.map((input) => {
+      const fieldKey = `field_${input.service_input_id}`;
+      const value = editableInputs[fieldKey] || "";
+
+      return (
+        <div key={input.id} className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <label className="w-full md:w-1/3 font-medium">{input.label_name}:</label>
+          <p className="w-full md:w-2/3 p-2 bg-gray-100 rounded border">
+            {Array.isArray(value) ? value.join(", ") : value || "-"}
+          </p>
+        </div>
+      );
+    })}
+  </div>
+)}
+
 
       {/* Payments / Invoices */}
       <h3 className="mt-6 font-semibold text-lg border-b pb-2">Invoices / Payments</h3>

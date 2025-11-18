@@ -11,6 +11,11 @@ import {
 } from "@/store/slices/orderDocumentsSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import axiosInstance from "@/api/axiosInstance";
+import {
+  fetchOrderInputs,
+  submitOrderInputs,
+  resetOrderInputsState,
+} from "@/store/slices/orderInputsSlice";
 import ServiceCustomFieldsDisplay from "./ServiceCustomFieldsDisplay";
 
 export default function DocumentUpload() {
@@ -30,9 +35,11 @@ export default function DocumentUpload() {
     (state) => state.orderDocuments
   );
 
+  const { items: orderInputs } = useSelector((state) => state.orderInputs);
+
   const [newFiles, setNewFiles] = useState({});
   const [previews, setPreviews] = useState({});
-
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [previewPopup, setPreviewPopup] = useState(null);
 
   useEffect(() => {
@@ -44,7 +51,22 @@ export default function DocumentUpload() {
     dispatch(resetOrderDocumentsState());
     dispatch(fetchDocumentsByService(serviceId));
     dispatch(fetchOrderDocuments(orderId));
+    dispatch(resetOrderInputsState());
+    dispatch(fetchOrderInputs(orderId)); // ✅ fetch previously submitted inputs
   }, [serviceId, orderId, dispatch, router]);
+
+  // If orderInputs exist, mark form as read-only and populate initialValues
+  const initialFormValues = {};
+  if (orderInputs?.length) {
+    orderInputs.forEach((input) => {
+      const key = `field_${input.service_input_id}`;
+      initialFormValues[key] = input.selected_option ?? input.text_value ?? "";
+    });
+  }
+
+  useEffect(() => {
+    if (orderInputs?.length) setIsSubmitted(true);
+  }, [orderInputs]);
 
   const handleFileChange = (docId, files) => {
     const fileList = Array.from(files);
@@ -86,32 +108,21 @@ export default function DocumentUpload() {
   // Handle custom fields submit
   // =========================
   const handleCustomFieldsSubmit = async (formValues) => {
+    const inputs = Object.entries(formValues).map(([key, value]) => ({
+      service_input_id: parseInt(key.replace("field_", "")),
+      text_value: typeof value === "string" ? value : null,
+      selected_option: typeof value === "string" || Array.isArray(value) ? value : null,
+    }));
+
     try {
-      // Transform formValues to backend format
-      const inputs = Object.entries(formValues).map(([key, value]) => {
-        const service_input_id = parseInt(key.replace("field_", ""));
-        return {
-          service_input_id,
-          text_value: typeof value === "string" ? value : null,
-          selected_option:
-            typeof value === "string" || Array.isArray(value) ? value : null,
-        };
-      });
-
-      if (!inputs.length) return;
-
-      await axiosInstance.post("/order-input", {
-        order_id: orderId,
-        inputs,
-      });
-
+      await dispatch(submitOrderInputs({ order_id: orderId, inputs })).unwrap();
       alert("Custom fields saved successfully!");
+      setIsSubmitted(true);
     } catch (err) {
       console.error(err);
       alert("Failed to save custom fields");
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -285,6 +296,8 @@ export default function DocumentUpload() {
         <ServiceCustomFieldsDisplay
           serviceId={serviceId}
           onSubmit={handleCustomFieldsSubmit}
+          readOnly={isSubmitted}
+          initialValues={initialFormValues}
         />
       </div>
       {previewPopup && (
