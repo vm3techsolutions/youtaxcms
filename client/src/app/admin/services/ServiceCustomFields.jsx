@@ -127,10 +127,10 @@ export default function ServiceCustomFields({ service, onSave }) {
             <option value="">Select Type</option>
             <option value="text">Text</option>
             <option value="textarea">Textarea</option>
-            <option value="number">Number</option>
+            {/* <option value="number">Number</option> */}
             <option value="radio">Radio</option>
             <option value="checkbox">Checkbox</option>
-            <option value="dropdown">Dropdown</option>
+            {/* <option value="dropdown">Dropdown</option> */}
           </select>
 
           {/* PLACEHOLDER */}
