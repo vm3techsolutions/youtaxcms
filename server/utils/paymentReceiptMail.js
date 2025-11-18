@@ -119,7 +119,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     doc
       .font("Noto-Bold")
       .fontSize(16)
-      .fillColor("#4CAF50")
+      .fillColor("#003366")
       .text("Youtax India Consulting Pvt. Ltd.", 200, 50, { align: "right" })
       .fillColor("#333")
       .font("Noto")
