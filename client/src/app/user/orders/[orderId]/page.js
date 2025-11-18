@@ -240,7 +240,7 @@ export default function OrderDetailPage() {
                 <th className="p-2 border">Type</th>
                 <th className="p-2 border">Status</th>
                 <th className="p-2 border">Preview</th>
-                <th className="p-2 border">Re-upload</th> {/* NEW COLUMN */}
+                {/* <th className="p-2 border">Re-upload</th> NEW COLUMN */}
               </tr>
             </thead>
             <tbody>
@@ -257,7 +257,7 @@ export default function OrderDetailPage() {
                       </span>
                     )}
                   </td>
-                  <td className="p-2 border text-center">
+                  {/* <td className="p-2 border text-center">
                     {doc.signed_url ? (
                       /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(doc.signed_url.split("?")[0]) ? (
                         <div
@@ -285,8 +285,31 @@ export default function OrderDetailPage() {
                     ) : (
                       <span className="text-red-500">No Preview</span>
                     )}
-                  </td>
-                  <td className="p-2 border">
+                  </td> */}
+                  <td className="p-2 border text-center">
+  {doc.signed_url ? (
+    /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(doc.signed_url.split("?")[0]) ? (
+      <button
+        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+        onClick={() => setPreviewImage(doc.signed_url)}
+      >
+        View Image
+      </button>
+    ) : (
+      <button
+        className="px-3 py-1  bg-blue-600 text-white rounded hover:bg-blue-700"
+        onClick={() => window.open(doc.signed_url, "_blank")}
+      >
+        View File
+      </button>
+    )
+  ) : (
+    <span className="text-red-500">No Preview</span>
+  )}
+</td>
+
+                  
+                  {/* <td className="p-2 border">
                     {doc.status === "rejected" ? (
                       <button
                         onClick={() => alert(`Upload functionality for ${doc.doc_name} coming soon`)}
@@ -297,7 +320,7 @@ export default function OrderDetailPage() {
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
