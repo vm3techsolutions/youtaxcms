@@ -2,16 +2,56 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
-export default function ServiceCustomFields({ service, onSave }) {
+export default function ServiceCustomFields({
+  service,
+  editField,
+  onSave,
+  onUpdate,
+}) {
+  const isEditing = !!editField;
+
   const [fields, setFields] = useState([]);
   const [errors, setErrors] = useState({});
 
+  // ===========================================================
+  // LOAD EDIT MODE DATA
+  // ===========================================================
   useEffect(() => {
-    if (service?.custom_fields) {
-      setFields(service.custom_fields);
-    }
-  }, [service]);
+  if (editField) {
+    setFields([
+      {
+        label: editField.label,
+        type: editField.type,
+        placeholder: editField.placeholder || "",
+        required: !!editField.required,
+        options: editField.options || [],
+      },
+    ]);
+  }
+}, [editField]);
 
+
+
+  // ===========================================================
+  // LOAD SERVICE FIELDS (ONLY WHEN NOT EDITING)
+  // ===========================================================
+  useEffect(() => {
+    if (!editField && service?.custom_fields) {
+      setFields(
+        service.custom_fields.map((f) => ({
+          label: f.label_name,
+          type: f.input_type,
+          placeholder: f.placeholder,
+          required: f.is_mandatory,
+          options: f.options ? f.options.split(",") : [],
+        }))
+      );
+    }
+  }, [service, editField]);
+
+  // ===========================================================
+  // Add new Field
+  // ===========================================================
   const addField = () => {
     setFields([
       ...fields,
@@ -20,8 +60,8 @@ export default function ServiceCustomFields({ service, onSave }) {
         type: "",
         placeholder: "",
         required: false,
-        options: []
-      }
+        options: [],
+      },
     ]);
   };
 
@@ -45,7 +85,9 @@ export default function ServiceCustomFields({ service, onSave }) {
 
   const removeOption = (fIndex, oIndex) => {
     const updated = [...fields];
-    updated[fIndex].options = updated[fIndex].options.filter((_, i) => i !== oIndex);
+    updated[fIndex].options = updated[fIndex].options.filter(
+      (_, i) => i !== oIndex
+    );
     setFields(updated);
   };
 
@@ -53,59 +95,76 @@ export default function ServiceCustomFields({ service, onSave }) {
     setFields(fields.filter((_, i) => i !== index));
   };
 
+  // ===========================================================
+  // VALIDATION
+  // ===========================================================
   const validate = () => {
     let err = {};
     fields.forEach((f, i) => {
       if (!f.label.trim()) err[i] = "Field name is required";
       else if (!f.type) err[i] = "Please select a field type";
-      else if (["radio", "checkbox", "dropdown"].includes(f.type) && f.options.length === 0)
+      else if (
+        ["radio", "checkbox", "dropdown"].includes(f.type) &&
+        f.options.length === 0
+      )
         err[i] = "Options required for this field type";
     });
     setErrors(err);
     return Object.keys(err).length === 0;
   };
 
+  // ===========================================================
+  // SAVE or UPDATE
+  // ===========================================================
   const handleSave = () => {
-  if (!validate()) return;
+    if (!validate()) return;
 
-  // Convert UI fields → Backend expected format
-  const formattedFields = fields.map(f => ({
-    label_name: f.label,
-    input_type: f.type,
-    placeholder: f.placeholder || null,
-    is_mandatory: f.required,
-    options: ["radio", "checkbox", "dropdown"].includes(f.type)
-      ? (Array.isArray(f.options) ? f.options.join(",") : f.options)
-      : null
-  }));
+    const formattedFields = fields.map((f) => ({
+      label_name: f.label,
+      input_type: f.type,
+      placeholder: f.placeholder || null,
+      is_mandatory: f.required,
+      options:
+  ["radio", "checkbox", "dropdown"].includes(f.type)
+    ? (Array.isArray(f.options)
+        ? f.options.join(",")
+        : typeof f.options === "string"
+          ? f.options
+          : "")
+    : null
 
-  console.log("Sending formatted data:", formattedFields);
 
-  // Send only formatted fields to API
-  onSave(formattedFields);
+    }));
 
-  // ✅ Clear fields after submission
-  setFields([]);
-  setErrors({});
-};
+    if (isEditing) {
+      onUpdate(editField.id, formattedFields[0]); // only one field
+    } else {
+      onSave(formattedFields); // array - bulk create
+    }
 
+    setFields([]);
+    setErrors({});
+  };
 
   return (
     <div className="mt-6 p-4 border rounded bg-gray-50">
       <div className="flex justify-between">
-        <h3 className="text-lg font-semibold">Custom Fields</h3>
-        <button
-          onClick={addField}
-          className="bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-1"
-        >
-          <Plus size={14} /> Add Field
-        </button>
+        <h3 className="text-lg font-semibold">
+          {isEditing ? "Edit Field" : "Custom Fields"}
+        </h3>
+
+        {!isEditing && (
+          <button
+            onClick={addField}
+            className="bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-1"
+          >
+            <Plus size={14} /> Add Field
+          </button>
+        )}
       </div>
 
       {fields.map((field, index) => (
         <div key={index} className="border p-3 rounded mt-3 bg-white">
-
-          {/* FIELD LABEL */}
           <input
             type="text"
             placeholder="Field Name"
@@ -118,7 +177,6 @@ export default function ServiceCustomFields({ service, onSave }) {
             <p className="text-red-600 text-sm mt-1">{errors[index]}</p>
           )}
 
-          {/* FIELD TYPE */}
           <select
             value={field.type}
             onChange={(e) => updateField(index, "type", e.target.value)}
@@ -127,34 +185,33 @@ export default function ServiceCustomFields({ service, onSave }) {
             <option value="">Select Type</option>
             <option value="text">Text</option>
             <option value="textarea">Textarea</option>
-            {/* <option value="number">Number</option> */}
             <option value="radio">Radio</option>
             <option value="checkbox">Checkbox</option>
-            {/* <option value="dropdown">Dropdown</option> */}
           </select>
 
-          {/* PLACEHOLDER */}
-          {["text", "textarea", "number"].includes(field.type) && (
+          {["text", "textarea"].includes(field.type) && (
             <input
               type="text"
               placeholder="Placeholder"
               value={field.placeholder}
-              onChange={(e) => updateField(index, "placeholder", e.target.value)}
+              onChange={(e) =>
+                updateField(index, "placeholder", e.target.value)
+              }
               className="border p-2 w-full mt-2"
             />
           )}
 
-          {/* REQUIRED CHECKBOX */}
           <label className="flex items-center gap-2 mt-2">
             <input
               type="checkbox"
               checked={field.required}
-              onChange={(e) => updateField(index, "required", e.target.checked)}
+              onChange={(e) =>
+                updateField(index, "required", e.target.checked)
+              }
             />
             Mandatory
           </label>
 
-          {/* OPTIONS SECTION */}
           {["radio", "checkbox", "dropdown"].includes(field.type) && (
             <div className="mt-3 border p-2 rounded bg-gray-50">
               <p className="text-sm font-medium mb-2">Options</p>
@@ -188,22 +245,24 @@ export default function ServiceCustomFields({ service, onSave }) {
             </div>
           )}
 
-          {/* REMOVE FIELD */}
-          <button
-            onClick={() => removeField(index)}
-            className="text-red-600 mt-2 flex items-center gap-1"
-          >
-            <Trash2 size={14} /> Remove Field
-          </button>
+          {!isEditing && (
+            <button
+              onClick={() => removeField(index)}
+              className="text-red-600 mt-2 flex items-center gap-1"
+            >
+              <Trash2 size={14} /> Remove Field
+            </button>
+          )}
         </div>
       ))}
 
-      {/* SAVE BUTTON */}
       <button
         onClick={handleSave}
-        className="bg-green-600 text-white px-4 py-2 rounded mt-4"
+        className={`${
+          isEditing ? "bg-yellow-600" : "bg-green-600"
+        } text-white px-4 py-2 rounded mt-4`}
       >
-        Save Custom Fields
+        {isEditing ? "Update Changes" : "Save Custom Fields"}
       </button>
     </div>
   );

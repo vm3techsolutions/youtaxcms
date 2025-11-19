@@ -91,18 +91,43 @@ export default function ServiceCardsBookPopup() {
 
   // Edit Custom field
   const handleEditCustomField = (field) => {
-    setEditField({
-      id: field.id,
-      label: field.label_name,
-      type: field.input_type,
-      placeholder: field.placeholder,
-      required: field.is_mandatory,
-      options: field.options ? field.options.split(",") : [],
-    });
+  setEditField({
+    id: field.id,
+    label: field.label_name,
+    type: field.input_type,
+    placeholder: field.placeholder || "",
+    required: field.is_mandatory,
+    options: field.options ? field.options.split(",") : [],
+  });
+};
 
-    // Auto-fill into the ServiceCustomFields component
-    console.log("Editing field:", field);
-  };
+
+ const handleUpdateCustomField = async (id, field) => {
+
+  const safeOptions = Array.isArray(field.options)
+    ? field.options.join(",")
+    : typeof field.options === "string"
+      ? field.options
+      : "";
+
+  await dispatch(
+    updateServiceInput({
+      id,
+      data: {
+        label_name: field.label,
+        input_type: field.type,
+        placeholder: field.placeholder || "",
+        is_mandatory: field.required ? 1 : 0,
+        options: safeOptions,
+      },
+    })
+  );
+
+  await dispatch(getServiceInputsByService(selectedService.id));
+  setEditField(null);
+};
+
+
 
 
   const handleAddDocument = () => {
@@ -460,9 +485,8 @@ export default function ServiceCardsBookPopup() {
 
                     // Reload list after adding
                     dispatch(getServiceInputsByService(selectedService.id));
-
-
                   }}
+                  onUpdate={handleUpdateCustomField}
                 />
 
                 {/* Custom Fields List */}
@@ -493,12 +517,12 @@ export default function ServiceCardsBookPopup() {
                         <div className="flex gap-3">
 
                           {/* ✏ Edit Button */}
-                          {/* <button
+                          <button
                             onClick={() => handleEditCustomField(field)}
                             className="text-blue-600"
                           >
                             <Pencil size={18} />
-                          </button> */}
+                          </button>
 
                           {/* 🗑 Delete Button */}
                           <button

@@ -167,3 +167,154 @@ const serviceInputSlice = createSlice({
 });
 
 export default serviceInputSlice.reducer;
+
+
+// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+// import axiosInstance from "@/api/axiosInstance";
+
+// // ============================================================
+// // CREATE Service Input
+// // Backend expects: { service_id, fields: [...] }
+// // ============================================================
+// export const createServiceInput = createAsyncThunk(
+//   "serviceInput/createServiceInput",
+//   async ({ service_id, fields }, thunkAPI) => {
+//     try {
+//       const payload = { service_id, fields };
+//       const res = await axiosInstance.post(`/service-input`, payload);
+//       return res.data; // MUST return created data
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.response?.data || err.message);
+//     }
+//   }
+// );
+
+// // ============================================================
+// // GET Inputs by Service ID
+// // ============================================================
+// export const getServiceInputsByService = createAsyncThunk(
+//   "serviceInput/getServiceInputsByService",
+//   async (serviceId, thunkAPI) => {
+//     try {
+//       const res = await axiosInstance.get(`/service-inputs/service/${serviceId}`);
+//       return res.data;
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.response?.data || err.message);
+//     }
+//   }
+// );
+
+// // ============================================================
+// // UPDATE Service Input
+// // ============================================================
+// export const updateServiceInput = createAsyncThunk(
+//   "serviceInput/updateServiceInput",
+//   async ({ id, data }, thunkAPI) => {
+//     try {
+//       const res = await axiosInstance.put(`/service-input/${id}`, data);
+//       return { id, ...res.data }; // return id + updated data
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.response?.data || err.message);
+//     }
+//   }
+// );
+
+// // ============================================================
+// // DELETE Service Input
+// // ============================================================
+// export const deleteServiceInput = createAsyncThunk(
+//   "serviceInput/deleteServiceInput",
+//   async (id, thunkAPI) => {
+//     try {
+//       const res = await axiosInstance.delete(`/service-input/${id}`);
+//       return { id, ...res.data };
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.response?.data || err.message);
+//     }
+//   }
+// );
+
+// // ============================================================
+// // SLICE
+// // ============================================================
+// const serviceInputSlice = createSlice({
+//   name: "serviceInput",
+//   initialState: {
+//     items: [],
+//     single: null,
+//     loading: false,
+//     error: null,
+//   },
+//   reducers: {},
+//   extraReducers: (builder) => {
+//     builder
+
+//       // CREATE
+//       .addCase(createServiceInput.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(createServiceInput.fulfilled, (state, action) => {
+//         state.loading = false;
+
+//         // ⬅️ Append newly created fields to list
+//         if (Array.isArray(action.payload)) {
+//           state.items.push(...action.payload);
+//         } else {
+//           state.items.push(action.payload);
+//         }
+//       })
+//       .addCase(createServiceInput.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       })
+
+//       // GET ALL
+//       .addCase(getServiceInputsByService.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(getServiceInputsByService.fulfilled, (state, action) => {
+//         state.loading = false;
+//         state.items = action.payload;
+//       })
+//       .addCase(getServiceInputsByService.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       })
+
+//       // UPDATE
+//       .addCase(updateServiceInput.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(updateServiceInput.fulfilled, (state, action) => {
+//         state.loading = false;
+
+//         const updated = action.payload;
+
+//         // ⬅️ Update the field in state.items
+//         state.items = state.items.map((item) =>
+//           item.id === updated.id ? { ...item, ...updated } : item
+//         );
+//       })
+//       .addCase(updateServiceInput.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       })
+
+//       // DELETE
+//       .addCase(deleteServiceInput.pending, (state) => {
+//         state.loading = true;
+//       })
+//       .addCase(deleteServiceInput.fulfilled, (state, action) => {
+//         state.loading = false;
+//         state.items = state.items.filter(
+//           (item) => item.id !== action.payload.id
+//         );
+//       })
+//       .addCase(deleteServiceInput.rejected, (state, action) => {
+//         state.loading = false;
+//         state.error = action.payload;
+//       });
+//   },
+// });
+
+// export default serviceInputSlice.reducer;
