@@ -590,21 +590,33 @@ export default function OperationsOrdersPage() {
                 </label>
               )}
 
-              <div className="flex items-center gap-2 mb-4">
+              {/* <div className="flex items-center gap-2 mb-4">
                 <input
                   type="checkbox"
                   checked={forwardWithoutChanges}
                   onChange={(e) => setForwardWithoutChanges(e.target.checked)}
                 />
                 <span>Forward without changes</span>
-              </div>
+              </div> */}
+
+              {orderDeliverables.length > 0 && (
+  <div className="flex items-center gap-2 mb-4">
+    <input
+      type="checkbox"
+      checked={forwardWithoutChanges}
+      onChange={(e) => setForwardWithoutChanges(e.target.checked)}
+    />
+    <span>Forward without changes</span>
+  </div>
+)}
+
 
               {(!hasDeliverables || !forwardWithoutChanges) && (
                 <input
                   type="file"
                   multiple
                   onChange={handleFileChange}
-                  className="mb-4"
+                  className="mb-4 w-full border-2 border-gray-500 rounded p-2 cursor-pointer bg-blue-50 hover:bg-blue-100 transition"
                 />
               )}
 
