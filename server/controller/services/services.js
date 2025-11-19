@@ -248,7 +248,85 @@ const getServiceByCategoryId = async (req, res) => {
     res.status(500).json({ message: "Database error" });
   }
 };
+/**
+ * Toggle service is_active status (true/false)
+ * @param {import('express').Request} req Express request object
+ * @param {import('express').Response} res Express response object
+ */
+const toggleServiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+    const updated_by = req.user ? req.user.id : null;
 
+    // Validate input
+    if (typeof is_active !== "boolean") {
+      return res.status(400).json({ message: "is_active must be true or false" });
+    }
+
+    // Validate admin
+    const [admin] = await db.query(
+      "SELECT role_id FROM admin_users WHERE id = ?", 
+      [updated_by]
+    );
+    if (!admin || admin.length === 0) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+    if (admin[0].role_id !== 4) {
+      return res.status(403).json({ message: "Only Admin can update status" });
+    }
+
+    // Check if service exists
+    const [service] = await db.query(
+      "SELECT id, is_active FROM services WHERE id = ?",
+      [id]
+    );
+    if (service.length === 0) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // Update status
+    await db.query(
+      `UPDATE services 
+       SET is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      [is_active ? 1 : 0, updated_by, id]
+    );
+
+    const msg = is_active ? "Service activated successfully" : "Service deactivated successfully";
+
+    return res.json({ 
+      message: msg,
+      id 
+    });
+
+  } catch (error) {
+    console.error("DB Error (toggleServiceStatus):", error);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+/**
+ * Get all  services with their category names, ordered by creation date descending.
+ * @param {import('express').Request} req Express request object
+ * @param {import('express').Response} res Express response object
+ * @returns {Promise<void>}
+ */
+const getAllServicesWithInactive = async (req, res) => {
+  try {
+    const sql = `
+      SELECT s.*, c.name AS category_name
+      FROM services s
+      LEFT JOIN categories c ON s.category_id = c.id
+      ORDER BY s.created_at DESC
+    `;
+    const [results] = await db.query(sql);
+    res.json(results);
+  } catch (err) {
+    console.error("DB Error (getAllServices):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
 // ✅ Export all functions
 module.exports = {
   createService,
@@ -256,5 +334,7 @@ module.exports = {
   getServiceById,
   getServiceByCategoryId,
   updateService,
+  toggleServiceStatus,
+  getAllServicesWithInactive,
   deleteService,
 };
