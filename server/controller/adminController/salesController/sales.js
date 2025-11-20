@@ -7,7 +7,7 @@ const db = require("../../../config/db"); // MySQL connection (mysql2)
 const getPendingOrders = async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT o.id, o.customer_id, o.service_id, o.status, c.name AS customer_name, s.name AS service_name
+      `SELECT o.*, c.name AS customer_name, s.name AS service_name
        FROM orders o
        JOIN customers c ON o.customer_id = c.id
        JOIN services s ON o.service_id = s.id

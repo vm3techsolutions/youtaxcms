@@ -30,13 +30,9 @@ const getPendingOrdersForAccounts = async (req, res) => {
 
     const [orders] = await db.query(
       `SELECT 
-        o.id, 
-        o.customer_id, 
+        o.*,
         c.name AS customer_name,
         s.name AS service_name,
-        o.status, 
-        o.total_amount,
-        o.assigned_to,
         SUM(p.amount) AS paid_amount
        FROM orders o
        LEFT JOIN customers c ON o.customer_id = c.id
