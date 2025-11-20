@@ -37,7 +37,10 @@ export default function AccountsOrdersPage() {
 
   // Fetch pending orders on mount
   useEffect(() => {
-    dispatch(fetchPendingOrdersForAccounts());
+    dispatch(fetchPendingOrdersForAccounts()).then((res) => {
+      console.log("Pending Orders:", res?.payload);
+    })
+    
     dispatch(fetchAdminRoles());
     return () => dispatch(resetAccountsState());
   }, [dispatch]);
@@ -102,6 +105,7 @@ export default function AccountsOrdersPage() {
         <table className="min-w-full border rounded">
           <thead className="bg-gray-100">
             <tr>
+              <th className="p-2 border">S.No</th>
               <th className="py-2 px-4 border">Order ID</th>
               <th className="py-2 px-4 border">Customer</th>
               <th className="py-2 px-4 border">Service</th>
@@ -109,6 +113,7 @@ export default function AccountsOrdersPage() {
               <th className="py-2 px-4 border">Paid</th>
               <th className="py-2 px-4 border">Status</th>
               <th className="py-2 px-4 border">Actions</th>
+              <th className="py-2 px-4 border">Created At</th>
             </tr>
           </thead>
           <tbody>
@@ -120,8 +125,9 @@ export default function AccountsOrdersPage() {
               </tr>
             )}
 
-            {pendingOrders.map((order) => (
+            {pendingOrders.map((order, index) => (
               <tr key={order.id} className="hover:bg-gray-50">
+                <td className="p-2 border">{index + 1}</td>
                 <td className="py-2 px-4 border">{order.id}</td>
                 <td className="py-2 px-4 border">{order.customer_name || order.customer_id}</td>
                 <td className="py-2 px-4 border">{order.service_name || "N/A"}</td> 
@@ -149,6 +155,9 @@ export default function AccountsOrdersPage() {
                     Forward
                   </button>
                 </td>
+                <td className="py-2 px-4 border">
+                          {order.created_at ? new Date(order.created_at).toLocaleString('en-GB') : "—"}
+                        </td>
               </tr>
             ))}
           </tbody>
