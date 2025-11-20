@@ -1,31 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAllDeliverables,
-  fetchDeliverablesForOrder,
   clearDeliverablesError,
   resetDeliverables,
 } from "@/store/slices/operationDeliverableSlice";
 
 export default function DeliverablesPage() {
   const dispatch = useDispatch();
-  const { allDeliverables, orderDeliverables, loading, error } = useSelector(
+  const { allDeliverables, loading, error } = useSelector(
     (state) => state.operationDeliverables || {}
   );
-  const [selectedOrder, setSelectedOrder] = useState("");
+
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     dispatch(fetchAllDeliverables());
     return () => dispatch(resetDeliverables());
   }, [dispatch]);
 
-  const handleOrderChange = (e) => {
-    const orderId = e.target.value;
-    setSelectedOrder(orderId);
-    if (orderId) dispatch(fetchDeliverablesForOrder(orderId));
-  };
+  // 🔍 Filtering logic
+  const filteredDeliverables = useMemo(() => {
+    if (!search.trim()) return allDeliverables;
+
+    const lower = search.toLowerCase();
+
+    return allDeliverables.filter((d) =>
+      (d.customer_name && d.customer_name.toLowerCase().includes(lower)) ||
+      (d.service_name && d.service_name.toLowerCase().includes(lower)) ||
+      String(d.order_id).includes(lower) ||
+      String(d.id).includes(lower)
+    );
+  }, [search, allDeliverables]);
 
   return (
     <div className="container mx-auto p-6">
@@ -34,28 +42,25 @@ export default function DeliverablesPage() {
       {loading && <p className="text-center text-gray-500">Loading deliverables...</p>}
       {error && (
         <p className="text-center text-red-500 mb-4">
-          {error}{" "}
-          <button onClick={() => dispatch(clearDeliverablesError())} className="underline ml-2">
+          {error}
+          <button
+            onClick={() => dispatch(clearDeliverablesError())}
+            className="underline ml-2"
+          >
             Clear
           </button>
         </p>
       )}
 
-      {/* Order filter */}
-      <div className="mb-4">
-        <label className="block mb-2">Select Order:</label>
-        <select
-          value={selectedOrder}
-          onChange={handleOrderChange}
-          className="border p-2 w-full max-w-sm"
-        >
-          <option value="">-- All Orders --</option>
-          {[...new Set(allDeliverables.map((d) => d.order_id))].map((orderId) => (
-            <option key={orderId} value={orderId}>
-              Order #{orderId}
-            </option>
-          ))}
-        </select>
+      {/* 🔍 Search Bar */}
+      <div className="mb-5 max-w-lg mx-auto">
+        <input
+          type="text"
+          placeholder="Search by Customer, Service, Order ID, Deliverable ID..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border p-3 w-full rounded shadow-sm focus:ring focus:ring-blue-200"
+        />
       </div>
 
       {/* Deliverables Table */}
@@ -74,7 +79,7 @@ export default function DeliverablesPage() {
             </tr>
           </thead>
           <tbody>
-            {(selectedOrder ? orderDeliverables : allDeliverables).map((d) => (
+            {filteredDeliverables.map((d) => (
               <tr key={d.id} className="hover:bg-gray-50">
                 <td className="py-2 px-4 border">{d.id}</td>
                 <td className="py-2 px-4 border">{d.order_id}</td>
@@ -96,7 +101,11 @@ export default function DeliverablesPage() {
                     "-"
                   )}
                 </td>
-                <td className="py-2 px-4 border">{new Date(d.created_at).toLocaleString('en-GB')}</td>
+                <td className="py-2 px-4 border">
+                  {new Date(d.created_at).toLocaleString("en-GB")}
+                </td>
+
+                
               </tr>
             ))}
           </tbody>

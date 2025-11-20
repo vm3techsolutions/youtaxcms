@@ -142,6 +142,14 @@ export default function ServiceCustomFieldsForm({ serviceId, onSubmit, readOnly 
                 );
             })}
 
+            {/* Info Note */}
+            <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                <p className="text-sm text-gray-700 leading-6">
+                    <strong className="text-red-500">Important:</strong> Once this information is submitted, it cannot be modified.
+                    Please verify all details carefully before proceeding.
+                </p>
+            </div>
+
             <div className="text-right mt-4">
                 <button
                     type="submit"

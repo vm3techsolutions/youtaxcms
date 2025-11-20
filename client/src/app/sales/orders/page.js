@@ -227,12 +227,14 @@ export default function SalesOrdersPage() {
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 border-b">
             <tr>
+              <th className="p-2 ">S.No</th>
               <th className="p-3 text-left">Order ID</th>
               <th className="p-3 text-left">Customer</th>
               <th className="p-3 text-left">Service</th>
               <th className="p-3 text-left">Order Status</th>
               <th className="p-3 text-left">Documents</th>
               <th className="p-3 text-left">Actions</th>
+              <th className="p-3">Created At</th>
             </tr>
           </thead>
           <tbody>
@@ -246,7 +248,7 @@ export default function SalesOrdersPage() {
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => {
+              filteredOrders.map((order, index) => {
                 const totalDocs = order.documents?.length || 0;
                 const verifiedDocs =
                   order.documents?.filter((d) => d.status === "verified")
@@ -264,6 +266,7 @@ export default function SalesOrdersPage() {
                 return (
                   <React.Fragment key={order.id}>
                     <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3 ">{index + 1}</td>
                       <td className="p-3">#{order.id}</td>
                       <td className="p-3">{order.customer_name}</td>
                       <td className="p-3">{order.service_name}</td>
@@ -331,6 +334,9 @@ export default function SalesOrdersPage() {
                           </>
                         )}
                       </td>
+                      <td className="py-2 px-4 ">
+                          {order.created_at ? new Date(order.created_at).toLocaleString('en-GB') : "—"}
+                        </td>
                     </tr>
 
                     {expandedOrder === order.id && allDocsUploaded && (
@@ -396,6 +402,7 @@ export default function SalesOrdersPage() {
                             ))}
                           </div>
                         </td>
+                        
                       </tr>
                     )}
                   </React.Fragment>

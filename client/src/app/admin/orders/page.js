@@ -8,7 +8,7 @@ import {
   approveOrderCompletion,
 } from "@/store/slices/adminOrdersSlice";
 import { fetchAllCustomers } from "@/store/slices/customersSlice";
-import { fetchServices } from '@/store/slices/servicesSlice';
+import { fetchServices } from "@/store/slices/servicesSlice";
 
 export default function AdminOrdersPage() {
   const dispatch = useDispatch();
@@ -42,7 +42,9 @@ export default function AdminOrdersPage() {
   };
 
   const handleQC = (deliverableId, status) => {
-    dispatch(qcDeliverable({ deliverable_id: deliverableId, qc_status: status }));
+    dispatch(
+      qcDeliverable({ deliverable_id: deliverableId, qc_status: status })
+    );
   };
 
   const handleApproveCompletion = (orderId) => {
@@ -60,20 +62,27 @@ export default function AdminOrdersPage() {
       <table className="w-full border border-gray-300 rounded mb-6">
         <thead className="bg-gray-100">
           <tr>
+            <th className="p-2 border">S.No</th>
             <th className="p-2 border">Order ID</th>
             <th className="p-2 border">Customer</th>
             <th className="p-2 border">Service</th>
             <th className="p-2 border">Status</th>
             <th className="p-2 border">Payment</th>
             <th className="p-2 border">Actions</th>
+            <th className="py-2 px-4 border">Created At</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
+          {orders.map((order, index) => (
             <tr key={order.id} className="text-center">
+              <td className="p-2 border">{index + 1}</td>
               <td className="p-2 border">{order.id}</td>
-              <td className="p-2 border">{customerMap[order.customer_id] || "N/A"}</td>
-              <td className="p-2 border">{serviceMap[order.service_id] || "N/A"}</td>
+              <td className="p-2 border">
+                {customerMap[order.customer_id] || "N/A"}
+              </td>
+              <td className="p-2 border">
+                {serviceMap[order.service_id] || "N/A"}
+              </td>
               <td className="p-2 border">{order.status}</td>
               <td className="p-2 border">{order.payment_status}</td>
               <td className="p-2 border">
@@ -92,6 +101,12 @@ export default function AdminOrdersPage() {
                       Approve Completion
                     </button>
                   )}
+              </td>
+
+              <td className="py-2 px-4 border">
+                {order.created_at
+                  ? new Date(order.created_at).toLocaleString("en-GB")
+                  : "—"}
               </td>
             </tr>
           ))}
@@ -129,7 +144,9 @@ export default function AdminOrdersPage() {
                     {deliverables[selectedOrder].map((d) => (
                       <tr key={d.id} className="text-center">
                         <td className="p-2 border">{d.versions}</td>
-                        <td className="p-2 border">{d.qc_status || "pending"}</td>
+                        <td className="p-2 border">
+                          {d.qc_status || "pending"}
+                        </td>
                         <td className="p-2 border">
                           {d.signed_url ? (
                             <a
@@ -145,18 +162,30 @@ export default function AdminOrdersPage() {
                           )}
                         </td>
                         <td className="p-2 border">
-                          <button
-                            onClick={() => handleQC(d.id, "approved")}
-                            className="px-2 py-1 bg-green-500 text-white rounded mr-2"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleQC(d.id, "rejected")}
-                            className="px-2 py-1 bg-red-500 text-white rounded"
-                          >
-                            Reject
-                          </button>
+                          {d.qc_status === "approved" ? (
+                            <span className="px-2 py-1 bg-green-500 text-white rounded">
+                              Approved
+                            </span>
+                          ) : d.qc_status === "rejected" ? (
+                            <span className="px-2 py-1 bg-red-500 text-white rounded">
+                              Rejected
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleQC(d.id, "approved")}
+                                className="px-2 py-1 bg-green-500 text-white rounded mr-2"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleQC(d.id, "rejected")}
+                                className="px-2 py-1 bg-red-500 text-white rounded"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}
