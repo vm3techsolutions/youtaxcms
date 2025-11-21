@@ -58,3 +58,11 @@ button, a, link, Link:hover{
   background-color: var(--color-secondary);
   color: #fff;
 }
+
+/* GLOBAL DISABLED BUTTON STYLES */
+button:disabled,
+button[disabled] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+  cursor: default !important; /* No pointer cursor */
+}

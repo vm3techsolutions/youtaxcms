@@ -8,6 +8,7 @@ import {
   forwardToOperations,
   clearMessages,
   resetAccountsState,
+  getOperationUsersForDropdown,
 } from "@/store/slices/accountsSlice";
 import { fetchAdminRoles } from "@/store/slices/adminSlice";
 import { fetchAdminUsersByRole } from "@/store/slices/adminUserSlice";
@@ -20,11 +21,12 @@ export default function AccountsOrdersPage() {
     loadingOrders,
     loadingPayments,
     loadingForward,
+    lastOperationUserId,
     error,
     success,
   } = useSelector((state) => state.accounts);
 
- // Admin slices
+  // Admin slices
   const { roles, rolesLoading } = useSelector((state) => state.admin);
   const { usersByRole: operationsUsers, loading: loadingAdmins } = useSelector(
     (state) => state.adminUser
@@ -39,8 +41,8 @@ export default function AccountsOrdersPage() {
   useEffect(() => {
     dispatch(fetchPendingOrdersForAccounts()).then((res) => {
       console.log("Pending Orders:", res?.payload);
-    })
-    
+    });
+
     dispatch(fetchAdminRoles());
     return () => dispatch(resetAccountsState());
   }, [dispatch]);
@@ -57,6 +59,13 @@ export default function AccountsOrdersPage() {
     }
   }, [roles, dispatch]);
 
+  // ⭐ NEW: Fetch last operation user for the selected order
+  useEffect(() => {
+    if (showForward && selectedOrder) {
+      dispatch(getOperationUsersForDropdown(selectedOrder));
+    }
+  }, [showForward, selectedOrder, dispatch]);
+
   const handleViewPayments = (orderId) => {
     dispatch(fetchOrderPayments(orderId));
     setSelectedOrder(orderId);
@@ -71,23 +80,59 @@ export default function AccountsOrdersPage() {
         assigned_to: selectedOperation,
         remarks: "Verified and forwarded",
       })
-    );
+    ).then(() => {
+    dispatch(fetchPendingOrdersForAccounts()); // 🔥 Refresh list instantly
+  });
     setShowForward(false);
     setSelectedOperation("");
   };
 
+  const isForwardDisabled = (order) => {
+    if (order.status !== "awaiting_final_payment") return false;
+
+    const payments = paymentsByOrder[order.id];
+
+    // If payments not loaded yet → allow button
+    if (!payments || payments.length === 0) return false;
+
+    // Disable only when:
+    // 1. only one payment
+    // 2. that one payment is advance
+    if (payments.length === 1 && payments[0].payment_type === "advance") {
+      return true;
+    }
+
+    return false;
+  };
+
+  // ⭐ NEW: Filter users — show last used first
+ const sortedOperationsUsers = operationsUsers.filter(
+  (u) => u.id === lastOperationUserId
+);
+
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Accounts Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Accounts Dashboard
+      </h1>
 
       {/* Messages */}
-      {loadingOrders && <p className="text-center text-gray-500">Loading orders...</p>}
-      {loadingPayments && <p className="text-center text-gray-500">Loading payments...</p>}
-      {loadingForward && <p className="text-center text-gray-500">Forwarding order...</p>}
+      {loadingOrders && (
+        <p className="text-center text-gray-500">Loading orders...</p>
+      )}
+      {loadingPayments && (
+        <p className="text-center text-gray-500">Loading payments...</p>
+      )}
+      {loadingForward && (
+        <p className="text-center text-gray-500">Forwarding order...</p>
+      )}
       {error && (
         <p className="text-center text-red-500 mb-4">
           {error}{" "}
-          <button onClick={() => dispatch(clearMessages())} className="underline ml-2">
+          <button
+            onClick={() => dispatch(clearMessages())}
+            className="underline ml-2"
+          >
             Clear
           </button>
         </p>
@@ -95,7 +140,10 @@ export default function AccountsOrdersPage() {
       {success && (
         <p className="text-center text-green-500 mb-4">
           {success}{" "}
-          <button onClick={() => dispatch(clearMessages())} className="underline ml-2">
+          <button
+            onClick={() => dispatch(clearMessages())}
+            className="underline ml-2"
+          >
             Clear
           </button>
         </p>
@@ -129,8 +177,12 @@ export default function AccountsOrdersPage() {
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="p-2 border">{index + 1}</td>
                 <td className="py-2 px-4 border">{order.id}</td>
-                <td className="py-2 px-4 border">{order.customer_name || order.customer_id}</td>
-                <td className="py-2 px-4 border">{order.service_name || "N/A"}</td> 
+                <td className="py-2 px-4 border">
+                  {order.customer_name || order.customer_id}
+                </td>
+                <td className="py-2 px-4 border">
+                  {order.service_name || "N/A"}
+                </td>
                 <td className="py-2 px-4 border">₹{order.total_amount}</td>
                 <td className="py-2 px-4 border">₹{order.paid_amount || 0}</td>
                 <td className="py-2 px-4 border">
@@ -146,8 +198,14 @@ export default function AccountsOrdersPage() {
                     View Payments
                   </button>
                   <button
-                    className="px-3 py-1 primary-btn rounded"
+                    className={`px-3 py-1 primary-btn rounded ${
+                      isForwardDisabled(order)
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={isForwardDisabled(order)}
                     onClick={() => {
+                      if (isForwardDisabled(order)) return;
                       setSelectedOrder(order.id);
                       setShowForward(true);
                     }}
@@ -156,8 +214,10 @@ export default function AccountsOrdersPage() {
                   </button>
                 </td>
                 <td className="py-2 px-4 border">
-                          {order.created_at ? new Date(order.created_at).toLocaleString('en-GB') : "—"}
-                        </td>
+                  {order.created_at
+                    ? new Date(order.created_at).toLocaleString("en-GB")
+                    : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -166,95 +226,99 @@ export default function AccountsOrdersPage() {
 
       {/* Payments Modal */}
       {showPayments && selectedOrder && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded shadow-lg w-2/3 max-h-[80vh] overflow-y-auto">
-      <h2 className="text-lg font-bold mb-4">Payments for Order #{selectedOrder}</h2>
-      <table className="min-w-full border rounded">
-        <thead className="bg-gray-100">
-  <tr>
-    <th className="py-2 px-4 border">Type</th>
-    <th className="py-2 px-4 border">Mode</th>
-    <th className="py-2 px-4 border">Amount</th>
-    <th className="py-2 px-4 border">Status</th>
-    <th className="py-2 px-4 border">Txn Ref</th>
-    <th className="py-2 px-4 border">Receipt</th>
-    <th className="py-2 px-4 border">Date</th>
-  </tr>
-</thead>
-<tbody>
-  {paymentsByOrder[selectedOrder]?.length > 0 ? (
-    paymentsByOrder[selectedOrder].map((p) => (
-      <tr key={p.id} className="hover:bg-gray-50">
-        <td className="py-2 px-4 border">{p.payment_type}</td>
-        <td className="py-2 px-4 border">{p.payment_mode}</td>
-        <td className="py-2 px-4 border">₹{Number(p.amount).toLocaleString("en-IN")}</td>
-        <td className="py-2 px-4 border">
-          <span
-            className={`px-2 py-1 text-sm rounded ${
-              p.status === "success"
-                ? "bg-green-100 text-green-800"
-                : p.status === "failed"
-                ? "bg-red-100 text-red-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {p.status}
-          </span>
-        </td>
-        <td className="py-2 px-4 border">{p.txn_ref || "N/A"}</td>
-       <td className="py-2 px-4 border">
-  {p.signed_receipt_url ? (
-    <a
-      href={p.signed_receipt_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-600 underline"
-    >
-      View
-    </a>
-  ) : (
-    "N/A"
-  )}
-</td>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded shadow-lg w-2/3 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-4">
+              Payments for Order #{selectedOrder}
+            </h2>
+            <table className="min-w-full border rounded">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-2 px-4 border">Type</th>
+                  <th className="py-2 px-4 border">Mode</th>
+                  <th className="py-2 px-4 border">Amount</th>
+                  <th className="py-2 px-4 border">Status</th>
+                  <th className="py-2 px-4 border">Txn Ref</th>
+                  <th className="py-2 px-4 border">Receipt</th>
+                  <th className="py-2 px-4 border">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentsByOrder[selectedOrder]?.length > 0 ? (
+                  paymentsByOrder[selectedOrder].map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="py-2 px-4 border">{p.payment_type}</td>
+                      <td className="py-2 px-4 border">{p.payment_mode}</td>
+                      <td className="py-2 px-4 border">
+                        ₹{Number(p.amount).toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-2 px-4 border">
+                        <span
+                          className={`px-2 py-1 text-sm rounded ${
+                            p.status === "success"
+                              ? "bg-green-100 text-green-800"
+                              : p.status === "failed"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4 border">{p.txn_ref || "N/A"}</td>
+                      <td className="py-2 px-4 border">
+                        {p.signed_receipt_url ? (
+                          <a
+                            href={p.signed_receipt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
 
-        <td className="py-2 px-4 border">
-          {new Date(p.created_at).toLocaleString('en-GB')}
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="7" className="text-center py-4 text-gray-500">
-        No payments found.
-      </td>
-    </tr>
-  )}
-</tbody>
-
-      </table>
-      <button
-        onClick={() => setShowPayments(false)}
-        className="mt-4 px-3 py-1 primary-btn rounded"
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
-
+                      <td className="py-2 px-4 border">
+                        {new Date(p.created_at).toLocaleString("en-GB")}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4 text-gray-500">
+                      No payments found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <button
+              onClick={() => setShowPayments(false)}
+              className="mt-4 px-3 py-1 primary-btn rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Forward Modal */}
       {showForward && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h2 className="text-lg font-bold mb-4">Forward Order #{selectedOrder}</h2>
+            <h2 className="text-lg font-bold mb-4">
+              Forward Order #{selectedOrder}
+            </h2>
             <select
               className="w-full border p-2 mb-4"
-              value={selectedOperation}
+              value={selectedOperation }
               onChange={(e) => setSelectedOperation(e.target.value)}
             >
               <option value="">-- Select Operation User --</option>
-              {operationsUsers.map((op) => (
+              {sortedOperationsUsers.map((op) => (
                 <option key={op.id} value={op.id}>
                   {op.name}
                 </option>

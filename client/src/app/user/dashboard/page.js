@@ -47,6 +47,46 @@ export default function DashboardPage() {
     { name: "In Progress", value: stats.inProgressOrders },
     { name: "Pending Payment", value: stats.pendingPayments },
   ];
+  
+
+  // New Code Added (Corrected)
+const renderCustomLabel = ({
+  cx,
+  cy,
+  midAngle,
+  outerRadius,
+  percent,
+  name,
+  value,
+  index,
+}) => {
+  const RADIAN = Math.PI / 180;
+
+  // Base label position
+  let radius = outerRadius + 25;
+  let x = cx + radius * Math.cos(-midAngle * RADIAN);
+  let y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  // 👉 FIX: If value is zero, shift labels downward to avoid overlap
+  if (value === 0) {
+    y += index * 20; // 20px offset per zero-value label
+  }
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#374151"
+      fontSize={14}
+      fontWeight={600}
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+    >
+      {`${name} ${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8">
@@ -88,7 +128,8 @@ export default function DashboardPage() {
                 outerRadius={120}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                 label={renderCustomLabel}
+                 // label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
