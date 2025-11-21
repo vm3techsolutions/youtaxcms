@@ -388,32 +388,37 @@ export default function OperationsOrdersPage() {
   const handleFileChange = (e) => setFiles(Array.from(e.target.files));
 
   const handleUpload = (orderId) => {
+    if (uploading) return; // 🔥 prevents double-trigger
+
     const order = assignedOrders.find((o) => o.id === orderId);
-    if (
-      (order?.payment_status === "partially_paid" && !accountId) ||
-      (order?.payment_status === "paid" && !adminId)
-    ) {
-      return alert(
-        order?.payment_status === "partially_paid"
-          ? "Account ID is required."
-          : "Admin ID is required."
-      );
-    }
+    // if (
+    //   (order?.payment_status === "partially_paid" && !accountId) ||
+    //   (order?.payment_status === "paid" && !adminId)
+    // ) {
+    //   return alert(
+    //     order?.payment_status === "partially_paid"
+    //       ? "Account ID is required."
+    //       : "Admin ID is required."
+    //   );
+    // }
+    if (order?.payment_status === "paid" && !adminId) {
+    return alert("Admin ID is required.");
+  }
 
     const formData = new FormData();
     formData.append("order_id", orderId);
     formData.append("admin_id", adminId);
-    formData.append("account_id", accountId);
+    // formData.append("account_id", accountId);
     formData.append("forward_without_changes", forwardWithoutChanges);
 
     if (!forwardWithoutChanges && files.length > 0) {
       files.forEach((file) => formData.append("files", file));
     }
-
+    setSelectedOrder(null); // for prevent double document
     dispatch(uploadDeliverable(formData))
     .unwrap()
     .then(() => {
-       setSelectedOrder(null);
+      //  setSelectedOrder(null);
     setFiles([]);
     setForwardWithoutChanges(false);
 
@@ -574,8 +579,9 @@ export default function OperationsOrdersPage() {
                 {/* Role selects */}
                 {order?.payment_status === "partially_paid" && (
                   <label className="block mb-2 text-sm font-medium">
-                    Select Account:
-                    <select
+                    {/* Select Account: */}
+                    Pending Payament Send Back To Account
+                    {/* <select
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
                       className="w-full border p-2 mt-1"
@@ -590,7 +596,7 @@ export default function OperationsOrdersPage() {
                             </option>
                           ))
                         )}
-                    </select>
+                    </select> */}
                   </label>
                 )}
 
@@ -656,6 +662,7 @@ export default function OperationsOrdersPage() {
                         );
                         return;
                       }
+                      if(uploading) return; // prevent double click
                       handleUpload(selectedOrder);
                     }}
                     className={`px-3 py-1 rounded primary-btn ${
@@ -663,7 +670,8 @@ export default function OperationsOrdersPage() {
                     }`}
                     disabled={!canSubmit}
                   >
-                    Submit
+                      {uploading ? "Processing..." : "Submit"}
+
                   </button>
                   <button
                     onClick={() => setSelectedOrder(null)}

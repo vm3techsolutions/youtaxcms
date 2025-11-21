@@ -250,15 +250,34 @@ const uploadDeliverable = async (req, res) => {
       }
     } 
     else if (paymentStatus === "partially_paid") {
+       // 🔍 Auto detect account user who originally sent this order
+    const [lastAccount] = await db.query(
+      `SELECT from_user 
+         FROM order_logs 
+        WHERE order_id=? AND from_role='accounts'
+        ORDER BY id DESC 
+        LIMIT 1`,
+      [order_id]
+    );
+
+    const autoAccountId = lastAccount.length > 0 ? lastAccount[0].from_user : null;
+
+    if (!autoAccountId) {
+      return res.status(400).json({
+        message: "Account user not found for this order."
+      });
+    }
+    //---end auto detect
+
       // ✅ Partial payment → forward to Accounts for final payment
       await db.query(
         `UPDATE orders SET assigned_to=?, status='awaiting_final_payment' WHERE id=?`,
-        [account_id, order_id]
+        [autoAccountId, order_id]
       );
       await db.query(
         `INSERT INTO order_logs (order_id, from_user, to_user, from_role, to_role, action, remarks, created_at) 
          VALUES (?, ?, ?, 'operation', 'accounts', 'deliverable_uploaded', 'Deliverable uploaded and sent to Accounts for final payment', NOW())`,
-        [order_id, operationId, account_id]
+        [order_id, operationId, autoAccountId]
       );
 
       // 🔔 Fetch customer details from customers table

@@ -135,7 +135,37 @@ const forwardToOperations = async (req, res) => {
   }
 };
 
+// Get filtered operation users for dropdown when accounts sends again
+getOperationUsersForDropdown = async (req, res) => {
+  try {
+    const { order_id } = req.body;
+
+    // 1️⃣ Fetch last operation user in the same query block
+    const [logRows] = await db.query(
+      `SELECT from_user 
+       FROM order_logs
+       WHERE order_id = ?
+         AND from_role = 'operation'
+       ORDER BY id DESC
+       LIMIT 1`,
+      [order_id]
+    );
+
+    return res.json({
+      success: true,
+      data: logRows.length > 0 ? logRows[0].from_user : null,
+    });
+
+  } catch (error) {
+    console.error("Error fetching operation dropdown:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching operation users",
+    });
+  }
+};
+
 
 // =============================
 
-module.exports = { getPendingOrdersForAccounts, getOrderPayments,forwardToOperations };
+module.exports = { getPendingOrdersForAccounts, getOrderPayments,forwardToOperations, getOperationUsersForDropdown };

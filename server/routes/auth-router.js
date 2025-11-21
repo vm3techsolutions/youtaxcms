@@ -163,6 +163,7 @@ router.get("/kyc/reviewed",verifyToken, isSales, salesKycController.getReviewedK
 router.get("/accounts/orders/pending", verifyToken, isAccount ,accountController.getPendingOrdersForAccounts);
 router.get("/accounts/orders/:id/payments", verifyToken, isAccount ,accountController.getOrderPayments);
 router.post("/accounts/orders/forward", verifyToken, isAccount ,accountController.forwardToOperations);
+router.get("/accounts/operation-users",verifyToken ,isAccount, accountController.getOperationUsersForDropdown);
 
 
 
