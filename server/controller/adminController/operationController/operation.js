@@ -409,10 +409,64 @@ const getAllDeliverablesWithCustomerAndService = async (req, res) => {
   }
 };
 
+
+const getOperationDashboardStats = async (req, res) => {
+  try {
+    const operationId = req.user.id;
+
+    // Latest log join (to get current assignment)
+    const latestLogJoin = `
+      JOIN (
+        SELECT order_id, MAX(id) AS latest_log_id
+        FROM order_logs
+        GROUP BY order_id
+      ) AS ll ON o.id = ll.order_id
+      JOIN order_logs ol ON ol.id = ll.latest_log_id
+    `;
+
+    // -----------------------------------------
+    // Assigned Orders (current assignment)
+    // -----------------------------------------
+    const [[assignedOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'operation' AND ol.to_user = ?
+    `, [operationId]);
+
+    // -----------------------------------------
+    //  Worked Orders (ANY time operation handled order)
+    // -----------------------------------------
+    const [[workedOrders]] = await db.query(`
+      SELECT COUNT(DISTINCT o.id) AS count
+      FROM orders o
+      JOIN order_logs ol ON ol.order_id = o.id
+      WHERE ol.to_role = 'operation' AND ol.to_user = ?
+    `, [operationId]);
+
+    // -----------------------------------------
+    // Response
+    // -----------------------------------------
+    res.json({
+      success: true,
+      data: {
+        assignedOrders: assignedOrders.count || 0,
+        workedOrders: workedOrders.count || 0,
+    
+      }
+    });
+
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
 module.exports = { 
   getAssignedOrdersForOperations, 
   uploadDeliverable, 
   getDeliverablesForOrder, 
   getDeliverableById,
-  getAllDeliverablesWithCustomerAndService // <-- export the new function
+  getAllDeliverablesWithCustomerAndService, // <-- export the new function
+  getOperationDashboardStats
 };

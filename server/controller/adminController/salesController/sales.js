@@ -242,4 +242,93 @@ const triggerOrderStatusCheck = async (req, res) => {
 //   }
 // };
 
-module.exports = { getPendingOrders,updateDocumentStatusByOrderDId,triggerOrderStatusCheck , triggerOrderStatusCheck };
+// ========================
+// Sales Dashboard Stats
+// ========================
+const getSalesDashboardStats = async (req, res) => {
+  try {
+    const salesId = req.user.id;
+
+    // Total Orders
+    const [[totalOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders"
+    );
+
+    // Completed Orders
+    const [[completedOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'completed'"
+    );
+
+    // In Progress Orders
+    const [[inProgressOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'in_progress'"
+    );
+
+    // Pending Payment Orders
+    const [[pendingPaymentOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE payment_status != 'paid'"
+    );
+
+    // Pending Orders
+    const [[pendingOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'pending'"
+    );
+
+    // Awaiting Docs Orders
+    const [[awaitingDocsOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'awaiting_docs'"
+    );
+
+    // Awaiting Payment Orders
+    const [[awaitingPaymentOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'awaiting_payment'"
+    );
+
+    // Awaiting Final Payment Orders
+    const [[awaitingFinalPaymentOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'awaiting_final_payment'"
+    );
+
+    // Under Review Orders
+    const [[underReviewOrders]] = await db.query(
+      "SELECT COUNT(*) AS count FROM orders WHERE status = 'under_review'"
+    );
+
+    // Total Customers
+    const [[totalCustomers]] = await db.query(
+      "SELECT COUNT(*) AS count FROM customers"
+    );
+
+
+    // Active Services
+    const [[activeServices]] = await db.query(
+      "SELECT COUNT(*) AS count FROM services WHERE is_active = 1"
+    );
+
+   
+
+    res.json({
+      success: true,
+      data: {
+        totalOrders: totalOrders.count || 0,
+        completedOrders: completedOrders.count || 0,
+        inProgressOrders: inProgressOrders.count || 0,
+        pendingPaymentOrders: pendingPaymentOrders.count || 0,
+        pendingOrders: pendingOrders.count || 0,
+        awaitingDocsOrders: awaitingDocsOrders.count || 0,
+        awaitingPaymentOrders: awaitingPaymentOrders.count || 0,
+        awaitingFinalPaymentOrders: awaitingFinalPaymentOrders.count || 0,
+        underReviewOrders: underReviewOrders.count || 0,
+        totalCustomers: totalCustomers.count || 0,
+        activeServices: activeServices.count || 0,
+      }
+    });
+  } catch (err) {
+    console.error("DB Error (getAdminDashboardStats):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+
+
+module.exports = { getPendingOrders,updateDocumentStatusByOrderDId,triggerOrderStatusCheck , triggerOrderStatusCheck,getSalesDashboardStats };

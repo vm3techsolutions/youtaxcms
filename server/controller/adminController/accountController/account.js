@@ -165,7 +165,83 @@ getOperationUsersForDropdown = async (req, res) => {
   }
 };
 
+const getAccountDashboardStats = async (req, res) => {
+  try {
+    const accountId = req.user.id;
+
+    // Latest log join (to get current assignment)
+    const latestLogJoin = `
+      JOIN (
+        SELECT order_id, MAX(id) AS latest_log_id
+        FROM order_logs
+        GROUP BY order_id
+      ) AS ll ON o.id = ll.order_id
+      JOIN order_logs ol ON ol.id = ll.latest_log_id
+    `;
+
+    // -----------------------------------------
+    // Assigned Orders (current)
+    // -----------------------------------------
+    const [[assignedOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'accounts' AND ol.to_user = ?
+    `, [accountId]);
+
+    // -----------------------------------------
+    //  Account Worked Orders (at ANY time)
+    // -----------------------------------------
+    const [[workedOrders]] = await db.query(`
+      SELECT COUNT(DISTINCT o.id) AS count
+      FROM orders o
+      JOIN order_logs ol ON ol.order_id = o.id
+      WHERE ol.to_role = 'accounts' AND ol.to_user = ?
+    `, [accountId]);
+
+    
+    // -----------------------------------------
+    // Pending Payment Count (latest assigned)
+    // -----------------------------------------
+    const [[pendingPaymentOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'accounts' 
+        AND ol.to_user = ?
+        AND o.payment_status IN ('unpaid', 'partially_paid')
+    `, [accountId]);
+
+    // -----------------------------------------
+    // Full Payment Count (latest assigned)
+    // -----------------------------------------
+    const [[fullPaymentOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'accounts' 
+        AND ol.to_user = ?
+        AND o.payment_status = 'paid'
+    `, [accountId]);
+
+    res.json({
+      success: true,
+      data: {
+        assignedOrders: assignedOrders.count || 0,
+        workedOrders: workedOrders.count || 0,
+        pendingPaymentOrders: pendingPaymentOrders.count || 0,
+        fullPaymentOrders: fullPaymentOrders.count || 0
+      }
+    });
+
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+
 
 // =============================
 
-module.exports = { getPendingOrdersForAccounts, getOrderPayments,forwardToOperations, getOperationUsersForDropdown };
+module.exports = { getPendingOrdersForAccounts, getOrderPayments,forwardToOperations, getOperationUsersForDropdown,getAccountDashboardStats };

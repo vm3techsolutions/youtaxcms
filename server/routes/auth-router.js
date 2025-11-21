@@ -153,7 +153,7 @@ router.post("/orders/check-status",verifyToken, isSales, salesController.trigger
 router.get("/kyc/pending",verifyToken, isSales, salesKycController.getPendingKycDocuments);
 router.put("/kyc/verify/:kyc_id",verifyToken, isSales, salesKycController.verifyKycDocument);
 router.get("/kyc/reviewed",verifyToken, isSales, salesKycController.getReviewedKycDocuments);
-
+router.get("/sales/dashboard/stats", verifyToken, isSales, salesController.getSalesDashboardStats);
 // router.put("/documents/verify",verifyToken, isSales, salesController.verifyDocument);
 // router.post("/orders/forward",verifyToken, isSales, salesController.forwardToAccounts);
 
@@ -164,6 +164,7 @@ router.get("/accounts/orders/pending", verifyToken, isAccount ,accountController
 router.get("/accounts/orders/:id/payments", verifyToken, isAccount ,accountController.getOrderPayments);
 router.post("/accounts/orders/forward", verifyToken, isAccount ,accountController.forwardToOperations);
 router.get("/accounts/operation-users",verifyToken ,isAccount, accountController.getOperationUsersForDropdown);
+router.get("/accounts/dashboard/stats", verifyToken, isAccount, accountController.getAccountDashboardStats);
 
 
 
@@ -173,7 +174,7 @@ router.post("/operations/upload/deliverable", verifyToken , isOperation, upload.
 router.get("/operations/upload/deliverable/:order_id", verifyToken , isOperation, operationController.getDeliverablesForOrder);
 router.get("/operations/upload/deliverablebyid/:id", verifyToken , isOperation, operationController.getDeliverableById);
 router.get("/operations/upload/all/deliverable", verifyToken , isOperation, operationController.getAllDeliverablesWithCustomerAndService);
-
+router.get("/operations/dashboard/stats", verifyToken, isOperation, operationController.getOperationDashboardStats);
 
 // admin routes second
 router.get("/admin/orders/all", verifyToken , isAdmin, adminControllerScond.getAssignedOrdersForAdmin);
@@ -181,7 +182,7 @@ router.get("/admin/orders/deliverables/:order_id", verifyToken , isAdmin, adminC
 router.put("/admin/orders/qc-deliverable", verifyToken , isAdmin, adminControllerScond.qcDeliverable);
 router.get("/admin/orders/approved/:order_id", verifyToken , isAdmin, adminControllerScond.getApprovedDeliverablesForOrder);
 router.put("/admin/orders/approve-completion", verifyToken , isAdmin, adminControllerScond.approveOrderCompleted);
-
+router.get("/admin/dashboard/stats", verifyToken, isAdmin, adminControllerScond.getAdminDashboardStats);
 
 
 module.exports = router;
