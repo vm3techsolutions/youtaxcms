@@ -287,7 +287,8 @@ const uploadSamplePDF = async (req, res) => {
     }
 
     // S3 Key Formatting
-    const fileKey = `uploads/sample-pdfs/serviceDoc${id}/${Date.now()}_${req.file.originalname}`;
+    const serviceId = doc[0].service_id;
+    const fileKey = `uploads/sample-pdfs/service${serviceId}/serviceDoc${id}/${Date.now()}_${req.file.originalname}`;
 
     // Upload to S3
     const putCommand = new PutObjectCommand({
