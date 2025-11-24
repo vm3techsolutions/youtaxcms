@@ -106,9 +106,20 @@ export default function AccountsOrdersPage() {
   };
 
   // ⭐ NEW: Filter users — show last used first
- const sortedOperationsUsers = operationsUsers.filter(
-  (u) => u.id === lastOperationUserId
-);
+//  const sortedOperationsUsers = operationsUsers.filter(
+//   (u) => u.id === lastOperationUserId
+// );
+
+let sortedOperationsUsers = operationsUsers;
+
+// If API tells you the order came from OPERATION
+if (lastOperationUserId) {
+  // Show only that operation user
+  sortedOperationsUsers = operationsUsers.filter(
+    (u) => u.id === lastOperationUserId
+  );
+}
+
 
   return (
     <div className="container mx-auto p-6">
