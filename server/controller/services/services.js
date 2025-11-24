@@ -311,7 +311,7 @@ const toggleServiceStatus = async (req, res) => {
  * @param {import('express').Response} res Express response object
  * @returns {Promise<void>}
  */
-const getAllServicesWithInactive = async (req, res) => {
+const getAllServicesWithActive = async (req, res) => {
   try {
     const sql = `
       SELECT s.*, c.name AS category_name
@@ -335,6 +335,6 @@ module.exports = {
   getServiceByCategoryId,
   updateService,
   toggleServiceStatus,
-  getAllServicesWithInactive,
+  getAllServicesWithActive,
   deleteService,
 };

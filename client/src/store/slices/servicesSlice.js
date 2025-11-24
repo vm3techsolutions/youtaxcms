@@ -4,7 +4,8 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "@/api/axiosInstance";
 
 // Helper to safely get token
-const getToken = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+const getToken = () =>
+  typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
 // ➤ Create Service
 export const createService = createAsyncThunk(
@@ -17,7 +18,9 @@ export const createService = createAsyncThunk(
       });
       return res.data; // { message, id }
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to create service");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to create service"
+      );
     }
   }
 );
@@ -30,7 +33,9 @@ export const fetchServices = createAsyncThunk(
       const res = await axiosInstance.get("/services");
       return res.data; // array of services
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to fetch services");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch services"
+      );
     }
   }
 );
@@ -43,7 +48,9 @@ export const fetchServiceById = createAsyncThunk(
       const res = await axiosInstance.get(`/services/${id}`);
       return res.data; // single service
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to fetch service");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch service"
+      );
     }
   }
 );
@@ -59,7 +66,9 @@ export const updateService = createAsyncThunk(
       });
       return { id, ...updates, message: res.data.message };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to update service");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to update service"
+      );
     }
   }
 );
@@ -75,7 +84,45 @@ export const deleteService = createAsyncThunk(
       });
       return id; // return deleted service id
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Failed to delete service");
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to delete service"
+      );
+    }
+  }
+);
+
+// Fetch ALL services including inactive
+export const fetchAllServicesWithActive = createAsyncThunk(
+  "services/fetchAllWithActive",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axiosInstance.get("/servicesWithActive");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch services"
+      );
+    }
+  }
+);
+
+// ⭐ FIXED ROUTE HERE (service → services)
+export const toggleServiceStatus = createAsyncThunk(
+  "services/toggleStatus",
+  async ({ id, is_active }, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      await axiosInstance.put(
+        `/service/toggle-status/${id}`, // FIXED
+        { is_active },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      return { id, is_active };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to toggle status"
+      );
     }
   }
 );
@@ -146,6 +193,19 @@ const servicesSlice = createSlice({
       .addCase(deleteService.fulfilled, (state, action) => {
         state.success = true;
         state.services = state.services.filter((s) => s.id !== action.payload);
+      })
+
+      .addCase(fetchAllServicesWithActive.fulfilled, (state, action) => {
+        state.loading = false;
+        state.services = action.payload;
+      })
+
+      .addCase(toggleServiceStatus.fulfilled, (state, action) => {
+        const { id, is_active } = action.payload;
+
+        state.services = state.services.map((s) =>
+          s.id === id ? { ...s, is_active: Boolean(is_active) } : s
+        );
       });
   },
 });
