@@ -119,6 +119,7 @@ router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
 
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
+router.post("/service-document/upload-sample/:id", verifyToken, upload.single("sample_pdf"), serviceDocuments.uploadSamplePDF);
 
 // service inpute
 router.post("/service-input", verifyToken, serviceInput.createServiceInput);

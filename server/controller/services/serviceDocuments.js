@@ -1,4 +1,29 @@
 const db = require("../../config/db");
+const { PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const s3 = require("../../config/aws");
+
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+const REGION = process.env.AWS_REGION;
+const SIGNED_URL_EXPIRY = 3600;
+
+// Helper → Generate Signed URL
+const generateSignedUrl = async (fileUrl) => {
+  try {
+    const baseUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/`;
+    const fileKey = fileUrl.replace(baseUrl, "");
+
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+    });
+
+    return await getSignedUrl(s3, command, { expiresIn: SIGNED_URL_EXPIRY });
+  } catch (err) {
+    console.error("❌ Error generating signed URL:", err);
+    return null;
+  }
+};
 
 /**
  * Create a new service document. Only Admin (role_id 4) can create.
@@ -81,7 +106,23 @@ const getDocumentsByService = async (req, res) => {
     
     const sql = "SELECT * FROM service_documents WHERE service_id = ? ORDER BY sort_order ASC, created_at ASC";
     const [results] = await db.query(sql, [serviceId]);
-    res.json(results);
+
+       const documents = await Promise.all(
+      results.map(async (doc) => {
+        let sampleSignedUrl = null;
+
+        if (doc.sample_pdf_url) {
+          sampleSignedUrl = await generateSignedUrl(doc.sample_pdf_url);
+        }
+
+        return {
+          ...doc,
+          sample_pdf_signed_url: sampleSignedUrl, // <-- NEW FIELD
+        };
+      })
+    );
+
+    res.json(documents);
   } catch (err) {
     console.error("DB Error (getDocumentsByService):", err);
     res.status(500).json({ message: "Database error" });
@@ -105,7 +146,19 @@ const getServiceDocumentById = async (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ message: "Service document not found" });
     }
-    res.json(results[0]);
+    // res.json(results[0]);
+    const doc = results[0];
+
+    let sampleSignedUrl = null;
+
+    if (doc.sample_pdf_url) {
+      sampleSignedUrl = await generateSignedUrl(doc.sample_pdf_url);
+    }
+
+    res.json({
+      ...doc,
+      sample_pdf_signed_url: sampleSignedUrl, // <-- ADDED
+    });
   } catch (err) {
     console.error("DB Error (getServiceDocumentById):", err);
     res.status(500).json({ message: "Database error" });
@@ -204,6 +257,68 @@ const deleteServiceDocument = async (req, res) => {
   }
 };
 
+/**
+ * Upload Sample PDF for service_document
+ * Admin Only (role_id = 4)
+ */
+const uploadSamplePDF = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated_by = req.user ? req.user.id : null;
+
+    // Validate admin
+    const [admin] = await db.query("SELECT role_id FROM admin_users WHERE id = ?", [updated_by]);
+    if (!admin || admin.length === 0) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+    if (admin[0].role_id !== 4) {
+      return res.status(403).json({ message: "Only Admin can upload sample PDF" });
+    }
+
+    // Validate existing document
+    const [doc] = await db.query("SELECT * FROM service_documents WHERE id = ?", [id]);
+    if (doc.length === 0) {
+      return res.status(404).json({ message: "Service document not found" });
+    }
+
+    // Validate file
+    if (!req.file) {
+      return res.status(400).json({ message: "PDF file is required" });
+    }
+
+    // S3 Key Formatting
+    const fileKey = `uploads/sample-pdfs/serviceDoc${id}/${Date.now()}_${req.file.originalname}`;
+
+    // Upload to S3
+    const putCommand = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype || "application/pdf",
+    });
+
+    await s3.send(putCommand);
+
+    const pdfUrl = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${fileKey}`;
+
+    // Update DB
+    await db.query(
+      "UPDATE service_documents SET sample_pdf_url = ? WHERE id = ?",
+      [pdfUrl, id]
+    );
+
+    res.json({
+      message: "Sample PDF uploaded successfully",
+      sample_pdf_url: pdfUrl,
+      signed_url: await generateSignedUrl(pdfUrl),
+    });
+
+  } catch (err) {
+    console.error("❌ DB Error (uploadSamplePDF):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
 // ✅ Export all
 module.exports = {
   createServiceDocument,
@@ -211,4 +326,5 @@ module.exports = {
   getServiceDocumentById,
   updateServiceDocument,
   deleteServiceDocument,
+  uploadSamplePDF,
 };
