@@ -71,7 +71,6 @@ const getAllServices = async (req, res) => {
       SELECT s.*, c.name AS category_name
       FROM services s
       LEFT JOIN categories c ON s.category_id = c.id
-      WHERE s.is_active = TRUE
       ORDER BY s.created_at DESC
     `;
     const [results] = await db.query(sql);
@@ -318,6 +317,7 @@ const getAllServicesWithInactive = async (req, res) => {
       SELECT s.*, c.name AS category_name
       FROM services s
       LEFT JOIN categories c ON s.category_id = c.id
+      WHERE s.is_active = TRUE
       ORDER BY s.created_at DESC
     `;
     const [results] = await db.query(sql);
