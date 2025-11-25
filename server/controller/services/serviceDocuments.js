@@ -320,6 +320,47 @@ const uploadSamplePDF = async (req, res) => {
   }
 };
 
+/**
+ * Delete Sample PDF for service_document
+ * Admin Only (role_id = )
+ */
+const deleteSamplePDF = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted_by = req.user ? req.user.id : null;
+
+    // Validate admin
+    const [admin] = await db.query("SELECT role_id FROM admin_users WHERE id = ?", [deleted_by]);
+    if (!admin || admin.length === 0) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+    if (admin[0].role_id !== 4) {
+      return res.status(403).json({ message: "Only Admin can delete sample PDF" });
+    }
+
+    // Get document to verify it exists
+    const [doc] = await db.query("SELECT sample_pdf_url FROM service_documents WHERE id = ?", [id]);
+    if (doc.length === 0) {
+      return res.status(404).json({ message: "Service document not found" });
+    }
+
+    // Clear sample_pdf_url from DB only (keep S3 file intact)
+    await db.query(
+      "UPDATE service_documents SET sample_pdf_url = NULL WHERE id = ?",
+      [id]
+    );
+
+    res.json({
+      message: "Sample PDF removed from document successfully",
+      sample_pdf_url: null,
+    });
+
+  } catch (err) {
+    console.error("❌ DB Error (deleteSamplePDF):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
 // ✅ Export all
 module.exports = {
   createServiceDocument,
@@ -328,4 +369,5 @@ module.exports = {
   updateServiceDocument,
   deleteServiceDocument,
   uploadSamplePDF,
+  deleteSamplePDF,
 };
