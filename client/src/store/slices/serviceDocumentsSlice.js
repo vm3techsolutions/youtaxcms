@@ -63,6 +63,55 @@ export const deleteServiceDocument = createAsyncThunk(
   }
 );
 
+// Upload sample document
+export const uploadSamplePDF = createAsyncThunk(
+  "serviceDocuments/uploadSamplePDF",
+  async ({ id, file }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("sample_pdf", file);
+
+      const res = await axiosInstance.post(
+        `/service-document/upload-sample/${id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return { id, sample_pdf_url: res.data.sample_pdf_url };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to upload PDF");
+    }
+  }
+);
+
+export const deleteSamplePDF = createAsyncThunk(
+  "serviceDocuments/deleteSamplePDF",
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const res = await axiosInstance.delete(`/service-document/delete-sample/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return { id }; 
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to delete sample PDF");
+    }
+  }
+);
+
+
+
 // --------------------- Slice ---------------------
 
 const initialState = {
@@ -152,9 +201,60 @@ const serviceDocumentsSlice = createSlice({
       .addCase(deleteServiceDocument.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+
+      .addCase(uploadSamplePDF.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+.addCase(uploadSamplePDF.fulfilled, (state, action) => {
+  state.loading = false;
+  state.success = true;
+
+  const { id, sample_pdf_url } = action.payload;
+
+  // Update in serviceDocuments store (search in all serviceId groups)
+  Object.keys(state.serviceDocuments).forEach(serviceId => {
+    const index = state.serviceDocuments[serviceId].findIndex(d => d.id === id);
+    if (index !== -1) {
+      state.serviceDocuments[serviceId][index].sample_pdf_url = sample_pdf_url;
+    }
+  });
+})
+.addCase(uploadSamplePDF.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+})
+
+.addCase(deleteSamplePDF.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+
+.addCase(deleteSamplePDF.fulfilled, (state, action) => {
+  state.loading = false;
+  const { id } = action.payload;
+
+  // Remove sample PDF URL from the matching document
+  Object.keys(state.serviceDocuments).forEach(serviceId => {
+    const index = state.serviceDocuments[serviceId].findIndex(d => d.id === id);
+    if (index !== -1) {
+      state.serviceDocuments[serviceId][index].sample_pdf_url = null;
+      state.serviceDocuments[serviceId][index].sample_pdf_signed_url = null;
+    }
+  });
+})
+
+.addCase(deleteSamplePDF.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+});
+
+
   },
 });
+
+
 
 export const { resetSuccess } = serviceDocumentsSlice.actions;
 export default serviceDocumentsSlice.reducer;

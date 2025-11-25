@@ -176,7 +176,29 @@ export default function DocumentUpload() {
               <div className="md:col-span-2 flex items-center font-semibold text-gray-700">
                 {doc.doc_name}{" "}
                 {doc.is_mandatory && <span className="text-red-500">*</span>}
+
+                 {/* SAMPLE DOCUMENT (if exists) */}
+{doc.sample_pdf_signed_url && (
+  <div className="md:col-span-4 mb-3">
+    <div className="flex items-center justify-between bg-gray-100 p-2 rounded">
+      
+
+      <a
+        href={doc.sample_pdf_signed_url}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+      >
+        Download
+      </a>
+    </div>
+  </div>
+)}
+
               </div>
+
+             
 
               {/* Input + thumbnails */}
               <div className="md:col-span-4 flex flex-col">

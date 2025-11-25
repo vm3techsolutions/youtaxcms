@@ -7,6 +7,8 @@ import {
   fetchDocumentsByService,
   createServiceDocument,
   deleteServiceDocument,
+  uploadSamplePDF,
+  deleteSamplePDF,
 } from "@/store/slices/serviceDocumentsSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
 import { Plus, X, Trash2, Save, Pencil } from "lucide-react";
@@ -366,10 +368,11 @@ export default function ServiceCardsBookPopup() {
                 Update Service
               </button>
 
+                    
 
               {/* Documents Section */}
               <div className="mb-4">
-                <h4 className="font-semibold mb-2">Required Documents</h4>
+                {/* <h4 className="font-semibold mb-2">Required Documents</h4>
 
                 {docsLoading ? (
                   <p className="text-gray-400">Loading documents...</p>
@@ -460,7 +463,163 @@ export default function ServiceCardsBookPopup() {
                       </div>
                     )}
                   </>
-                )}
+                )} */}
+
+                {/* Documents Section */}
+<div className="mb-4">
+  <h4 className="font-semibold mb-2">Required Documents</h4>
+
+  {docsLoading ? (
+    <p className="text-gray-400">Loading documents...</p>
+  ) : (
+    <>
+      {newDoc === null && (
+        <>
+          {documents.length === 0 && (
+            <p className="text-gray-500">No documents added yet.</p>
+          )}
+
+          {documents.map((doc) => (
+  <div
+    key={doc.id}
+    className="border rounded p-3 mb-3 bg-gray-50 flex flex-col gap-2"
+  >
+    <div className="flex justify-between items-center">
+      <span className="font-medium">{doc.doc_name}</span>
+
+      {/* Delete Document */}
+      <button
+        onClick={() => handleDeleteDocument(doc)}
+        className="text-red-600 hover:text-red-800"
+      >
+        <Trash2 size={18} />
+      </button>
+    </div>
+
+    {/* Sample PDF Section */}
+    <div className="pl-2 mt-1">
+      {doc.sample_pdf_url ? (
+        <div className="flex items-center gap-3">
+          <a
+            href={doc.sample_pdf_signed_url || doc.sample_pdf_url}
+            target="_blank"
+            className="text-blue-600 underline text-sm"
+          >
+            View Sample PDF
+          </a>
+
+          {/* ⭐ DELETE SAMPLE PDF BUTTON */}
+          <button
+            onClick={() => dispatch(deleteSamplePDF({ id: doc.id }))}
+            className="text-red-500 text-sm hover:underline"
+          >
+            Delete Sample
+          </button>
+        </div>
+      ) : (
+        <label className="cursor-pointer text-blue-600 underline text-sm">
+          <input
+            type="file"
+            className="hidden"
+            accept="application/pdf"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                dispatch(uploadSamplePDF({ id: doc.id, file }));
+              }
+            }}
+          />
+          Upload Sample PDF
+        </label>
+      )}
+    </div>
+  </div>
+))}
+
+
+          <button
+            onClick={handleAddDocument}
+            className="flex items-center gap-2 primary-btn px-4 py-2 rounded mt-2"
+          >
+            <Plus size={16} /> Add Document
+          </button>
+        </>
+      )}
+
+      {newDoc !== null && (
+        <div className="flex flex-col gap-2 border rounded p-4 mt-2">
+          <input
+            type="text"
+            name="doc_code"
+            value={newDoc.doc_code}
+            onChange={handleChange}
+            placeholder="Document Code"
+            className="border rounded p-2"
+          />
+          <input
+            type="text"
+            name="doc_name"
+            value={newDoc.doc_name}
+            onChange={handleChange}
+            placeholder="Document Name"
+            className="border rounded p-2"
+          />
+          <select
+            name="doc_type"
+            value={newDoc.doc_type}
+            onChange={handleChange}
+            className="border rounded p-2"
+          >
+            <option value="identity">Identity</option>
+            <option value="address">Address</option>
+            <option value="financial">Financial</option>
+            <option value="legal">Legal</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="is_mandatory"
+              checked={newDoc.is_mandatory}
+              onChange={handleChange}
+            />
+            Mandatory
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="allow_multiple"
+              checked={newDoc.allow_multiple}
+              onChange={handleChange}
+            />
+            Multiple
+          </label>
+
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleSaveDocument}
+              className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 flex items-center gap-1"
+            >
+              <Save size={16} /> Save
+            </button>
+
+            <button
+              onClick={() => setNewDoc(null)}
+              className="bg-gray-200 px-4 py-1 rounded hover:bg-gray-300 flex items-center gap-1"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )}
+
+  {docsError && <p className="text-red-600 mt-2">{docsError}</p>}
+</div>
+
 
                 <ServiceCustomFields
                   service={selectedService}
