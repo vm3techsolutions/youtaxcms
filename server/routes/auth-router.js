@@ -27,6 +27,7 @@ const accountController = require('../controller/adminController/accountControll
 const { isAccount } = require('../middleware/auth');
 const operationController = require('../controller/adminController/operationController/operation');
 const { isOperation } = require('../middleware/auth');
+const operationDocumentController = require('../controller/adminController/operationController/operationDocumentsController');
 const adminControllerScond = require('../controller/adminController/adminControllerSecond/admin');
 const { isAdmin } = require('../middleware/auth');
 
@@ -176,6 +177,14 @@ router.get("/operations/upload/deliverable/:order_id", verifyToken , isOperation
 router.get("/operations/upload/deliverablebyid/:id", verifyToken , isOperation, operationController.getDeliverableById);
 router.get("/operations/upload/all/deliverable", verifyToken , isOperation, operationController.getAllDeliverablesWithCustomerAndService);
 router.get("/operations/dashboard/stats", verifyToken, isOperation, operationController.getOperationDashboardStats);
+
+// operation document
+router.post("/operations/document/upload", verifyToken, isOperation, upload.single("file"), operationDocumentController.uploadOperationDocument);
+router.get("/operations/document/byOrderId/:order_id", verifyToken, isOperation, operationDocumentController.getOperationDocumentsForOrder);
+router.get("/operations/document/byId/:id", verifyToken, isOperation, operationDocumentController.getOperationDocumentById);
+router.delete("/operations/document/delete/:id", verifyToken, isOperation, operationDocumentController.deleteOperationDocument);
+router.get("/operations/document/all", verifyToken, isOperation, operationDocumentController.getAllOperationDocuments);
+
 
 // admin routes second
 router.get("/admin/orders/all", verifyToken , isAdmin, adminControllerScond.getAssignedOrdersForAdmin);

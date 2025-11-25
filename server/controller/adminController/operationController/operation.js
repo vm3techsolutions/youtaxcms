@@ -428,11 +428,11 @@ const getOperationDashboardStats = async (req, res) => {
     // Assigned Orders (current assignment)
     // -----------------------------------------
     const [[assignedOrders]] = await db.query(`
-      SELECT COUNT(*) AS count
-      FROM orders o
-      ${latestLogJoin}
-      WHERE ol.to_role = 'operation' AND ol.to_user = ?
-    `, [operationId]);
+          SELECT COUNT(*) AS count
+          FROM orders o
+          ${latestLogJoin}
+          WHERE ol.to_role = 'operation' AND ol.to_user = ?
+        `, [operationId]);
 
     // -----------------------------------------
     //  Worked Orders (ANY time operation handled order)
