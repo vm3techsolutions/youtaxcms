@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchServices, fetchServiceById } from "@/store/slices/servicesSlice";
+import { fetchAllServicesWithActive, fetchServiceById } from "@/store/slices/servicesSlice";
 import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
@@ -59,7 +59,7 @@ export default function ServicesFlex() {
   const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
-    dispatch(fetchServices());
+    dispatch(fetchAllServicesWithActive());
     dispatch(fetchCategories());
   }, [dispatch]);
 

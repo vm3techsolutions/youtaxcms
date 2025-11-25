@@ -105,7 +105,7 @@ router.get("/service/:id", services.getServiceById);
 router.get("/service-by-category/:category_id", services.getServiceByCategoryId);
 router.put("/service/:id", verifyToken, services.updateService);
 router.put("/service/toggle-status/:id", verifyToken, services.toggleServiceStatus);
-router.get("/servicesWithInactive", services.getAllServicesWithInactive)
+router.get("/servicesWithActive", services.getAllServicesWithActive)
 router.delete("/service/:id", verifyToken, services.deleteService);
 // Service Category Routes
 router.post("/service-categories", verifyToken, categoryController.createCategory);

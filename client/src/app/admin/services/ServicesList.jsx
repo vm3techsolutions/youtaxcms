@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchServices, updateService, resetSuccess, toggleServiceStatus } from "@/store/slices/servicesSlice";
+import { fetchAllServicesWithActive, updateService, resetSuccess } from "@/store/slices/servicesSlice";
 import {
   fetchDocumentsByService,
   createServiceDocument,
@@ -31,7 +31,7 @@ export default function ServiceCardsBookPopup() {
 
   // Fetch all services
   useEffect(() => {
-    dispatch(fetchServices());
+    dispatch(fetchAllServicesWithActive());
     dispatch(fetchCategories());
   }, [dispatch]);
 
@@ -52,14 +52,10 @@ export default function ServiceCardsBookPopup() {
   // Refresh services after successful update
   useEffect(() => {
     if (success) {
-      dispatch(fetchServices());
+      dispatch(fetchAllServicesWithActive());
       dispatch(resetSuccess());
     }
   }, [success, dispatch]);
-
-  const handleToggleService = (id, currentStatus) => {
-    dispatch(toggleServiceStatus({ id, is_active: !currentStatus }));
-  };
 
   const handleServiceClick = (service) => {
     setSelectedService(service);
@@ -126,9 +122,6 @@ export default function ServiceCardsBookPopup() {
   await dispatch(getServiceInputsByService(selectedService.id));
   setEditField(null);
 };
-
-
-
 
   const handleAddDocument = () => {
     setNewDoc({
