@@ -55,7 +55,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
         o.id AS order_id,
         s.name AS service_name,
         c.name AS customer_name,
-        c.email AS customer_email
+        c.email AS customer_email,
+        c.phone AS customer_phone,
+        c.location AS customer_location
       FROM payments p
       JOIN orders o ON p.order_id = o.id
       JOIN services s ON o.service_id = s.id
@@ -75,6 +77,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const customerName =
       overrides.name || payment.customer_name || `Customer_${payment.customer_id}`;
     const customerEmailFinal = email || payment.customer_email;
+    const customerPhone = payment.customer_phone || "N/A";
+    const customerLocation = payment.customer_location || "N/A";
+
     const amountPaid =
       overrides.amount !== undefined ? overrides.amount : payment.amount || 0;
     const paymentMode = overrides.paymentMode || payment.payment_mode || "Online";
@@ -83,7 +88,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const status = overrides.status || payment.status || "Paid";
 
     // -----------------------------
-    // Generate PDF receipt with logo
+    // Generate PDF receipt (unchanged)
     // -----------------------------
     const tmpDir = path.join(__dirname, "../tmp");
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
@@ -95,27 +100,25 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
 
-    // ✅ Register fonts
     const regularFontPath = path.join(__dirname, "NotoSans-Regular.ttf");
     const boldFontPath = path.join(__dirname, "NotoSans-Bold.ttf");
 
     if (!fs.existsSync(regularFontPath) || !fs.existsSync(boldFontPath)) {
-      console.error("⚠️ Missing font files! Please add NotoSans-Regular.ttf and NotoSans-Bold.ttf in utils/");
+      console.error(
+        "⚠️ Missing font files! Please add NotoSans-Regular.ttf and NotoSans-Bold.ttf in utils/"
+      );
     }
 
     doc.registerFont("Noto", regularFontPath);
     doc.registerFont("Noto-Bold", boldFontPath);
 
-    // Default font
     doc.font("Noto");
 
-    // Logo
     const logoPath = path.resolve(__dirname, "logo.png");
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 45, { width: 120 });
     }
 
-    // Header
     doc
       .font("Noto-Bold")
       .fontSize(16)
@@ -125,42 +128,40 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       .font("Noto")
       .fontSize(10)
       .text("Pune, Maharashtra, India", { align: "right" })
-      .text("GST Number: 27AAPFV4818G1ZQ", { align: "right" })
       .text("Email: support@youtax.in", { align: "right" })
       .moveDown(3);
 
-    // Billing info
-    doc
-      .font("Noto-Bold")
-      .fontSize(12)
-      .fillColor("#000")
-      .text("Billed To:", 50, doc.y)
-      .moveDown(0.3);
-    doc.font("Noto").text(`${customerName}`).text(`${customerEmailFinal}`).moveDown(1);
+    doc.font("Noto-Bold").fontSize(12).fillColor("#000").text("Billed To:", 50, doc.y);
 
-    // Invoice Info
-    const invoiceTop = 160;
+    doc
+      .font("Noto")
+      .text(`${customerName}`)
+      .text(`${customerEmailFinal}`)
+      .text(`Phone: ${customerPhone}`)
+      .text(`Location: ${customerLocation}`)
+      .moveDown(1);
+
+    const invoiceTop = 180;
     doc.font("Noto-Bold").fontSize(12).text("Invoice", 400, invoiceTop);
     doc
       .font("Noto")
       .fontSize(10)
-      .text(`Invoice #: ${payment.payment_id}`, 400, invoiceTop + 20)
+      .text(`Invoice : ${payment.payment_id}`, 400, invoiceTop + 20)
       .text(`Date: ${paidDate}`, 400, invoiceTop + 35);
 
-    // Add txn_ref to PDF if present
     if (payment.txn_ref) {
       doc.text(`Txn Ref: ${payment.txn_ref}`, 400, invoiceTop + 50);
     }
 
     doc.moveDown(3);
 
-    // Table header
     const tableTop = doc.y + 10;
     const itemX = 50;
     const colWidths = [200, 120, 80, 100];
     doc.rect(itemX, tableTop, 500, 20).fill("#003366").stroke();
     const headers = ["Description", "Service", "Qty", "Amount"];
     doc.fillColor("#fff").font("Noto-Bold").fontSize(10);
+
     headers.forEach((header, i) => {
       doc.text(
         header,
@@ -169,25 +170,35 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       );
     });
 
-    // Table row
     const rowY = tableTop + 25;
     doc.fillColor("#000").font("Noto").fontSize(10);
     doc.rect(itemX, rowY, 500, 20).stroke();
     doc.text("Youtax Service Subscription", itemX + 10, rowY + 5);
     doc.text(serviceName, itemX + colWidths[0] + 10, rowY + 5);
     doc.text("1", itemX + colWidths[0] + colWidths[1] + 10, rowY + 5);
-    doc.text(`₹${amountPaid}`, itemX + colWidths[0] + colWidths[1] + colWidths[2] + 10, rowY + 5);
+    doc.text(
+      `₹${amountPaid}`,
+      itemX + colWidths[0] + colWidths[1] + colWidths[2] + 10,
+      rowY + 5
+    );
 
-    // Total
     const totalsY = rowY + 50;
-    doc.font("Noto-Bold").fontSize(12)
+    doc
+      .font("Noto-Bold")
+      .fontSize(12)
       .text(`Total: ₹${amountPaid}`, 400, totalsY, { align: "right" });
 
-    // Footer
     doc.moveDown(5);
-    doc.font("Noto").fontSize(10).fillColor("#777")
+    doc
+      .font("Noto")
+      .fontSize(10)
+      .fillColor("#777")
       .text("Thank you for your business!", { align: "center" })
-      .text("Youtax.in", { align: "center", link: "https://youtax.in", underline: true });
+      .text("Youtax.in", {
+        align: "center",
+        link: "https://youtax.in",
+        underline: true,
+      });
 
     doc.end();
 
@@ -199,7 +210,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     // -----------------------------
     // Upload PDF to S3
     // -----------------------------
-    const safeCustomerName = customerName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+    const safeCustomerName = customerName
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9_]/g, "");
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const s3Key = `uploads/receipts/${payment.customer_id}_${safeCustomerName}_${payment.order_id}/${timestamp}_${fileName}`;
 
@@ -216,8 +229,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
 
     const s3Url = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${s3Key}`;
 
-    // Ensure receipt_url column exists
-    const [columns] = await db.query("SHOW COLUMNS FROM payments LIKE 'receipt_url'");
+    const [columns] = await db.query(
+      "SHOW COLUMNS FROM payments LIKE 'receipt_url'"
+    );
     if (columns.length === 0) {
       await db.query("ALTER TABLE payments ADD COLUMN receipt_url VARCHAR(500)");
     }
@@ -226,10 +240,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       "UPDATE payments SET receipt_url = ? WHERE id = ?",
       [s3Url, payment.payment_id]
     );
-    console.log("✅ Receipt URL saved to payments table");
 
     // -----------------------------
-    // Send email with logo and attachment
+    // Send EMAIL (UPDATED DESIGN)
     // -----------------------------
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -242,72 +255,123 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       tls: { rejectUnauthorized: false },
     });
 
+    // Use CID inline image so email clients display the logo reliably
+    const logoCid = "youtaxlogo@cid";
+    // Keep base64 available (not used in HTML now) in case fallback required elsewhere
     const logoBase64 = imageToBase64(logoPath);
 
-    // Add txn_ref to the email content if present
-    const txnRefHtml = payment.txn_ref
-      ? `<tr>
-          <td style="padding: 8px; border: 1px solid #ddd;"><strong>Txn Ref</strong></td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${payment.txn_ref}</td>
-        </tr>`
-      : "";
-
     const htmlContent = `
-      <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
-        ${logoBase64 ? `<img src="${logoBase64}" width="120" style="display:block;margin-bottom:20px;" />` : ""}
-        <h2 style="color: #4CAF50;">Youtax</h2>
-        <p>Hi <strong>${customerName}</strong>,</p>
-        <p>We’re confirming that your payment of 
-          <strong style="color: #4CAF50;">₹${amountPaid}</strong> 
-          for <strong>${serviceName}</strong> has been received successfully 🎉.
-        </p>
-        <table style="border-collapse: collapse; margin: 20px 0; width: 100%; max-width: 500px;">
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Invoice #</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${payment.payment_id}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Service</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${serviceName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; color: #4CAF50;">${status}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Payment Mode</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${paymentMode}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Amount Paid</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd;">₹${amountPaid}</td>
-          </tr>
-          ${txnRefHtml}
-        </table>
-        <p>You can download your official receipt attached below as a PDF.</p>
-        <p>Best regards,<br/><strong>The Youtax Team</strong></p>
+      <div style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 30px;">
+          
+          <div style="font-size: 22px; font-weight: bold; color: #003366;">
+            Youtax
+          </div>
+
+          <div style="text-align: center; margin-top: 20px;">
+            <img src="cid:${logoCid}" width="180" style="margin-bottom: 20px;" alt="Youtax Logo" />
+            <h2 style="color: #003366; margin-top: 10px;">
+              Payment Receipt
+            </h2>
+          </div>
+
+          <p style="font-size: 15px; color: #333;">
+            Hi <strong>${customerName}</strong>,<br/><br/>
+            Your payment has been successfully received. Please find the details below:
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Invoice #</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${payment.payment_id}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Service</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${serviceName}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Email</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${customerEmailFinal}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Phone</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${customerPhone}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Location</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${customerLocation}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Mode</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${paymentMode}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount Paid</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">₹${amountPaid}</td>
+            </tr>
+
+            ${
+              payment.txn_ref
+                ? `
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Txn Ref</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${payment.txn_ref}</td>
+            </tr>
+            `
+                : ""
+            }
+          </table>
+
+          <p style="font-size: 15px; color: #333;">
+            Your official receipt is attached to this email.<br/><br/>
+            Thank you for choosing Youtax.<br/><br/>
+            Warm regards,<br/>
+            <strong>Team Youtax</strong>
+          </p>
+
+          <p style="margin-top: 30px; font-size: 12px; color: #777; text-align: center;">
+            © 2025 Youtax. All rights reserved.
+          </p>
+
+        </div>
       </div>
     `;
+
+    // Send mail with inline logo (cid) and PDF attachment
+    const attachments = [
+      {
+        filename: fileName,
+        path: filePath,
+      },
+    ];
+
+    // Attach logo inline if exists
+    if (fs.existsSync(logoPath)) {
+      attachments.push({
+        filename: path.basename(logoPath),
+        path: logoPath,
+        cid: logoCid,
+      });
+    }
 
     await transporter.sendMail({
       from: `"Youtax" <${process.env.EMAIL_USER}>`,
       to: customerEmailFinal,
-      subject: `✅ Payment Receipt - Payment #${payment.payment_id}`,
+      subject: `Payment Receipt - ${payment.payment_id}`,
       html: htmlContent,
-      attachments: [
-        {
-          filename: fileName,
-          path: filePath,
-        },
-      ],
+      attachments,
     });
-    console.log("✅ Payment receipt email sent to:", customerEmailFinal);
 
-    // Cleanup temp PDF
     try {
       await fs.promises.unlink(filePath);
     } catch (err) {
-      console.warn("⚠️ Could not delete temp file:", err);
+      // ignore cleanup errors
     }
 
     return { emailSent: true };
