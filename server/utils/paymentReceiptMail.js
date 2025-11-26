@@ -19,6 +19,7 @@ function imageToBase64(imgPath) {
 }
 
 async function sendPaymentReceiptMail(arg1, customerEmail) {
+   console.log("🚀 sendPaymentReceiptMail() triggered");
   try {
     let paymentId;
     let email;
@@ -79,6 +80,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const customerEmailFinal = email || payment.customer_email;
     const customerPhone = payment.customer_phone || "N/A";
     const customerLocation = payment.customer_location || "N/A";
+    const paymentType = overrides.paymentType || payment.payment_type || "N/A";
 
     const amountPaid =
       overrides.amount !== undefined ? overrides.amount : payment.amount || 0;
@@ -147,10 +149,11 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       .font("Noto")
       .fontSize(10)
       .text(`Invoice : ${payment.payment_id}`, 400, invoiceTop + 20)
-      .text(`Date: ${paidDate}`, 400, invoiceTop + 35);
+      .text(`Date: ${paidDate}`, 400, invoiceTop + 35)
+      .text(`Payment Type: ${paymentType}`, 400, invoiceTop + 50); 
 
     if (payment.txn_ref) {
-      doc.text(`Txn Ref: ${payment.txn_ref}`, 400, invoiceTop + 50);
+      doc.text(`Txn Ref: ${payment.txn_ref}`, 400, invoiceTop + 65);
     }
 
     doc.moveDown(3);
@@ -206,7 +209,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       writeStream.on("finish", resolve);
       writeStream.on("error", reject);
     });
-
+    console.log("📄 PDF generated:", fileName);
     // -----------------------------
     // Upload PDF to S3
     // -----------------------------
@@ -312,6 +315,11 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
             </tr>
 
             <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Type</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${paymentType}</td>
+            </tr>
+
+            <tr>
               <td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount Paid</strong></td>
               <td style="padding: 10px; border: 1px solid #ddd;">₹${amountPaid}</td>
             </tr>
@@ -359,6 +367,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
         cid: logoCid,
       });
     }
+    console.log("📤 Sending email to:", customerEmailFinal);
 
     await transporter.sendMail({
       from: `"Youtax" <${process.env.EMAIL_USER}>`,
@@ -367,12 +376,13 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       html: htmlContent,
       attachments,
     });
-
+    console.log("✅ Email sent successfully!");
     try {
       await fs.promises.unlink(filePath);
     } catch (err) {
       // ignore cleanup errors
     }
+    
 
     return { emailSent: true };
   } catch (error) {
