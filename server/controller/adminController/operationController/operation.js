@@ -445,6 +445,28 @@ const getOperationDashboardStats = async (req, res) => {
     `, [operationId]);
 
     // -----------------------------------------
+    // Pending Payment Orders
+    // -----------------------------------------
+    const [[pendingPaymentOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'operation' AND ol.to_user = ? 
+        AND o.payment_status = 'pending'
+    `, [operationId]);
+
+    // -----------------------------------------
+    // Full Payment Orders
+    // -----------------------------------------
+    const [[fullPaymentOrders]] = await db.query(`
+      SELECT COUNT(*) AS count
+      FROM orders o
+      ${latestLogJoin}
+      WHERE ol.to_role = 'operation' AND ol.to_user = ? 
+        AND o.payment_status = 'paid'
+    `, [operationId]);
+
+    // -----------------------------------------
     // Response
     // -----------------------------------------
     res.json({
@@ -452,7 +474,8 @@ const getOperationDashboardStats = async (req, res) => {
       data: {
         assignedOrders: assignedOrders.count || 0,
         workedOrders: workedOrders.count || 0,
-    
+        pendingPaymentOrders: pendingPaymentOrders.count || 0,
+        fullPaymentOrders: fullPaymentOrders.count || 0,
       }
     });
 
