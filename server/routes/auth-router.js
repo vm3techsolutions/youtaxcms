@@ -181,7 +181,7 @@ router.get("/operations/dashboard/stats", verifyToken, isOperation, operationCon
 
 // operation document
 router.post("/operations/document/upload", verifyToken, isOperation, upload.single("file"), operationDocumentController.uploadOperationDocument);
-router.get("/operations/document/byOrderId/:order_id", verifyToken, isOperation, operationDocumentController.getOperationDocumentsForOrder);
+router.get("/operations/document/byOrderId/:order_id", verifyToken, operationDocumentController.getOperationDocumentsForOrder);
 router.get("/operations/document/byId/:id", verifyToken, isOperation, operationDocumentController.getOperationDocumentById);
 router.delete("/operations/document/delete/:id", verifyToken, isOperation, operationDocumentController.deleteOperationDocument);
 router.get("/operations/document/all", verifyToken, isOperation, operationDocumentController.getAllOperationDocuments);

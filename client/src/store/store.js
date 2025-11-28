@@ -25,6 +25,7 @@ import customerStatsReducer from "./slices/customerStatsSlice";
 import categoryReducer from "./slices/categorySlice";
 import serviceInputReducer from "./slices/serviceInputSlice";
 import orderInputsReducer from "./slices/orderInputsSlice";
+import operationDocumentReducer from "./slices/operationDocumentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -54,5 +55,6 @@ export const store = configureStore({
     category: categoryReducer,
     serviceInput: serviceInputReducer,
     orderInputs: orderInputsReducer,
+    operationDocuments: operationDocumentReducer,
   },
 });
