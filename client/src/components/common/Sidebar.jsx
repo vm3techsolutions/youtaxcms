@@ -2,6 +2,7 @@
 
 import { useSelector } from "react-redux";
 import Link from "next/link";
+import Image from "next/image";
 
 // ✅ Heroicons (solid)
 import {
@@ -15,11 +16,13 @@ import {
   ClipboardDocumentListIcon, // Order History / Records
   BriefcaseIcon, // Deliverables / Work Items
   TagIcon, // Categories
+  HomeIcon, // Dashboard
 } from "@heroicons/react/24/solid";
 
 // 🔹 Menu configuration with distinct icons per item
 const menuConfig = {
   Admin: [
+    {name: "Dashboard", path: "/admin/dashboard", icon: HomeIcon },
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
     { name: "Categories", path: "/admin/service-categories", icon: TagIcon },
@@ -29,17 +32,20 @@ const menuConfig = {
   ],
 
   Sale: [
+    {name: "Dashboard", path: "/sales/dashboard", icon: HomeIcon },
     { name: "Orders", path: "/sales/orders", icon: BanknotesIcon },
     { name: "Verify KYC", path: "/sales/verify-kyc", icon: IdentificationIcon },
     { name: "Order History", path: "/sales/order-history", icon: ClipboardDocumentListIcon },
   ],
 
   Accounts: [
+    {name : "Dashboard", path: "/accounts/dashboard", icon: HomeIcon },
     { name: "Orders", path: "/accounts/orders", icon: BanknotesIcon },
     { name: "Order History", path: "/accounts/order-history", icon: ClipboardDocumentListIcon },
   ],
 
   Operation: [
+    {name : "Dashboard", path: "/operations/dashboard", icon: HomeIcon },
     { name: "Orders", path: "/operations/orders", icon: BanknotesIcon },
     { name: "Deliverables", path: "/operations/deliverables", icon: BriefcaseIcon },
     { name: "Order History", path: "/operations/order-history", icon: ClipboardDocumentListIcon },
@@ -49,10 +55,31 @@ const menuConfig = {
 export default function Sidebar() {
   const { currentAdmin } = useSelector((state) => state.admin);
   const role = currentAdmin?.role || "Viewer"; // fallback role
-  const items = menuConfig[role] || [];
+
+  // const items = menuConfig[role] || [];
+
+  const items = (menuConfig[role] || []).map((item) => {
+  if (item.name === "Dashboard") {
+    return { ...item, name: `${role} Dashboard` };
+  }
+  return item;
+});
+
 
   return (
-    <div className="h-full bg-white flex flex-col justify-between border-r border-gray-200">
+    <div className="h-full bg-white flex flex-col border-r border-gray-200">
+
+           {/* Logo */}
+              <div className="flex justify-center mb-4 h-fit">
+  <Image 
+    src="/assets/logo/youtax_logo.png"
+    alt="YouTax Logo"
+    width={250}
+    height={50}
+    className="h-20 w-auto" 
+  />
+</div>
+
       <nav className="mt-6 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;

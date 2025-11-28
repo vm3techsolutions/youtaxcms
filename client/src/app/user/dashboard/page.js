@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCustomerStats } from "@/store/slices/customerStatsSlice";
@@ -45,7 +44,7 @@ export default function DashboardPage() {
   const chartData = [
     { name: "Completed", value: stats.completedOrders },
     { name: "In Progress", value: stats.inProgressOrders },
-    { name: "Pending Payment", value: stats.pendingPayments },
+    // { name: "Pending Payment", value: stats.pendingPayments },
   ];
   
 
@@ -89,7 +88,7 @@ const renderCustomLabel = ({
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8">
+    <div className="min-h-screen bg-liner-to-br from-gray-50 via-white to-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-8 text-gray-800">
         Welcome Back 👋
       </h1>
@@ -105,8 +104,7 @@ const renderCustomLabel = ({
           <div
             key={idx}
             className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all border-t-4"
-            style={{ borderTopColor: COLORS[idx] }}
-          >
+            style={{ borderTopColor: COLORS[idx] }}>
             <h2 className="text-gray-500 text-sm font-semibold">{card.label}</h2>
             <p className={`text-4xl font-bold mt-2 ${card.color}`}>{card.value}</p>
           </div>
@@ -114,12 +112,14 @@ const renderCustomLabel = ({
       </div>
 
       {/* 🔹 Analytics Section */}
-      <div className="bg-white rounded-2xl shadow p-8 flex flex-col lg:flex-row items-center">
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold mb-4 text-gray-700">
+      <div className="bg-white rounded-2xl shadow p-4 flex flex-col lg:flex-row items-center py-8 ">
+        <div className="flex-1 ">
+          <h3 className="text-xl font-semibold mb-4 text-gray-700 ">
             Order Distribution
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+        
+        
+          <ResponsiveContainer width="100%" height={350}>
             <PieChart>
               <Pie
                 data={chartData}
@@ -135,9 +135,13 @@ const renderCustomLabel = ({
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+
+
             </PieChart>
           </ResponsiveContainer>
+
+
+          
         </div>
 
         {/* 🔹 Progress Bars */}
@@ -154,8 +158,9 @@ const renderCustomLabel = ({
                   style={{
                     width: `${(item.value / stats.totalOrders) * 100 || 0}%`,
                     backgroundColor: COLORS[idx],
-                  }}
-                ></div>
+                  }}>
+
+                  </div>
               </div>
             </div>
           ))}

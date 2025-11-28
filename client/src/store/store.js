@@ -26,6 +26,11 @@ import categoryReducer from "./slices/categorySlice";
 import serviceInputReducer from "./slices/serviceInputSlice";
 import orderInputsReducer from "./slices/orderInputsSlice";
 
+import adminStatsReducer from "./slices/adminStatsSlice";
+import salesStatsReducer from "./slices/salesStatsSlice";
+import accountsStatsReducer from "./slices/accountsStatsSlice";
+import operationsStatsReducer from "./slices/operationsStatsSlice";
+
 export const store = configureStore({
   reducer: {
     admin: adminReducer,
@@ -54,5 +59,10 @@ export const store = configureStore({
     category: categoryReducer,
     serviceInput: serviceInputReducer,
     orderInputs: orderInputsReducer,
+
+    adminStats: adminStatsReducer,
+    salesStats: salesStatsReducer,
+    accountsStats: accountsStatsReducer,
+    operationsStats: operationsStatsReducer,
   },
 });

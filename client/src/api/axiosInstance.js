@@ -68,6 +68,10 @@ axiosInstance.interceptors.response.use(
     if (currentPath === "/admin/login") return Promise.reject(error);
     if (fullUrl.includes("/admin/login")) return Promise.reject(error);
 
+    //When User is already on login page, do not redirect again to avoid loop
+    if (currentPath === "/user/login") return Promise.reject(error);
+    if (fullUrl.includes("/user/login")) return Promise.reject(error);
+
     if (status === 401 && typeof window !== "undefined") {
       localStorage.clear();
       sessionStorage.clear();
