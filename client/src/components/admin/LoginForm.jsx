@@ -50,19 +50,19 @@ export default function AdminLoginForm() {
 
         switch (role) {
           case "Admin":
-            router.push("/admin/orders");
+            router.push("/admin/dashboard");
             break;
           case "Sale":       // match DB
-            router.push("/sales/orders");
+            router.push("/sales/dashboard");
             break;
           case "Accounts":   // match DB
-            router.push("/accounts/orders");
+            router.push("/accounts/dashboard");
             break;
           case "Operation":
-            router.push("/operations/orders");
+            router.push("/operations/dashboard");
             break;
           default:
-            router.push("/admin/orders");
+            router.push("/admin/dashboard");
         }
       }
     } catch (err) {
@@ -76,19 +76,19 @@ export default function AdminLoginForm() {
       const role = currentAdmin.role;
       switch (role) {
         case "Admin":
-          router.push("/admin/orders");
+          router.push("/admin/dashboard");
           break;
         case "Sale":
-          router.push("/sales/orders");
+          router.push("/sales/dashboard");
           break;
         case "Accounts":
-          router.push("/accounts/orders");
+          router.push("/accounts/dashboard");
           break;
         case "Operation":
-          router.push("/operations/orders");
+          router.push("/operations/dashboard");
           break;
         default:
-          router.push("/admin/orders");
+          router.push("/admin/dashboard");
       }
     }
   }, [currentAdmin, router]);
