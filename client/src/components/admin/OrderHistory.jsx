@@ -3,21 +3,35 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllOrders } from "@/store/slices/adminCustomerSlice";
 import { fetchAdmins } from "@/store/slices/adminSlice";
+import { fetchOrderLogsByOrderId, clearOrderLogs } from "@/store/slices/orderLogsSlice";
 
 const OrderHistory = () => {
   const dispatch = useDispatch();
   const { orders, loading, error } = useSelector((state) => state.adminCustomer);
   const { admins } = useSelector((state) => state.admin);
-
+  const { logs, loading: logsLoading } = useSelector((state) => state.orderLogs);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
   const ordersPerPage = 10;
 
   useEffect(() => {
     dispatch(fetchAllOrders());
     dispatch(fetchAdmins());
   }, [dispatch]);
+
+  const openLogsModal = (orderId) => {
+    setSelectedOrderId(orderId);
+    dispatch(fetchOrderLogsByOrderId(orderId));
+    setShowModal(true);
+  };
+
+  const closePopup = () => {
+    setShowModal(false);
+    dispatch(clearOrderLogs());
+  };
 
   // ✅ Get assigned admin name by ID
   const getAssignedAdminName = (assignedId) => {
@@ -109,7 +123,11 @@ const OrderHistory = () => {
                   <td className="px-4 py-2 text-sm text-gray-700">
                     {indexOfFirstOrder + index + 1}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800 font-medium">
+                  {/* CLICKABLE ORDER ID → OPEN POPUP */}
+                  <td
+                    onClick={() => openLogsModal(order.id)}
+                    className="px-4 py-2 text-sm text-blue-600 cursor-pointer hover:underline font-semibold"
+                  >
                     #{order.id}
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-800">{order.service_name}</td>
@@ -124,13 +142,12 @@ const OrderHistory = () => {
                     ₹{Number(order.pending_amount || 0).toLocaleString()}
                   </td>
                   <td
-                    className={`px-4 py-2 text-sm font-semibold ${
-                      order.payment_status === "paid"
+                    className={`px-4 py-2 text-sm font-semibold ${order.payment_status === "paid"
                         ? "text-green-600"
                         : order.payment_status === "unpaid"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                    }`}
+                          ? "text-red-600"
+                          : "text-gray-600"
+                      }`}
                   >
                     {order.payment_status}
                   </td>
@@ -138,13 +155,12 @@ const OrderHistory = () => {
                     {getAssignedAdminName(order.assigned_to)}
                   </td>
                   <td
-                    className={`px-4 py-2 text-sm font-semibold ${
-                      order.status === "completed"
+                    className={`px-4 py-2 text-sm font-semibold ${order.status === "completed"
                         ? "text-green-600"
                         : order.status === "under_review"
-                        ? "text-yellow-600"
-                        : "text-gray-600"
-                    }`}
+                          ? "text-yellow-600"
+                          : "text-gray-600"
+                      }`}
                   >
                     {order.status.replace("_", " ")}
                   </td>
@@ -170,11 +186,10 @@ const OrderHistory = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded-lg border ${
-              currentPage === 1
+            className={`px-3 py-1 rounded-lg border ${currentPage === 1
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-white text-gray-700 hover:bg-blue-100"
-            }`}
+              }`}
           >
             Prev
           </button>
@@ -183,11 +198,10 @@ const OrderHistory = () => {
             <button
               key={i}
               onClick={() => handlePageChange(i + 1)}
-              className={`px-3 py-1 rounded-lg border ${
-                currentPage === i + 1
-                  ? "bg-blue-500 text-white"
+              className={`px-3 py-1 rounded-lg border ${currentPage === i + 1
+                  ? "primaryBg text-white"
                   : "bg-white text-gray-700 hover:bg-blue-100"
-              }`}
+                }`}
             >
               {i + 1}
             </button>
@@ -196,16 +210,85 @@ const OrderHistory = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded-lg border ${
-              currentPage === totalPages
+            className={`px-3 py-1 rounded-lg border ${currentPage === totalPages
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-white text-gray-700 hover:bg-blue-100"
-            }`}
+              }`}
           >
             Next
           </button>
         </div>
       )}
+
+      {/* ===========================
+    MODAL (Order Logs Timeline)
+============================ */}
+{showModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center px-4 z-50">
+    <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl p-6 relative 
+      animate-[slideIn_0.3s_ease] max-h-[85vh] overflow-y-auto">
+
+      {/* Close Button */}
+      <button
+        onClick={closePopup}
+        className="absolute top-2 right-0 text-gray-700 hover:text-gray-900 bg-amber-300 px-1 py-1 rounded"
+      >
+        ✕
+      </button>
+
+      {/* ORDER INFO — SHOW ONCE */}
+      {logs.length > 0 && (
+        <div className="mb-6 bg-gray-100 p-4 rounded-lg border">
+          <h3 className="text-xl font-semibold mb-3">Order Details</h3>
+          <p><strong>Customer:</strong> {logs[0].customer_name}</p>
+          <p><strong>Service:</strong> {logs[0].service_name}</p>
+          <p><strong>Date:</strong> {new Date(logs[0].created_at).toLocaleDateString()}</p>
+        </div>
+      )}
+
+      <h3 className="text-xl font-semibold mb-4">Timeline</h3>
+
+      {/* TIMELINE */}
+      {logsLoading ? (
+        <p className="text-center py-4 text-gray-600">Loading logs...</p>
+      ) : logs.length === 0 ? (
+        <p className="text-center py-4 text-gray-500">No logs available.</p>
+      ) : (
+        <div className="space-y-6 mt-4 max-h-[70vh] pr-2">
+          {/*
+            Put the first log at the top, then display the rest
+          */}
+          {[
+            logs[0],                 // first entry at top
+            ...logs.slice(1),        // remaining logs
+          ].map((log, index) => (
+            <div
+              key={index}
+              className="relative pl-8 border-l-2 border-yellow-500 animate-[fadeIn_0.4s_ease]"
+            >
+              {/* Timeline Dot */}
+              <span className="absolute -left-[10px] top-1 w-5 h-5 bg-yellow-500 rounded-full shadow-md"></span>
+
+              {/* MAIN LOG CONTENT */}
+              <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                <p><strong>From ({log.from_role || "System"}):</strong> {log.from_user_name || "System"} </p>
+                <p><strong>To ({log.to_role || "Unassigned"}):</strong> {log.to_user_name || "Unassigned"} </p>
+                <p><strong>Action:</strong> {log.action || "—"}</p>
+                <p><strong>Remark:</strong> {log.remarks || "—"}</p>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date(log.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 };

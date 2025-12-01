@@ -174,7 +174,7 @@ export default function OperationsOrdersPage() {
               <th className="py-2 px-4 border">Amount Paid</th>
               <th className="py-2 px-4 border">Pending Amount</th>
               <th className="py-2 px-4 border">Payment Status</th>
-              <th className="py-2 px-4 border">Order Status</th>
+              <th className="py-2 px-4 border">Deliverable Status</th>
               <th className="py-2 px-4 border">Actions</th>
               <th className="py-2 px-4 border">View Documents</th>{" "}
               <th className="py-2 px-4 border">Reciepts </th>
@@ -202,10 +202,19 @@ export default function OperationsOrdersPage() {
                 <td className="py-2 px-2 border">₹{order.pending_amount}</td>
                 <td className="py-2 px-2 border">{order.payment_status}</td>
                 <td className="py-2 px-4 border">
-                  <span className="px-2 py-1 text-sm rounded bg-yellow-100 text-yellow-800">
-                    {order.status}
+                  <span
+                    className={`px-2 py-1 text-sm rounded 
+      ${order.qc_status === "rejected" ? "bg-red-100 text-red-800" : ""}
+      ${
+        order.qc_status === "pending" || !order.qc_status
+          ? "bg-yellow-100 text-yellow-800"
+          : ""
+      }`}
+                  >
+                    {order.qc_status ? order.qc_status : "pending"}
                   </span>
                 </td>
+
                 <td className="py-2 px-4 border">
                   <button
                     className="px-3 py-1 rounded primary-btn"
@@ -235,29 +244,29 @@ export default function OperationsOrdersPage() {
                 </td> */}
 
                 <td className="py-2 px-4 border">
-  {order.operation_documents && order.operation_documents.length > 0 ? (
-    <button
-      className="px-3 py-1 rounded bg-blue-600 text-white"
-      onClick={() => {
-        setUploadCustomerDocOrder(order);
-        dispatch(getOperationDocuments(order.id)); 
-      }}
-    >
-      View Documents
-    </button>
-  ) : (
-    <button
-      className="px-3 py-1 rounded bg-green-600 text-white"
-      onClick={() => {
-        setUploadCustomerDocOrder(order);
-        dispatch(getDocumentsByOrderId(order.id)); 
-      }}
-    >
-      Upload Documents
-    </button>
-  )}
-</td>
-
+                  {order.operation_documents &&
+                  order.operation_documents.length > 0 ? (
+                    <button
+                      className="px-3 py-1 rounded bg-blue-600 text-white"
+                      onClick={() => {
+                        setUploadCustomerDocOrder(order);
+                        dispatch(getOperationDocuments(order.id));
+                      }}
+                    >
+                      View Documents
+                    </button>
+                  ) : (
+                    <button
+                      className="px-3 py-1 rounded bg-green-600 text-white"
+                      onClick={() => {
+                        setUploadCustomerDocOrder(order);
+                        dispatch(getDocumentsByOrderId(order.id));
+                      }}
+                    >
+                      Upload Documents
+                    </button>
+                  )}
+                </td>
 
                 <td className="py-2 px-4 ">
                   {order.created_at
@@ -460,12 +469,11 @@ export default function OperationsOrdersPage() {
       )}
 
       {uploadCustomerDocOrder && (
-  <OperationDocumentsPopup
-    orderId={uploadCustomerDocOrder.id}
-    onClose={() => setUploadCustomerDocOrder(null)}
-  />
-)}
-
+        <OperationDocumentsPopup
+          orderId={uploadCustomerDocOrder.id}
+          onClose={() => setUploadCustomerDocOrder(null)}
+        />
+      )}
 
       {/* {uploadCustomerDocOrder && (
         <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center">

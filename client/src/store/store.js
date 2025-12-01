@@ -26,11 +26,11 @@ import categoryReducer from "./slices/categorySlice";
 import serviceInputReducer from "./slices/serviceInputSlice";
 import orderInputsReducer from "./slices/orderInputsSlice";
 import operationDocumentReducer from "./slices/operationDocumentsSlice";
-
 import adminStatsReducer from "./slices/adminStatsSlice";
 import salesStatsReducer from "./slices/salesStatsSlice";
 import accountsStatsReducer from "./slices/accountsStatsSlice";
 import operationsStatsReducer from "./slices/operationsStatsSlice";
+import orderLogsReducer from "./slices/orderLogsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -66,5 +66,6 @@ export const store = configureStore({
     accountsStats: accountsStatsReducer,
     operationsStats: operationsStatsReducer,
     operationDocuments: operationDocumentReducer,
+    orderLogs: orderLogsReducer,
   },
 });
