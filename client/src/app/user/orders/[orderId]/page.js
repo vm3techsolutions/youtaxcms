@@ -15,10 +15,17 @@ import {
   submitOrderInputs,
   resetOrderInputsState,
 } from "@/store/slices/orderInputsSlice";
+import {
+  getDocumentsByOrderId,
+} from "@/store/slices/operationDocumentsSlice";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
   const dispatch = useDispatch();
+
+  const { documents: operationDocuments, loading } = useSelector(
+  (state) => state.operationDocuments
+);
 
   const {
     orders = [],
@@ -39,6 +46,13 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [editableInputs, setEditableInputs] = useState({});
+  
+  // Fetch Operation Documents
+useEffect(() => {
+  if (!orderId) return;
+  dispatch(getDocumentsByOrderId(orderId));
+}, [orderId, dispatch]);
+
 
   // Load orders if not loaded
   useEffect(() => {
@@ -387,6 +401,60 @@ export default function OrderDetailPage() {
         </div>
       );
     })}
+  </div>
+)}
+
+{/* ================= Operation Documents ================= */}
+<h3 className="mt-6 font-semibold text-lg border-b pb-2 text-green-700">
+  Downloads
+</h3>
+
+{operationDocuments.length === 0 ? (
+  <p className="text-gray-500 mt-2">No operation documents uploaded.</p>
+) : (
+  <div className="overflow-x-auto mt-2">
+    <table className="w-full border border-gray-300 rounded text-sm">
+      <thead className="bg-gray-100">
+        <tr className="text-center">
+          <th className="p-2 border">File</th>
+          <th className="p-2 border">Remark</th>
+          <th className="p-2 border">Uploaded Date</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {operationDocuments.map((doc) => (
+          <tr key={doc.id} className="text-center hover:bg-gray-50">
+
+            {/* File Name with Download */}
+            <td className="p-2 border">
+              {doc.signed_url ? (
+                <button
+                  className="text-blue-600 underline hover:text-blue-800"
+                  onClick={() => window.open(doc.signed_url, "_blank")}
+                >
+                  {doc.file_name || doc.fileUrl.split("/").pop()}
+                </button>
+              ) : (
+                <span className="text-red-500">No File</span>
+              )}
+            </td>
+
+            {/* Remark */}
+            <td className="p-2 border">{doc.remarks || "-"}</td>
+
+            {/* Uploaded Date */}
+            <td className="p-2 border">
+              {doc.created_at
+                ? new Date(doc.created_at).toLocaleString("en-GB")
+                : "-"}
+            </td>
+
+            
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
 )}
 

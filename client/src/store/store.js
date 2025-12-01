@@ -25,6 +25,7 @@ import customerStatsReducer from "./slices/customerStatsSlice";
 import categoryReducer from "./slices/categorySlice";
 import serviceInputReducer from "./slices/serviceInputSlice";
 import orderInputsReducer from "./slices/orderInputsSlice";
+import operationDocumentReducer from "./slices/operationDocumentsSlice";
 
 import adminStatsReducer from "./slices/adminStatsSlice";
 import salesStatsReducer from "./slices/salesStatsSlice";
@@ -64,5 +65,6 @@ export const store = configureStore({
     salesStats: salesStatsReducer,
     accountsStats: accountsStatsReducer,
     operationsStats: operationsStatsReducer,
+    operationDocuments: operationDocumentReducer,
   },
 });
