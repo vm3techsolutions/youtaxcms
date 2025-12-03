@@ -30,7 +30,7 @@ const generateSignedUrl = async (fileUrl) => {
  */
 const createOrder = async (req, res) => {
   try {
-    const { service_id, customer_name, customer_email, customer_contact, payment_option } = req.body;
+    const { service_id, customer_name, customer_email, customer_contact, payment_option, years } = req.body;
     const customer_id = req.user ? req.user.id : null;
 
     if (!customer_id) {
@@ -38,6 +38,12 @@ const createOrder = async (req, res) => {
     }
     if (!service_id || !customer_name || !customer_email || !customer_contact || !payment_option) {
       return res.status(400).json({ message: "service_id, customer_name, customer_email, customer_contact and payment_option are required" });
+    }
+
+    //  Validate years
+    const serviceYears = years ? parseInt(years) : 1;
+    if (serviceYears < 1 || serviceYears > 10) {
+      return res.status(400).json({ message: "Years must be between 1–10" });
     }
 
     // 1. fetch service pricing
@@ -55,7 +61,10 @@ const createOrder = async (req, res) => {
     const serviceCharges = service.service_charges ? parseFloat(service.service_charges) : 0;
     const advancePrice = service.advance_price ? parseFloat(service.advance_price) : 0;
 
-    const totalAmount = basePrice + serviceCharges;
+    // const totalAmount = basePrice + serviceCharges;
+    //  TOTAL FOR YEARS
+    const totalAmount = (basePrice + serviceCharges) * serviceYears;
+
 
     let amountToPay = totalAmount; // default full payment
     let paymentType = "final";     // default payment type
@@ -89,9 +98,9 @@ const createOrder = async (req, res) => {
     // 2. insert order
     const [ins] = await db.query(
       `INSERT INTO orders 
-        (customer_id, service_id, status, total_amount, advance_required, advance_paid) 
-       VALUES (?, ?, 'awaiting_payment', ?, ?, 0)`,
-      [customer_id, service_id, totalAmount, service.advance_price || 0]
+        (customer_id, service_id, service_years, status, total_amount, advance_required, advance_paid)
+       VALUES (?, ?, ?, 'awaiting_payment', ?, ?, 0)`,
+      [customer_id, service_id, serviceYears, totalAmount, service.advance_price || 0]
     );
     const orderId = ins.insertId;
 
@@ -122,7 +131,7 @@ try {
   paymentLink = await razorpay.paymentLink.create({
     amount: Math.round(amountToPay * 100),
     currency: "INR",
-    description: `Payment for service ${service_id}`,
+    description: `Payment for service ${service_id} (${serviceYears} year/s)`, // ⭐ UPDATED
     customer: { name: customer_name, email: customer_email, contact: customer_contact },
     notify: { sms: true, email: true },
     reminder_enable: true,
@@ -130,6 +139,7 @@ try {
       order_id: String(orderId),
       customer_id: String(customer_id),
       service_id: String(service_id),
+      service_years: String(serviceYears),  // ADD YEARS
       payment_option: paymentType,
     },
     callback_url: `${process.env.FRONT_END_URL}/user/payment-success`,
@@ -161,6 +171,7 @@ try {
       success: true,
       order: {
         id: orderId,
+        years:serviceYears,
         status: "awaiting_payment",
         total_amount: totalAmount,
         service_charges: service.service_charges,
