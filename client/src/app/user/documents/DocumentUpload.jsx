@@ -19,6 +19,10 @@ import {
 import ServiceCustomFieldsDisplay from "./ServiceCustomFieldsDisplay";
 
 export default function DocumentUpload() {
+
+  //added Tabs state
+  const [activeTab, setActiveTab] = useState("documents");
+
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -151,6 +155,32 @@ export default function DocumentUpload() {
 
   return (
     <div className="container bg-white px-14 py-10 max-w-4xl">
+      
+      {/* --- TABS --- */}
+<div className="flex mb-10 justify-center">
+  <button
+    onClick={() => setActiveTab("documents")}
+    className={`px-4 py-2 ${
+      activeTab === "documents"
+        ? "border-b-2 border-[#FFBF00] font-bold"
+        : ""
+    }`}
+  >
+    Upload Documents
+  </button>
+
+  <button
+    onClick={() => setActiveTab("fields")}
+    className={`px-4 py-2 ${
+      activeTab === "fields"
+        ? "border-b-2 border-[#FFBF00] font-bold"
+        : ""
+    }`}
+  >
+    Additional Information
+  </button>
+</div>
+
       <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">
         {serviceName || "Service"} - Upload Documents
       </h2>
@@ -161,6 +191,14 @@ export default function DocumentUpload() {
         </p>
       )}
 
+
+
+
+
+  {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
+
+
+  {activeTab === "documents" && (
       <form onSubmit={handleSubmit} className="space-y-6">
         {documents.map((doc) => {
           const uploadedFilesForDoc =
@@ -311,17 +349,22 @@ export default function DocumentUpload() {
         </div>
 
       </form>
+  )}
       {/* =========================
           Custom Fields Form
       ========================= */}
-      <div className="mt-10">
-        <ServiceCustomFieldsDisplay
-          serviceId={serviceId}
-          onSubmit={handleCustomFieldsSubmit}
-          readOnly={isSubmitted}
-          initialValues={initialFormValues}
-        />
-      </div>
+
+   {/* Wrapped in conditional rendering */}
+      {activeTab === "fields" && (
+  <div className="mt-10">
+    <ServiceCustomFieldsDisplay
+      serviceId={serviceId}
+      onSubmit={handleCustomFieldsSubmit}
+      readOnly={isSubmitted}
+      initialValues={initialFormValues}
+    />
+  </div>
+)}
       {previewPopup && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 
