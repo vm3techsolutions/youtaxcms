@@ -9,10 +9,10 @@ import { fetchCategories } from "@/store/slices/categorySlice";
 
 // Reusable Price Info Component
 
-function ServicePriceInfo({ service, paymentOption }) {
+function ServicePriceInfo({ service, paymentOption, years }) {
   const basePrice = Number(service.base_price || 0);
   const serviceCharges = Number(service.service_charges || 0);
-  const totalPrice = basePrice + serviceCharges;
+  const totalPrice = (basePrice + serviceCharges) * years;
   const advancePrice = Number(service.advance_price || 0);
 
   return (
@@ -57,6 +57,8 @@ export default function ServicesFlex() {
   const [paymentOption, setPaymentOption] = useState("full");
   const [searchTerm, setSearchTerm] = useState(""); 
   const [activeCategory, setActiveCategory] = useState("all");
+  const [years, setYears] = useState(1);
+
 
   useEffect(() => {
     dispatch(fetchAllServicesWithActive());
@@ -97,6 +99,7 @@ export default function ServicesFlex() {
       customer_email: userInfo.email,
       customer_contact: userInfo.phone,
       payment_option: paymentOption, // 'full' or 'advance'
+      years: years,
       callback_url: `${window.location.origin}/user/payment-success`,
     };
 
@@ -125,6 +128,12 @@ export default function ServicesFlex() {
   
     return matchesSearch && matchesCategory;
   });
+
+  const getCategoryName = (id) => {
+  const cat = categories.find((c) => Number(c.id) === Number(id));
+  return cat?.name || "";
+};
+
 
   if (servicesLoading)
     return <p className="text-center mt-8">Loading services...</p>;
@@ -251,7 +260,26 @@ export default function ServicesFlex() {
                 </p>
               </div>
 
-              <ServicePriceInfo service={modalService} paymentOption={paymentOption} />
+              <ServicePriceInfo service={modalService} paymentOption={paymentOption} years={years} />
+              {/* Show Years drop-down only for Food License */}
+{getCategoryName(modalService.category_id) === "Food License" && (
+  <div className="mt-4">
+    <label className="font-medium">Select Validity (Years)</label>
+    <select
+      value={years}
+      onChange={(e) => setYears(Number(e.target.value))}
+      className="w-full border p-2 rounded-lg mt-1"
+    >
+      {[1, 2].map((y) => (
+        <option key={y} value={y}>
+          {y} Year{y > 1 ? "s" : ""}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+
 
               {/* Payment Options */}
               <div className="flex gap-4 mt-3">
