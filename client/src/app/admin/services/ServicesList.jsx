@@ -10,6 +10,8 @@ import {
   uploadSamplePDF,
   deleteSamplePDF,
 } from "@/store/slices/serviceDocumentsSlice";
+import { toggleDocumentStatus } from "@/store/slices/serviceDocumentsSlice";
+
 import { fetchCategories } from "@/store/slices/categorySlice";
 import { Plus, X, Trash2, Save, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -480,62 +482,94 @@ export default function ServiceCardsBookPopup() {
           )}
 
           {documents.map((doc) => (
-  <div
-    key={doc.id}
-    className="border rounded p-3 mb-3 bg-gray-50 flex flex-col gap-2"
-  >
-    <div className="flex justify-between items-center">
-      <span className="font-medium">{doc.doc_name}</span>
+            <div
+              key={doc.id}
+              className="border rounded p-3 mb-3 bg-gray-50 flex flex-col gap-2"
+            >
+              {/* Top Row - Name + Delete */}
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{doc.doc_name}</span>
 
-      {/* Delete Document */}
-      <button
-        onClick={() => handleDeleteDocument(doc)}
-        className="text-red-600 hover:text-red-800"
-      >
-        <Trash2 size={18} />
-      </button>
-    </div>
+                {/* <button
+                  onClick={() => handleDeleteDocument(doc)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 size={18} />
+                </button> */}
+              </div>
 
-    {/* Sample PDF Section */}
-    <div className="pl-2 mt-1">
-      {doc.sample_pdf_url ? (
-        <div className="flex items-center gap-3">
-          <a
-            href={doc.sample_pdf_signed_url || doc.sample_pdf_url}
-            target="_blank"
-            className="text-blue-600 underline text-sm"
-          >
-            View Sample PDF
-          </a>
+              {/* ⭐ ACTIVE / INACTIVE UI */}
+              <div className="flex items-center gap-3 pl-2">
+                {/* Status badge */}
+                <span
+                  className={`px-2 py-1 text-xs rounded ${
+                    doc.is_active
+                      ? "bg-green-200 text-green-700"
+                      : "bg-red-200 text-red-700"
+                  }`}
+                >
+                  {doc.is_active ? "Active" : "Inactive"}
+                </span>
 
-          {/* ⭐ DELETE SAMPLE PDF BUTTON */}
-          <button
-            onClick={() => dispatch(deleteSamplePDF({ id: doc.id }))}
-            className="text-red-500 text-sm hover:underline"
-          >
-            Delete Sample
-          </button>
-        </div>
-      ) : (
-        <label className="cursor-pointer text-blue-600 underline text-sm">
-          <input
-            type="file"
-            className="hidden"
-            accept="application/pdf"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                dispatch(uploadSamplePDF({ id: doc.id, file }));
-              }
-            }}
-          />
-          Upload Sample PDF
-        </label>
-      )}
-    </div>
-  </div>
-))}
+                {/* Toggle button */}
+                <button
+                  onClick={() =>
+                    dispatch(
+                      toggleDocumentStatus({
+                        id: doc.id,
+                        is_active: doc.is_active ? 0 : 1,
+                        serviceId: doc.service_id,
+                      })
+                    )
+                  }
+                  className={`text-sm px-3 py-1 rounded ${
+                    doc.is_active
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                >
+                  {doc.is_active ? "Deactivate" : "Activate"}
+                </button>
+              </div>
 
+              {/* Sample PDF Section */}
+              <div className="pl-2 mt-1">
+                {doc.sample_pdf_url ? (
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={doc.sample_pdf_signed_url || doc.sample_pdf_url}
+                      target="_blank"
+                      className="text-blue-600 underline text-sm"
+                    >
+                      View Sample PDF
+                    </a>
+
+                    <button
+                      onClick={() => dispatch(deleteSamplePDF({ id: doc.id }))}
+                      className="text-red-500 text-sm hover:underline"
+                    >
+                      Delete Sample
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer text-blue-600 underline text-sm">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          dispatch(uploadSamplePDF({ id: doc.id, file }));
+                        }
+                      }}
+                    />
+                    Upload Sample PDF
+                  </label>
+                )}
+              </div>
+            </div>
+          ))}
 
           <button
             onClick={handleAddDocument}
