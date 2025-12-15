@@ -121,7 +121,7 @@ useEffect(() => {
 
   const service = services.find((s) => s.id === order.service_id);
   const documents = orderDocuments[order?.id] || [];
-  const payments = orderPayments[order?.id] || [];
+  // const payments = orderPayments[order?.id] || [];
 
   // ================= Steps Logic =================
   const orderSteps = [
@@ -132,18 +132,53 @@ useEffect(() => {
     { key: "completed", label: "Completed" },
   ];
 
-  if (order.payment_status === "partial") {
-    orderSteps.splice(4, 0, {
-      key: "awaiting_final_payment",
-      label: "Final Payment",
-    });
-  }
+  // if (order.payment_status === "partial") {
+  //   orderSteps.splice(4, 0, {
+  //     key: "awaiting_final_payment",
+  //     label: "Final Payment",
+  //   });
+  // }
+
+//   const payments = orderPayments[order.id] || [];
+// const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+const payments = orderPayments[order.id] || [];
+
+const successfulPayments = payments.filter(
+  (p) => p.status === "success"
+);
+
+const totalPaid = successfulPayments.reduce(
+  (sum, p) => sum + Number(p.amount),
+  0
+);
+
+const serviceCost = order.total_amount || 0;
+
+if (totalPaid > 0 && totalPaid < serviceCost && order.status !== "completed") {
+  orderSteps.splice(4, 0, {
+    key: "awaiting_final_payment",
+    label: "Final Payment",
+  });
+}
 
   const renderSteps = (order) => {
     const completedSteps = [];
 
+    // const payments = orderPayments[order.id] || [];
+    // const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
     const payments = orderPayments[order.id] || [];
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+const successfulPayments = payments.filter(
+  (p) => p.status === "success"
+);
+
+const totalPaid = successfulPayments.reduce(
+  (sum, p) => sum + Number(p.amount),
+  0
+);
+
     const serviceCost = order.total_amount || 0;
 
     if (totalPaid > 0) completedSteps.push("awaiting_payment");
@@ -166,7 +201,15 @@ useEffect(() => {
     if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
       completedSteps.push("in_progress");
 
-    if (totalPaid > 0 && totalPaid < serviceCost) completedSteps.push("awaiting_final_payment");
+    // if (totalPaid > 0 && totalPaid < serviceCost) completedSteps.push("awaiting_final_payment");
+
+    if (
+  totalPaid > 0 &&
+  totalPaid < serviceCost &&
+  order.status !== "completed"
+) {
+  completedSteps.push("awaiting_final_payment");
+}
 
     if (order.status === "completed") completedSteps.push("completed");
 
@@ -179,31 +222,81 @@ useEffect(() => {
             let textClass = "text-gray-500";
             let label = step.label;
 
-            if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
-              if (totalPaid > 0 && totalPaid < serviceCost) {
-                label = "Partially Paid";
-                statusClass = "bg-yellow-500";
-                textClass = "text-yellow-600 font-semibold";
-              } else if (totalPaid >= serviceCost) {
-                label = "Final Payment Done";
-                statusClass = "bg-green-500";
-                textClass = "text-green-600 font-semibold";
-              }
-            }
+            // if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
+            //   if (totalPaid > 0 && totalPaid < serviceCost) {
+            //     label = "Partially Paid";
+            //     statusClass = "bg-yellow-500";
+            //     textClass = "text-yellow-600 font-semibold";
+            //   } 
+              
+            //   else if (totalPaid >= serviceCost) {
+            //     label = "Final Payment Done";
+            //     statusClass = "bg-green-500";
+            //     textClass = "text-green-600 font-semibold";
+            //   }
+            // }
+
+//             if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
+//   label = "Partially Paid"; // label never changes
+
+//   if (totalPaid >= serviceCost) {
+//     statusClass = "bg-green-500";
+//     textClass = "text-green-600 font-semibold";
+//   } else {
+//     statusClass = "bg-orange-500";
+//     textClass = "text-orange-600 font-semibold";
+//   }
+// }
+
+if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
+  label = "Payment"; // label stays same
+
+  if (totalPaid >= serviceCost) {
+    statusClass = "bg-green-500";
+    textClass = "text-green-600 font-semibold";
+  } else {
+    statusClass = "bg-orange-500";
+    textClass = "text-orange-600 font-semibold";
+  }
+}
+
+
+            // if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
+            //   label = "Final Payment Pending";
+            //   statusClass = "bg-yellow-500";
+            //   textClass = "text-yellow-600 font-semibold";
+            // }
 
             if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
-              label = "Final Payment Pending";
-              statusClass = "bg-yellow-500";
-              textClass = "text-yellow-600 font-semibold";
-            }
+  if (totalPaid >= serviceCost) {
+    statusClass = "bg-green-500";
+    textClass = "text-green-600 font-semibold";
+  } else {
+    statusClass = "bg-orange-500";
+    textClass = "text-orange-600 font-semibold";
+  }
+}
+
+
+            // if (
+            //   completedSteps.includes(step.key) &&
+            //   !["awaiting_payment", "awaiting_final_payment"].includes(step.key)
+            // ) {
+            //   statusClass = "bg-green-500";
+            //   textClass = "text-green-600 font-semibold";
+            // } 
 
             if (
-              completedSteps.includes(step.key) &&
-              !["awaiting_payment", "awaiting_final_payment"].includes(step.key)
-            ) {
-              statusClass = "bg-green-500";
-              textClass = "text-green-600 font-semibold";
-            } else if (step.key === order.status) {
+  completedSteps.includes(step.key) &&
+  step.key !== "awaiting_payment" &&
+  step.key !== "awaiting_final_payment"
+) {
+  statusClass = "bg-green-500";
+  textClass = "text-green-600 font-semibold";
+}
+            
+            
+            else if (step.key === order.status) {
               statusClass = "bg-blue-500";
               textClass = "text-blue-600 font-semibold";
             }
