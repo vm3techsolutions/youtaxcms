@@ -361,6 +361,60 @@ const deleteSamplePDF = async (req, res) => {
   }
 };
 
+
+/**
+ * Activate / Deactivate a service document
+ */
+const toggleDocumentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body; // 1 = active, 0 = inactive
+
+    // Check admin user (using logged-in user ID)
+    const adminId = req.user ? req.user.id : null;
+
+    const [admin] = await db.query(
+      "SELECT role_id FROM admin_users WHERE id = ?",
+      [adminId]
+    );
+
+    if (!admin || admin.length === 0) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+
+    if (admin[0].role_id !== 4) {
+      return res.status(403).json({ message: "Only Admin can change document status" });
+    }
+
+    // Validate document exists
+    const [doc] = await db.query(
+      "SELECT id FROM service_documents WHERE id = ?",
+      [id]
+    );
+
+    if (doc.length === 0) {
+      return res.status(404).json({ message: "Service document not found" });
+    }
+
+    // Update ONLY is_active
+    await db.query(
+      "UPDATE service_documents SET is_active = ? WHERE id = ?",
+      [is_active, id]
+    );
+
+    res.json({
+      message: `Document ${is_active ? "activated" : "deactivated"} successfully`,
+      id,
+      is_active
+    });
+
+  } catch (err) {
+    console.error("DB Error (toggleDocumentStatus):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+
 // ✅ Export all
 module.exports = {
   createServiceDocument,
@@ -370,4 +424,5 @@ module.exports = {
   deleteServiceDocument,
   uploadSamplePDF,
   deleteSamplePDF,
+  toggleDocumentStatus,
 };

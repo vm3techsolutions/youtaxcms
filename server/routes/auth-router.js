@@ -17,6 +17,8 @@ const adminUsers = require('../controller/adminController/adminUsers/adminUsers'
 const services = require('../controller/services/services');
 const categoryController = require('../controller/services/serviceCategory/categoryController');
 const serviceDocuments = require('../controller/services/serviceDocuments');
+const { toggleDocumentStatus } = require('../controller/services/serviceDocuments');
+
 const serviceInput = require('../controller/services/serviceInput/serviceInputController');
 const serviceOrderInput = require('../controller/services/serviceInput/orderInputController');
 const adminCoustomerController = require('../controller/adminController/adminCoustomerController/adminCoustomerController');
@@ -117,7 +119,7 @@ router.delete("/service-category/:id", verifyToken, categoryController.deleteCat
 router.post("/service-documents", verifyToken, serviceDocuments.createServiceDocument);
 router.get("/service-documents/service/:serviceId", serviceDocuments.getDocumentsByService);
 router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
-
+router.patch("/service-documents/:id/status", verifyToken, toggleDocumentStatus);
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);
 router.post("/service-document/upload-sample/:id", verifyToken, upload.single("sample_pdf"), serviceDocuments.uploadSamplePDF);
