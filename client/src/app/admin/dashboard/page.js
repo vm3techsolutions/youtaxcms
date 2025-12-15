@@ -38,9 +38,10 @@ export default function AdminDashboard() {
         <p className="text-gray-500">No admin stats found.</p>
       </div>
     );
-
+//"#2563eb"
+// "#10b981",
   // Admin stats pie chart
-  const COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+  const COLORS = ["#f59e0b", "#8b5cf6","#06b6d4","#10b981"];
 
   const chartData = [
     { name: "Completed", value: stats.completedOrders },
@@ -92,10 +93,10 @@ export default function AdminDashboard() {
       {/* 🔹 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label: "Total Orders", value: stats.totalOrders, color: "text-blue-600" },
-          { label: "Total Customers", value: stats.totalCustomers, color: "text-green-600" },
-          { label: "Active Services", value: stats.activeServices, color: "text-purple-600" },
-          { label: "Total Revenue", value: "₹" + stats.totalRevenue, color: "text-red-500" },
+          { label: "Total Orders", value: stats.totalOrders, color: "text-[#f59e0b]" },
+          { label: "Total Customers", value: stats.totalCustomers, color: "text-[#8b5cf6]" },
+          { label: "Active Services", value: stats.activeServices, color: "text-[#06b6d4]" },
+          { label: "Total Revenue", value: "₹" + stats.totalRevenue, color: "text-[#10b981]" },
         ].map((card, i) => (
           <div
             key={i}
