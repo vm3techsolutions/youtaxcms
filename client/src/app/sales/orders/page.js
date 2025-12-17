@@ -13,6 +13,7 @@ import { fetchAdminUsersByRole } from "@/store/slices/adminUserSlice";
 import axiosInstance from "@/api/axiosInstance";
 
 export default function SalesOrdersPage() {
+
   const dispatch = useDispatch();
 
   // Sales state
@@ -25,11 +26,23 @@ export default function SalesOrdersPage() {
     (state) => state.adminUser
   );
 
+  //17-12-25
+  const [salesViewedOrders, setSalesViewedOrders] = useState([]);
+  //-------------------------------------------------
   const [ordersWithDocs, setOrdersWithDocs] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [assignedAccountant, setAssignedAccountant] = useState({});
   const [forwardedAccountants, setForwardedAccountants] = useState({}); // actually assigned
   const [filter, setFilter] = useState("all");
+
+  //17-12-25
+  // Pagination
+const [currentPage, setCurrentPage] = useState(1);
+const ORDERS_PER_PAGE = 10;
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [filter]);
 
   // Fetch orders + roles on mount
   useEffect(() => {
@@ -38,6 +51,16 @@ export default function SalesOrdersPage() {
 
     return () => dispatch(resetSalesState());
   }, [dispatch]);
+
+  //17-12-25
+  // 🔁 Poll new orders every 30 seconds
+useEffect(() => {
+  const interval = setInterval(() => {
+    dispatch(fetchPendingOrders());
+  }, 30000); // 30 sec
+
+  return () => clearInterval(interval);
+}, [dispatch]);
 
   // When roles are loaded → find accountant role → fetch users by roleId
   useEffect(() => {
@@ -80,6 +103,32 @@ export default function SalesOrdersPage() {
 
     fetchDocumentsForOrders();
   }, [pendingOrders]);
+
+
+  //17-12-25
+  useEffect(() => {
+  const storedViewedOrders =
+    JSON.parse(localStorage.getItem("sales_viewed_orders")) || [];
+
+  setSalesViewedOrders(storedViewedOrders);
+}, []);
+
+const markOrderAsViewedBySales = (orderId) => {
+  setSalesViewedOrders((prev) => {
+    if (prev.includes(orderId)) return prev;
+
+    const updated = [...prev, orderId];
+    localStorage.setItem(
+      "sales_viewed_orders",
+      JSON.stringify(updated)
+    );
+
+    return updated;
+  });
+};
+
+
+//--------------------
 
   // Handle Verify / Reject
   const handleVerifyReject = (orderId, docId, status) => {
@@ -194,6 +243,38 @@ export default function SalesOrdersPage() {
     return true;
   });
 
+  // =====================
+// SORT: New first, then latest 
+// =====================
+const sortedOrders = [...filteredOrders].sort((a, b) => {
+  const aViewed = salesViewedOrders.includes(a.id);
+  const bViewed = salesViewedOrders.includes(b.id);
+
+  // Unviewed (NEW) orders first
+  if (aViewed !== bViewed) {
+    return aViewed ? 1 : -1;
+  }
+
+  // Newest first
+  return new Date(b.created_at) - new Date(a.created_at);
+});
+
+// =====================
+// PAGINATION
+// =====================
+const totalPages = Math.ceil(
+  sortedOrders.length / ORDERS_PER_PAGE
+);
+
+const paginatedOrders = sortedOrders.slice(
+  (currentPage - 1) * ORDERS_PER_PAGE,
+  currentPage * ORDERS_PER_PAGE
+);
+
+
+
+
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">
@@ -248,7 +329,10 @@ export default function SalesOrdersPage() {
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order, index) => {
+              
+              // filteredOrders.map((order, index)=> {
+                // sortedOrders.map((order, index) => {
+                  paginatedOrders.map((order, index) => {
                 const totalDocs = order.documents?.length || 0;
                 const verifiedDocs =
                   order.documents?.filter((d) => d.status === "verified")
@@ -266,25 +350,50 @@ export default function SalesOrdersPage() {
                 return (
                   <React.Fragment key={order.id}>
                     <tr className="border-b hover:bg-gray-50">
-                      <td className="p-3 ">{index + 1}</td>
+                      {/* <td className="p-3 ">{index + 1}</td> */}
+ {/* //17-12-25 */}
+                      <td className="p-3 text-center">
+  <div className="flex flex-col items-center">
+    {!salesViewedOrders.includes(order.id) && (
+      <span className="mb-1 px-2 py-0.5 text-[10px] font-bold text-white bg-[#06b6d4] rounded-full">
+        NEW
+      </span>
+    )}
+    {/* <span>{index + 1}</span> */}
+    <span>
+  {(currentPage - 1) * ORDERS_PER_PAGE + index + 1}
+</span>
+  </div>
+</td>
+{/* ----------------------- */}
+
                       <td className="p-3">#{order.id}</td>
                       <td className="p-3">{order.customer_name}</td>
                       <td className="p-3">{order.service_name}</td>
                       <td className="p-3 font-semibold">{displayStatus}</td>
+                      
 
                       <td className="p-3">
                         {allDocsUploaded ? (
                           <button
                             onClick={() =>
-                              setExpandedOrder(
-                                expandedOrder === order.id ? null : order.id
-                              )
-                            }
-                            className="px-3 py-1 text-sm primary-btn rounded"
-                          >
-                            {expandedOrder === order.id ? "Hide" : "View"}{" "}
-                            Documents
-                          </button>
+                              // setExpandedOrder(
+                              //   expandedOrder === order.id ? null : order.id
+                              // );
+                              {
+                                 setExpandedOrder(
+                                  expandedOrder === order.id ? null : order.id);
+                                  
+                                  // 👇 Mark as viewed ONLY when opening docs
+                                   if (!salesViewedOrders.includes(order.id)) {
+                                    markOrderAsViewedBySales(order.id);  }
+                                  }
+                                }
+                                 className="px-3 py-1 text-sm primary-btn rounded"  >
+                            {expandedOrder === order.id ? "Hide" : "View"}{" "}  documents
+                            </button>
+ 
+
                         ) : (
                           <span className="text-gray-500">No Docs</span>
                         )}
@@ -411,6 +520,34 @@ export default function SalesOrdersPage() {
             )}
           </tbody>
         </table>
+{/* 
+        //17-12-25 */}
+        <div className="flex justify-between items-center mt-4 px-4 py-2">
+  <span className="text-sm text-gray-600">
+    Page {currentPage} of {totalPages}
+  </span>
+
+  <div className="flex gap-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      Previous
+    </button>
+
+    <button
+      onClick={() =>
+        setCurrentPage((p) => Math.min(p + 1, totalPages))
+      }
+      disabled={currentPage === totalPages}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      Next
+    </button>
+  </div>
+</div>
+
       </div>
     </div>
   );
