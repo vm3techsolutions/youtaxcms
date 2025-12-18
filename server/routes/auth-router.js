@@ -119,6 +119,7 @@ router.delete("/service-category/:id", verifyToken, categoryController.deleteCat
 router.post("/service-documents", verifyToken, serviceDocuments.createServiceDocument);
 router.get("/service-documents/service/:serviceId", serviceDocuments.getDocumentsByService);
 router.get("/service-document/:id", serviceDocuments.getServiceDocumentById);
+router.get("/service-documents/service/:serviceId/active",serviceDocuments.getActiveDocumentsByService);
 router.patch("/service-documents/:id/status", verifyToken, toggleDocumentStatus);
 router.put("/service-document/:id", verifyToken, serviceDocuments.updateServiceDocument);
 router.delete("/service-document/:id", verifyToken, serviceDocuments.deleteServiceDocument);

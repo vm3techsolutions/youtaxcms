@@ -9,7 +9,9 @@ import {
   fetchOrderDocuments,
   resetOrderDocumentsState,
 } from "@/store/slices/orderDocumentsSlice";
-import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
+// import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
+import { fetchActiveDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
+
 import axiosInstance from "@/api/axiosInstance";
 import {
   fetchOrderInputs,
@@ -53,7 +55,8 @@ export default function DocumentUpload() {
     }
 
     dispatch(resetOrderDocumentsState());
-    dispatch(fetchDocumentsByService(serviceId));
+    // dispatch(fetchDocumentsByService(serviceId));
+    dispatch(fetchActiveDocumentsByService(serviceId));
     dispatch(fetchOrderDocuments(orderId));
     dispatch(resetOrderInputsState());
     dispatch(fetchOrderInputs(orderId)); // ✅ fetch previously submitted inputs

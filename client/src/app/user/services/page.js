@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllServicesWithActive, fetchServiceById } from "@/store/slices/servicesSlice";
-import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
+//import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
+import { fetchActiveDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
 
@@ -68,7 +69,7 @@ export default function ServicesFlex() {
   const handleToggle = (serviceId) => {
     setExpanded(expanded === serviceId ? null : serviceId);
     if (!serviceDocuments[serviceId]) {
-      dispatch(fetchDocumentsByService(serviceId));
+      dispatch(fetchActiveDocumentsByService(serviceId));
     }
   };
 
