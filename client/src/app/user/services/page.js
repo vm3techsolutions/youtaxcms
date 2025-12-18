@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllServicesWithActive, fetchServiceById } from "@/store/slices/servicesSlice";
+import {
+  fetchAllServicesWithActive,
+  fetchServiceById,
+} from "@/store/slices/servicesSlice";
 //import { fetchDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { fetchActiveDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
@@ -36,7 +39,10 @@ function ServicePriceInfo({ service, paymentOption, years }) {
       <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
         <span>Total to Pay Now:</span>
         <span>
-          ₹{paymentOption === "advance" && advancePrice > 0 ? advancePrice.toLocaleString() : totalPrice.toLocaleString()}
+          ₹
+          {paymentOption === "advance" && advancePrice > 0
+            ? advancePrice.toLocaleString()
+            : totalPrice.toLocaleString()}
         </span>
       </div>
     </div>
@@ -46,9 +52,11 @@ function ServicePriceInfo({ service, paymentOption, years }) {
 export default function ServicesFlex() {
   const dispatch = useDispatch();
 
-  const { services, loading: servicesLoading, error: servicesError } = useSelector(
-    (state) => state.services
-  );
+  const {
+    services,
+    loading: servicesLoading,
+    error: servicesError,
+  } = useSelector((state) => state.services);
   const { serviceDocuments } = useSelector((state) => state.serviceDocuments);
   const { userInfo } = useSelector((state) => state.user);
   const { loading: orderLoading } = useSelector((state) => state.order);
@@ -56,10 +64,9 @@ export default function ServicesFlex() {
   const [expanded, setExpanded] = useState(null);
   const [modalService, setModalService] = useState(null);
   const [paymentOption, setPaymentOption] = useState("full");
-  const [searchTerm, setSearchTerm] = useState(""); 
+  const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [years, setYears] = useState(1);
-
 
   useEffect(() => {
     dispatch(fetchAllServicesWithActive());
@@ -118,23 +125,23 @@ export default function ServicesFlex() {
     }
   };
 
-   // ✅ Filter services based on search term
+  // ✅ Filter services based on search term
   const filteredServices = services.filter((service) => {
-    const matchesSearch =
-      service.name.toLowerCase().includes(searchTerm.toLowerCase());
-  
+    const matchesSearch = service.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
     const matchesCategory =
       activeCategory === "all" ||
       Number(service.category_id) === Number(activeCategory);
-  
+
     return matchesSearch && matchesCategory;
   });
 
   const getCategoryName = (id) => {
-  const cat = categories.find((c) => Number(c.id) === Number(id));
-  return cat?.name || "";
-};
-
+    const cat = categories.find((c) => Number(c.id) === Number(id));
+    return cat?.name || "";
+  };
 
   if (servicesLoading)
     return <p className="text-center mt-8">Loading services...</p>;
@@ -261,42 +268,51 @@ export default function ServicesFlex() {
                 </p>
               </div>
 
-              <ServicePriceInfo service={modalService} paymentOption={paymentOption} years={years} />
+              <ServicePriceInfo
+                service={modalService}
+                paymentOption={paymentOption}
+                years={years}
+              />
               {/* Show Years drop-down only for Food License */}
-{getCategoryName(modalService.category_id) === "Food License" && (
-  <div className="mt-4">
-    <label className="font-medium">Select Validity (Years)</label>
-    <select
-      value={years}
-      onChange={(e) => setYears(Number(e.target.value))}
-      className="w-full border p-2 rounded-lg mt-1"
-    >
-      {[1, 2].map((y) => (
-        <option key={y} value={y}>
-          {y} Year{y > 1 ? "s" : ""}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
-
-
+              {getCategoryName(modalService.category_id) === "Food License" && (
+                <div className="mt-4">
+                  <label className="font-medium">Select Validity (Years)</label>
+                  <select
+                    value={years}
+                    onChange={(e) => setYears(Number(e.target.value))}
+                    className="w-full border p-2 rounded-lg mt-1"
+                  >
+                    {[1, 2].map((y) => (
+                      <option key={y} value={y}>
+                        {y} Year{y > 1 ? "s" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Payment Options */}
               <div className="flex gap-4 mt-3">
                 <button
                   onClick={() => setPaymentOption("full")}
                   className={`px-4 py-2 rounded-lg flex-1 ${
-                    paymentOption === "full" ? "bg-green-500 text-white" : "bg-gray-200"
+                    paymentOption === "full"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200"
                   }`}
                 >
                   Full Payment
                 </button>
                 <button
                   onClick={() => setPaymentOption("advance")}
-                  disabled={!modalService.advance_price || modalService.advance_price <= 0}
+                  disabled={
+                    !modalService.advance_price ||
+                    modalService.advance_price <= 0
+                  }
                   className={`px-4 py-2 rounded-lg flex-1 ${
-                    paymentOption === "advance" ? "bg-green-500 text-white" : "bg-gray-200"
+                    paymentOption === "advance"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200"
                   } disabled:opacity-50`}
                 >
                   Advance Payment
