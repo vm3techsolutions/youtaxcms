@@ -10,6 +10,8 @@ import {
   fetchCurrentAdmin,
 } from "@/store/slices/adminSlice";
 
+
+
 export default function Topbar() {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -17,12 +19,15 @@ export default function Topbar() {
 
   const { currentAdmin, token } = useSelector((state) => state.admin);
 
+
   // 🔹 Fetch current admin on mount if token exists but Redux lost data
   useEffect(() => {
     if (!currentAdmin && token) {
       dispatch(fetchCurrentAdmin());
     }
   }, [currentAdmin, token, dispatch]);
+
+
 
   // Hide Topbar on login/signup routes
   if (pathname === "/admin/login" || pathname === "/admin/signup") {
@@ -51,6 +56,10 @@ export default function Topbar() {
           <Bell size={24} />
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
         </button> */}
+
+    
+
+   
 
         {/* Admin Avatar with hover dropdown */}
         <div className="relative group">

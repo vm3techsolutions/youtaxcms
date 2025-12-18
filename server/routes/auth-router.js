@@ -198,4 +198,9 @@ router.put("/admin/orders/approve-completion", verifyToken , isAdmin, adminContr
 router.get("/admin/dashboard/stats", verifyToken, isAdmin, adminControllerScond.getAdminDashboardStats);
 
 
+
+// 🔔 Admin order notifications
+router.get( "/admin/notifications", verifyToken, orderController.getAdminNotifications);
+
+
 module.exports = router;

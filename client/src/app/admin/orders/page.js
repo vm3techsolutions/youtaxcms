@@ -10,6 +10,22 @@ import {
 import { fetchAllCustomers } from "@/store/slices/customersSlice";
 import { fetchServices } from "@/store/slices/servicesSlice";
 
+//18-12-25
+const STORAGE_KEY = "admin_viewed_orders";
+
+const getViewedOrders = () => {
+  if (typeof window === "undefined") return [];
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+};
+
+const markOrderViewed = (orderId) => {
+  const viewed = getViewedOrders();
+  if (!viewed.includes(orderId)) {
+    viewed.push(orderId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(viewed));
+  }
+};
+
 export default function AdminOrdersPage() {
   const dispatch = useDispatch();
   const { orders, deliverables, loading, error, successMessage } = useSelector(
@@ -20,6 +36,13 @@ export default function AdminOrdersPage() {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  //18-12-25
+  const [viewedOrders, setViewedOrders] = useState([]);
+
+  useEffect(() => {
+  setViewedOrders(getViewedOrders());
+}, []);
 
   // Fetch orders and customers
   useEffect(() => {
@@ -35,11 +58,20 @@ export default function AdminOrdersPage() {
   const serviceMap = {};
   services.forEach((s) => (serviceMap[s.id] = s.name));
 
+  // const handleFetchDeliverables = (orderId) => {
+  //   setSelectedOrder(orderId);
+  //   dispatch(fetchDeliverables(orderId));
+  //   setShowModal(true);
+  // };
+
   const handleFetchDeliverables = (orderId) => {
-    setSelectedOrder(orderId);
-    dispatch(fetchDeliverables(orderId));
-    setShowModal(true);
-  };
+  markOrderViewed(orderId);
+  setViewedOrders(getViewedOrders());
+
+  setSelectedOrder(orderId);
+  dispatch(fetchDeliverables(orderId));
+  setShowModal(true);
+};
 
   const handleQC = (deliverableId, status) => {
     dispatch(
@@ -50,6 +82,43 @@ export default function AdminOrdersPage() {
   const handleApproveCompletion = (orderId) => {
     dispatch(approveOrderCompletion({ order_id: orderId }));
   };
+
+
+  //Pagination 
+  const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 10;
+   
+      // 🔁 Poll new orders every 30 seconds
+    useEffect(() => {
+      const interval = setInterval(() => {
+        dispatch(fetchAssignedOrders());
+      }, 30000); // 30 sec
+    
+      return () => clearInterval(interval);
+    }, [dispatch]);
+
+    const sortedOrders = [...orders].sort(
+  (a, b) => new Date(b.created_at) - new Date(a.created_at)
+);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [sortedOrders.length]);
+
+
+//pagination- Logic 
+
+const totalPages = Math.ceil(sortedOrders.length / ordersPerPage);
+
+const indexOfLastOrder = currentPage * ordersPerPage;
+const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+
+const currentOrders = sortedOrders.slice(
+  indexOfFirstOrder,
+  indexOfLastOrder
+);
+
+    
 
   return (
     <div className="container mx-auto p-6">
@@ -73,9 +142,28 @@ export default function AdminOrdersPage() {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order, index) => (
+          {/* {orders.map((order, index) => { */}
+          {/* {sortedOrders.map((order, index) => { */}
+          {currentOrders.map((order, index) => {
+
+            const isNew =
+    !viewedOrders.includes(order.id);
+    return (
             <tr key={order.id} className="text-center">
-              <td className="p-2 border">{index + 1}</td>
+              {/* <td className="p-2 border">{index + 1}</td> */}
+              <td className="p-2 border relative">
+
+
+  {isNew && (
+    <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
+      NEW
+    </span> 
+
+  )}
+
+    {/* {index + 1} */}
+     {indexOfFirstOrder + index + 1}
+</td>
               <td className="p-2 border">{order.id}</td>
               <td className="p-2 border">
                 {customerMap[order.customer_id] || "N/A"}
@@ -109,9 +197,55 @@ export default function AdminOrdersPage() {
                   : "—"}
               </td>
             </tr>
-          ))}
+            )}
+          )}
         </tbody>
       </table>
+      {/* //Pagination UI */}
+      {totalPages > 1 && (
+  <div className="flex justify-center items-center mt-6 space-x-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 rounded border ${
+        currentPage === 1
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Prev
+    </button>
+
+    {[...Array(totalPages)].map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded border ${
+          currentPage === i + 1
+            ? "primaryBg text-white"
+            : "bg-white hover:bg-blue-100"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() =>
+        setCurrentPage((p) => Math.min(p + 1, totalPages))
+      }
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded border ${
+        currentPage === totalPages
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
+
 
       {/* Deliverables Modal */}
       {showModal && selectedOrder && (

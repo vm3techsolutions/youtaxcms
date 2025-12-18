@@ -17,6 +17,10 @@ const OrderHistory = () => {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const ordersPerPage = 10;
 
+  //18-12-25  - Customer Details Model
+const [showCustomerModal, setShowCustomerModal] = useState(false);
+const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   useEffect(() => {
     dispatch(fetchAllOrders());
     dispatch(fetchAdmins());
@@ -32,6 +36,21 @@ const OrderHistory = () => {
     setShowModal(false);
     dispatch(clearOrderLogs());
   };
+
+  //18-12-25 - Customer Deails Model
+  const openCustomerModal = (order) => {
+  setSelectedCustomer({
+    name: order.customer_name,
+    email: order.customer_email,
+    phone: order.customer_phone,
+  });
+  setShowCustomerModal(true);
+};
+
+const closeCustomerModal = () => {
+  setShowCustomerModal(false);
+  setSelectedCustomer(null);
+};
 
   // ✅ Get assigned admin name by ID
   const getAssignedAdminName = (assignedId) => {
@@ -138,7 +157,13 @@ const filteredLogs = (logs || []).filter(
                     #{order.id}
                   </td>
                   <td className="px-4 py-2 text-sm text-gray-800">{order.service_name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{order.customer_name}</td>
+                  {/* <td className="px-4 py-2 text-sm text-gray-700">{order.customer_name}</td> */}
+                  <td
+  onClick={() => openCustomerModal(order)}
+  className="px-4 py-2 text-sm text-blue-600 cursor-pointer hover:underline font-medium"
+>
+  {order.customer_name}
+</td>
                   <td className="px-4 py-2 text-sm text-gray-700">
                     ₹{Number(order.total_amount || 0).toLocaleString()}
                   </td>
@@ -231,7 +256,7 @@ const filteredLogs = (logs || []).filter(
     MODAL (Order Logs Timeline)
 ============================ */}
 {showModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center px-4 z-50">
+  <div className="fixed inset-0 backdrop-blur-md bg-white/20  flex justify-center items-center px-4 z-50">
     <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl p-6 relative 
       animate-[slideIn_0.3s_ease] max-h-[85vh] overflow-y-auto">
 
@@ -296,6 +321,41 @@ const filteredLogs = (logs || []).filter(
     </div>
   </div>
 )}
+
+{/* ===========================
+   CUSTOMER DETAILS MODAL
+=========================== */}
+{showCustomerModal && selectedCustomer && (
+  <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex justify-center items-center px-4 z-50">
+    <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 relative animate-[fadeIn_0.3s_ease]">
+
+      {/* Close Button */}
+      <button
+        onClick={closeCustomerModal}
+        className="absolute top-2 right-2 text-[#003366] hover:text-[#FFBF00] text-[15px] font-bold"
+      >
+        ✕
+      </button>
+
+      <h3 className="text-xl font-semibold mb-4 text-gray-800 primaryText">
+        Customer Details
+      </h3>
+
+      <div className="space-y-3 text-[18px] text-gray-700 secondaryText">
+        <p>
+          <strong>Name:</strong> {selectedCustomer.name}
+        </p>
+        <p>
+          <strong>Email:</strong> {selectedCustomer.email}
+        </p>
+        <p>
+          <strong>Phone:</strong> {selectedCustomer.phone}
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
     </div>
