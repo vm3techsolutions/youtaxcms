@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchAllServicesWithActive, updateService, resetSuccess } from "@/store/slices/servicesSlice";
 import {
   fetchDocumentsByService,
+  updateServiceDocument,
   createServiceDocument,
   deleteServiceDocument,
   uploadSamplePDF,
@@ -32,6 +33,7 @@ export default function ServiceCardsBookPopup() {
   const { items: serviceInputs } = useSelector((s) => s.serviceInput);
   const [editField, setEditField] = useState(null);
 
+  const [editingDocId, setEditingDocId] = useState(null);
 
   // Fetch all services
   useEffect(() => {
@@ -88,6 +90,19 @@ export default function ServiceCardsBookPopup() {
     // ⬇️ NEW: fetch service custom fields
     dispatch(getServiceInputsByService(service.id));
   };
+
+
+  const handleEditDocument = (doc) => {
+  setEditingDocId(doc.id);
+  setNewDoc({
+    doc_code: doc.doc_code,
+    doc_name: doc.doc_name,
+    doc_type: doc.doc_type,
+    is_mandatory: Boolean(doc.is_mandatory),
+    allow_multiple: Boolean(doc.allow_multiple),
+    sort_order: doc.sort_order,
+  });
+};
 
   // Edit Custom field
   const handleEditCustomField = (field) => {
@@ -147,25 +162,67 @@ export default function ServiceCardsBookPopup() {
     setNewDoc({ ...newDoc, [name]: type === "checkbox" ? checked : value });
   };
 
-  const handleSaveDocument = async () => {
+  // const handleSaveDocument = async () => {
+  //   if (!newDoc.doc_code.trim() || !newDoc.doc_name.trim()) {
+  //     alert("Document code and name are required");
+  //     return;
+  //   }
+
+  //   await dispatch(
+  //     createServiceDocument({
+  //       service_id: selectedService.id,
+  //       doc_code: newDoc.doc_code,
+  //       doc_name: newDoc.doc_name,
+  //       doc_type: newDoc.doc_type,
+  //       is_mandatory: newDoc.is_mandatory,
+  //       allow_multiple: newDoc.allow_multiple,
+  //       sort_order: newDoc.sort_order,
+  //     })
+  //   );
+
+  //   setNewDoc(null);
+  //   dispatch(fetchDocumentsByService(selectedService.id));
+  // };
+
+    const handleSaveDocument = async () => {
     if (!newDoc.doc_code.trim() || !newDoc.doc_name.trim()) {
       alert("Document code and name are required");
       return;
     }
 
-    await dispatch(
-      createServiceDocument({
-        service_id: selectedService.id,
-        doc_code: newDoc.doc_code,
-        doc_name: newDoc.doc_name,
-        doc_type: newDoc.doc_type,
-        is_mandatory: newDoc.is_mandatory,
-        allow_multiple: newDoc.allow_multiple,
-        sort_order: newDoc.sort_order,
-      })
-    );
+    if (editingDocId) {
+      // 🔁 UPDATE
+      await dispatch(
+        updateServiceDocument({
+          id: editingDocId,
+          data: {
+            doc_code: newDoc.doc_code,
+            doc_name: newDoc.doc_name,
+            doc_type: newDoc.doc_type,
+            is_mandatory: newDoc.is_mandatory,
+            allow_multiple: newDoc.allow_multiple,
+            sort_order: newDoc.sort_order,
+          },
+          serviceId: selectedService.id,
+        })
+      );
+    } else {
+      // ➕ CREATE
+      await dispatch(
+        createServiceDocument({
+          service_id: selectedService.id,
+          doc_code: newDoc.doc_code,
+          doc_name: newDoc.doc_name,
+          doc_type: newDoc.doc_type,
+          is_mandatory: newDoc.is_mandatory,
+          allow_multiple: newDoc.allow_multiple,
+          sort_order: newDoc.sort_order,
+        })
+      );
+    }
 
     setNewDoc(null);
+    setEditingDocId(null);
     dispatch(fetchDocumentsByService(selectedService.id));
   };
 
@@ -487,16 +544,28 @@ export default function ServiceCardsBookPopup() {
               className="border rounded p-3 mb-3 bg-gray-50 flex flex-col gap-2"
             >
               {/* Top Row - Name + Delete */}
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="font-medium">{doc.doc_name}</span>
 
-                {/* <button
+                <button
                   onClick={() => handleDeleteDocument(doc)}
                   className="text-red-600 hover:text-red-800"
                 >
                   <Trash2 size={18} />
-                </button> */}
-              </div>
+                </button>
+              </div> */}
+              <div className="flex justify-between items-center">
+              <span className="font-medium">{doc.doc_name}</span>
+
+              <button
+                onClick={() => handleEditDocument(doc)}
+                className="text-blue-600 hover:text-blue-800"
+                title="Edit Document"
+              >
+                <Pencil size={18} />
+              </button>
+            </div>
+
 
               {/* ⭐ ACTIVE / INACTIVE UI */}
               <div className="flex items-center gap-3 pl-2">

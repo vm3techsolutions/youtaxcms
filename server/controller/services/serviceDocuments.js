@@ -414,6 +414,44 @@ const toggleDocumentStatus = async (req, res) => {
   }
 };
 
+/**
+ * USER: Get ONLY ACTIVE documents for a service
+ */
+const getActiveDocumentsByService = async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+
+    const sql = `
+      SELECT *
+      FROM service_documents
+      WHERE service_id = ?
+      AND is_active = 1
+      ORDER BY sort_order ASC, created_at ASC
+    `;
+
+    const [results] = await db.query(sql, [serviceId]);
+
+    const documents = await Promise.all(
+      results.map(async (doc) => {
+        let sampleSignedUrl = null;
+
+        if (doc.sample_pdf_url) {
+          sampleSignedUrl = await generateSignedUrl(doc.sample_pdf_url);
+        }
+
+        return {
+          ...doc,
+          sample_pdf_signed_url: sampleSignedUrl,
+        };
+      })
+    );
+
+    res.json(documents);
+  } catch (err) {
+    console.error("DB Error (getActiveDocumentsByService):", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
 
 // ✅ Export all
 module.exports = {
@@ -425,4 +463,5 @@ module.exports = {
   uploadSamplePDF,
   deleteSamplePDF,
   toggleDocumentStatus,
+  getActiveDocumentsByService
 };

@@ -36,6 +36,20 @@ export default function AccountsOrdersPage() {
   const [showForward, setShowForward] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOperation, setSelectedOperation] = useState("");
+    const [filter, setFilter] = useState("all");
+
+  //Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
+
+  //18-12-25
+  // NEW TAG – Accounts
+const [accountsViewedOrders, setAccountsViewedOrders] = useState([]);
 
   // Fetch pending orders on mount
   useEffect(() => {
@@ -66,11 +80,56 @@ export default function AccountsOrdersPage() {
     }
   }, [showForward, selectedOrder, dispatch]);
 
+  //18-12-25
+  useEffect(() => {
+  const stored =
+    JSON.parse(localStorage.getItem("accounts_viewed_orders")) || [];
+
+  setAccountsViewedOrders(stored);
+}, []);
+
+const markOrderAsViewedByAccounts = (orderId) => {
+  setAccountsViewedOrders((prev) => {
+    if (prev.includes(orderId)) return prev;
+
+    const updated = [...prev, orderId];
+    localStorage.setItem(
+      "accounts_viewed_orders",
+      JSON.stringify(updated)
+    );
+
+    return updated;
+  });
+};
+
+//17-12-25
+  // 🔁 Poll new orders every 30 seconds
+useEffect(() => {
+  const interval = setInterval(() => {
+    dispatch(fetchPendingOrdersForAccounts());
+  }, 30000); // 30 sec
+
+  return () => clearInterval(interval);
+}, [dispatch]);
+
+//-----------------------------------------------------
+
+  // const handleViewPayments = (orderId) => {
+  //   dispatch(fetchOrderPayments(orderId));
+  //   setSelectedOrder(orderId);
+  //   setShowPayments(true);
+    
+  // };
   const handleViewPayments = (orderId) => {
-    dispatch(fetchOrderPayments(orderId));
-    setSelectedOrder(orderId);
-    setShowPayments(true);
-  };
+  dispatch(fetchOrderPayments(orderId));
+  setSelectedOrder(orderId);
+  setShowPayments(true);
+
+  // 👇 REMOVE NEW TAG ONLY HERE
+  if (!accountsViewedOrders.includes(orderId)) {
+    markOrderAsViewedByAccounts(orderId);
+  }
+};
 
   const handleForwardOrder = () => {
     if (!selectedOperation) return alert("Select an Operation User");
@@ -119,6 +178,22 @@ if (lastOperationUserId) {
     (u) => u.id === lastOperationUserId
   );
 }
+
+const sortedPendingOrders = [...pendingOrders].sort(
+  (a, b) => new Date(b.created_at) - new Date(a.created_at)
+);
+  // ===============================
+// STEP 4: Pagination calculation
+// ===============================
+const totalPages = Math.ceil(sortedPendingOrders.length / ordersPerPage);
+
+const indexOfLastOrder = currentPage * ordersPerPage;
+const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+
+const currentOrders = sortedPendingOrders.slice(
+  indexOfFirstOrder,
+  indexOfLastOrder
+);
 
 
   return (
@@ -184,9 +259,24 @@ if (lastOperationUserId) {
               </tr>
             )}
 
-            {pendingOrders.map((order, index) => (
+            {/* {pendingOrders.map((order, index) => ( */}
+            {currentOrders.map((order, index) => (
               <tr key={order.id} className="hover:bg-gray-50">
-                <td className="p-2 border">{index + 1}</td>
+                {/* <td className="p-2 border">{index + 1}</td> */}
+                
+                <td className="p-2 border text-center">
+  <div className="flex flex-col items-center">
+    {!accountsViewedOrders.includes(order.id) && (
+      <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
+        NEW
+      </span>
+    )}
+    {/* <span>{index + 1}</span> */}
+    <span>{indexOfFirstOrder + index + 1}</span>
+  </div>
+</td>
+
+
                 <td className="py-2 px-4 border">{order.id}</td>
                 <td className="py-2 px-4 border">
                   {order.customer_name || order.customer_id}
@@ -235,6 +325,53 @@ if (lastOperationUserId) {
         </table>
       </div>
 
+        {/* //17-12-25 - Pagination Logic*/}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center mt-6 space-x-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 rounded border ${
+        currentPage === 1
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Prev
+    </button>
+
+    {[...Array(totalPages)].map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded border ${
+          currentPage === i + 1
+            ? "primaryBg text-white"
+            : "bg-white hover:bg-blue-100"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() =>
+        setCurrentPage((p) => Math.min(p + 1, totalPages))
+      }
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded border ${
+        currentPage === totalPages
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
+ {/* //  --------------------------------------------*/}
+
+
       {/* Payments Modal */}
       {showPayments && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -242,6 +379,7 @@ if (lastOperationUserId) {
             <h2 className="text-lg font-bold mb-4">
               Payments for Order #{selectedOrder}
             </h2>
+   <div>
             <table className="min-w-full border rounded">
               <thead className="bg-gray-100">
                 <tr>
@@ -306,6 +444,8 @@ if (lastOperationUserId) {
                 )}
               </tbody>
             </table>
+            </div>
+                
             <button
               onClick={() => setShowPayments(false)}
               className="mt-4 px-3 py-1 primary-btn rounded"

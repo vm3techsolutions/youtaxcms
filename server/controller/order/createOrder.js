@@ -484,6 +484,48 @@ const getSignedReceiptUrl = async (req, res) => {
   }
 };
 
+/**
+ * 🔔 Get admin notifications (derived from orders)
+ * No DB changes
+ */
+const getAdminNotifications = async (req, res) => {
+  try {
+    const { since } = req.query;
+
+    let sql = `
+      SELECT id, created_at
+      FROM orders
+      ORDER BY created_at DESC
+    `;
+    let params = [];
+
+    if (since) {
+      sql = `
+        SELECT id, created_at
+        FROM orders
+        WHERE created_at > ?
+        ORDER BY created_at DESC
+      `;
+      params.push(since);
+    }
+
+    const [rows] = await db.query(sql, params);
+
+    res.json({
+      unreadCount: rows.length,
+      notifications: rows.map(order => ({
+        id: order.id,
+        message: `New order #${order.id} created`,
+        created_at: order.created_at,
+      })),
+    });
+  } catch (err) {
+    console.error("Admin notifications error:", err);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+};
 
 
-module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments, getPendingPaymentsByCustomerId, getSignedReceiptUrl };
+
+
+module.exports = { createOrder, verifyPaymentLink, createPendingPaymentLink, getMyOrders, getOrdersByCustomerId, getOrderPayments, getPendingPaymentsByCustomerId, getSignedReceiptUrl , getAdminNotifications};

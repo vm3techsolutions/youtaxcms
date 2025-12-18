@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -209,10 +211,15 @@ const markOrderAsViewedBySales = (orderId) => {
       const accountant = accountants.find((a) => a.id === accountantId);
 
       // Update forwardedAccountants state
-      setForwardedAccountants((prev) => ({
-        ...prev,
-        [orderId]: accountant?.name || "Unknown",
-      }));
+      // setForwardedAccountants((prev) => ({
+      //   ...prev,
+      //   [orderId]: accountant?.name || "Unknown",
+      // }));
+
+      // Remove order from Sales list after successful assignment
+setOrdersWithDocs((prev) =>
+  prev.filter((order) => order.id !== orderId)
+);
 
       alert(`Order #${orderId} forwarded to Accounts: ${accountant?.name}`);
     } catch (err) {

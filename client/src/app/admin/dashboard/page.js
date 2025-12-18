@@ -104,7 +104,7 @@ export default function AdminDashboard() {
             style={{ borderTopColor: COLORS[i] }}
           >
             <h2 className="text-gray-500 text-sm font-semibold">{card.label}</h2>
-            <p className={`text-4xl font-bold mt-2 ${card.color}`}>{card.value}</p>
+            <p className={`text-3xl font-bold mt-2 ${card.color}`}>{card.value}</p>
           </div>
         ))}
       </div>

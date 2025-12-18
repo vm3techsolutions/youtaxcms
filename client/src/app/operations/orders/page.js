@@ -17,7 +17,33 @@ import {
 } from "@/store/slices/operationDocumentsSlice";
 import OperationDocumentsPopup from "./OperationDocumentsPopup";
 
+
+  
+//18-12-25
+  const STORAGE_KEY = "operations_viewed_docs_orders";
+
+const getViewedDocOrders = () => {
+  if (typeof window === "undefined") return [];
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+};
+
+const markOrderDocsViewed = (orderId) => {
+  const viewed = getViewedDocOrders();
+  if (!viewed.includes(orderId)) {
+    viewed.push(orderId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(viewed));
+  }
+};
+//-------------------------------------------------
+
 export default function OperationsOrdersPage() {
+
+// Pagination
+const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 10;
+
+
+
   const dispatch = useDispatch();
   const {
     assignedOrders = [],
@@ -26,6 +52,10 @@ export default function OperationsOrdersPage() {
     error,
     success,
   } = useSelector((state) => state.operationOrders || {});
+    useEffect(() => {
+  setCurrentPage(1);
+}, [assignedOrders]);
+
 
   const { roles } = useSelector((state) => state.admin);
   const { usersByRole: roleUsers } = useSelector(
@@ -49,6 +79,13 @@ export default function OperationsOrdersPage() {
   const [customerDocFile, setCustomerDocFile] = useState(null);
   const [showDocsTable, setShowDocsTable] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+ const [viewedDocOrders, setViewedDocOrders] = useState([]);
+  useEffect(() => {
+  setViewedDocOrders(getViewedDocOrders());
+}, []);
+
+
 
   // Fetch assigned orders and roles on mount
   useEffect(() => {
@@ -81,6 +118,18 @@ export default function OperationsOrdersPage() {
       setOrderDeliverables([]);
     }
   }, [selectedOrder, dispatch]);
+
+
+  //18-12-2025
+  //17-12-25
+    // 🔁 Poll new orders every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      dispatch(fetchAssignedOrdersForOperations());
+    }, 30000); // 30 sec
+  
+    return () => clearInterval(interval);
+  }, [dispatch]);
 
   const handleFileChange = (e) => setFiles(Array.from(e.target.files));
 
@@ -124,6 +173,22 @@ export default function OperationsOrdersPage() {
       })
       .catch(() => {});
   };
+
+  //18-12-25
+  const sortedAssignedOrders = [...assignedOrders].sort(
+  (a, b) => new Date(b.created_at) - new Date(a.created_at)
+);
+
+//Pagination-calculations
+const totalPages = Math.ceil(sortedAssignedOrders.length / ordersPerPage);
+
+const indexOfLastOrder = currentPage * ordersPerPage;
+const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+
+const currentOrders = sortedAssignedOrders.slice(
+  indexOfFirstOrder,
+  indexOfLastOrder
+);
 
   return (
     <div className="container mx-auto p-6">
@@ -183,16 +248,37 @@ export default function OperationsOrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {assignedOrders.length === 0 && !loadingOrders && (
+            {/* {assignedOrders.length === 0 && !loadingOrders && ( */}
+            {currentOrders.length === 0 && !loadingOrders && (
               <tr>
                 <td colSpan="11" className="text-center py-4 text-gray-500">
                   No assigned orders.
                 </td>
               </tr>
             )}
-            {assignedOrders.map((order, index) => (
+          {/* //  {assignedOrders.map((order, index) => { */}
+            {/* {sortedAssignedOrders.map((order, index) => { */}
+            {currentOrders.map((order, index) => {
+              const hasDocuments =
+    order.order_documents && order.order_documents.length > 0;
+
+  const isNewDoc =
+    hasDocuments && !viewedDocOrders.includes(order.id);
+    return(
               <tr key={order.id} className="hover:bg-gray-50">
-                <td className="p-2 border">{index + 1}</td>
+                {/* <td className="p-2 border">{index + 1}</td> */}
+
+                <td className="p-2 border relative">
+  
+
+  {isNewDoc && (
+    <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
+      NEW
+    </span>
+  )}
+  {/* {index + 1} */}
+  {indexOfFirstOrder + index + 1}
+</td>
                 <td className="py-2 px-4 border">{order.id}</td>
                 <td className="py-2 px-4 border">{order.customer_name}</td>
                 <td className="py-2 px-4 border">{order.service_name}</td>
@@ -223,14 +309,26 @@ export default function OperationsOrdersPage() {
                     Upload / Forward
                   </button>
                 </td>
-                <td className="py-2 px-4 border">
+                {/* <td className="py-2 px-4 border">
                   <button
                     className="px-3 py-1 rounded primary-btn"
                     onClick={() => setViewDocumentsOrder(order)}
                   >
                     View Documents
                   </button>
-                </td>
+                </td> */}
+                <td className="py-2 px-4 border">
+  <button
+    className="relative px-3 py-1 rounded primary-btn"
+    onClick={() => {
+      markOrderDocsViewed(order.id);
+      setViewedDocOrders(getViewedDocOrders());
+      setViewDocumentsOrder(order);
+    }}
+  >
+    View Documents
+  </button>
+</td>
                 {/* <td className="py-2 px-4 border">
                   <button
                     className="px-3 py-1 rounded primary-btn"
@@ -273,11 +371,57 @@ export default function OperationsOrdersPage() {
                     ? new Date(order.created_at).toLocaleString("en-GB")
                     : "—"}
                 </td>
-              </tr>
-            ))}
+              </tr>)}
+            )}
           </tbody>
         </table>
       </div>
+
+{/* Paginations UI */}
+      {totalPages > 1 && (
+  <div className="flex justify-center items-center mt-6 space-x-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 rounded border ${
+        currentPage === 1
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Prev
+    </button>
+
+    {[...Array(totalPages)].map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded border ${
+          currentPage === i + 1
+            ? "primaryBg text-white"
+            : "bg-white hover:bg-blue-100"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() =>
+        setCurrentPage((p) => Math.min(p + 1, totalPages))
+      }
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded border ${
+        currentPage === totalPages
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
+
 
       {/* Upload / Forward Modal */}
       {selectedOrder &&
