@@ -32,6 +32,27 @@ export const fetchDocumentsByService = createAsyncThunk(
   }
 );
 
+// ✅ Fetch ONLY ACTIVE documents for frontend
+export const fetchActiveDocumentsByService = createAsyncThunk(
+  "serviceDocuments/fetchActiveByService",
+  async (serviceId, { rejectWithValue }) => {
+    try {
+      const res = await axiosInstance.get(
+        `/service-documents/service/${serviceId}/active`
+      );
+
+      return {
+        serviceId,
+        documents: Array.isArray(res.data) ? res.data : [],
+      };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch active documents"
+      );
+    }
+  }
+);
+
 export const updateServiceDocument = createAsyncThunk(
   "serviceDocuments/update",
   async ({ id, data, serviceId }, { rejectWithValue }) => {
@@ -185,6 +206,25 @@ const serviceDocumentsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      // ================= ACTIVE DOCUMENTS (FRONTEND) =================
+
+      .addCase(fetchActiveDocumentsByService.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchActiveDocumentsByService.fulfilled, (state, action) => {
+        state.loading = false;
+        state.serviceDocuments[action.payload.serviceId] =
+          action.payload.documents;
+      })
+
+      .addCase(fetchActiveDocumentsByService.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
 
       // Update
       .addCase(updateServiceDocument.pending, (state) => {
