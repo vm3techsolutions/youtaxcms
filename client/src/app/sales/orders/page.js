@@ -13,6 +13,37 @@ import { fetchAdminUsersByRole } from "@/store/slices/adminUserSlice";
 import axiosInstance from "@/api/axiosInstance";
 
 export default function SalesOrdersPage() {
+
+  //17-12-25
+  // ===============================
+// Sales viewed orders helpers
+// ===============================
+const getSalesViewedOrders = () => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem("sales_viewed_orders")) || [];
+  } catch {
+    return [];
+  }
+};
+
+const markSalesOrderAsViewed = (orderId) => {
+  if (typeof window === "undefined") return;
+
+  const viewedOrders = getSalesViewedOrders();
+
+  if (!viewedOrders.includes(orderId)) {
+    viewedOrders.push(orderId);
+    localStorage.setItem(
+      "sales_viewed_orders",
+      JSON.stringify(viewedOrders)
+    );
+  }
+};
+
+//-----------------------------
+
+
   const dispatch = useDispatch();
 
   // Sales state
@@ -25,11 +56,24 @@ export default function SalesOrdersPage() {
     (state) => state.adminUser
   );
 
+  //17-12-25
+  const [salesViewedOrders, setSalesViewedOrders] = useState([]);
+  //-------------------------------------------------
   const [ordersWithDocs, setOrdersWithDocs] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [assignedAccountant, setAssignedAccountant] = useState({});
   const [forwardedAccountants, setForwardedAccountants] = useState({}); // actually assigned
   const [filter, setFilter] = useState("all");
+
+  //Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+const ordersPerPage = 10;
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [filter]);
+
+  
 
   // Fetch orders + roles on mount
   useEffect(() => {
@@ -80,6 +124,42 @@ export default function SalesOrdersPage() {
 
     fetchDocumentsForOrders();
   }, [pendingOrders]);
+
+
+  //17-12-25
+  useEffect(() => {
+  const storedViewedOrders =
+    JSON.parse(localStorage.getItem("sales_viewed_orders")) || [];
+
+  setSalesViewedOrders(storedViewedOrders);
+}, []);
+
+  //17-12-25
+  // 🔁 Poll new orders every 30 seconds
+useEffect(() => {
+  const interval = setInterval(() => {
+    dispatch(fetchPendingOrders());
+  }, 30000); // 30 sec
+
+  return () => clearInterval(interval);
+}, [dispatch]);
+
+const markOrderAsViewedBySales = (orderId) => {
+  setSalesViewedOrders((prev) => {
+    if (prev.includes(orderId)) return prev;
+
+    const updated = [...prev, orderId];
+    localStorage.setItem(
+      "sales_viewed_orders",
+      JSON.stringify(updated)
+    );
+
+    return updated;
+  });
+};
+
+
+//--------------------
 
   // Handle Verify / Reject
   const handleVerifyReject = (orderId, docId, status) => {
@@ -192,7 +272,24 @@ export default function SalesOrdersPage() {
       return false;
 
     return true;
+  })
+  // 🔽 NEW: Sort newest orders first
+  .sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
   });
+
+  // ===============================
+// STEP 4: Pagination calculation
+// ===============================
+const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+const indexOfLastOrder = currentPage * ordersPerPage;
+const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+
+const currentOrders = filteredOrders.slice(
+  indexOfFirstOrder,
+  indexOfLastOrder
+);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -224,6 +321,8 @@ export default function SalesOrdersPage() {
       )}
 
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+     
+        <div>
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 border-b">
             <tr>
@@ -248,7 +347,9 @@ export default function SalesOrdersPage() {
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order, index) => {
+              
+              // filteredOrders.map((order, index) => {
+                currentOrders.map((order, index) => {
                 const totalDocs = order.documents?.length || 0;
                 const verifiedDocs =
                   order.documents?.filter((d) => d.status === "verified")
@@ -266,25 +367,57 @@ export default function SalesOrdersPage() {
                 return (
                   <React.Fragment key={order.id}>
                     <tr className="border-b hover:bg-gray-50">
-                      <td className="p-3 ">{index + 1}</td>
+                      {/* <td className="p-3 ">{index + 1}</td> */}
+ {/* //17-12-25 */}
+                      <td className="p-3 text-center">
+  <div className="flex flex-col items-center">
+    {!salesViewedOrders.includes(order.id) && (
+      <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
+        NEW
+      </span>
+    )}
+    {/* <span>{index + 1}</span> */}
+    <span>{indexOfFirstOrder + index + 1}</span>
+  </div>
+</td>
+{/* ----------------------- */}
+
                       <td className="p-3">#{order.id}</td>
                       <td className="p-3">{order.customer_name}</td>
                       <td className="p-3">{order.service_name}</td>
                       <td className="p-3 font-semibold">{displayStatus}</td>
+                      
 
                       <td className="p-3">
                         {allDocsUploaded ? (
-                          <button
-                            onClick={() =>
-                              setExpandedOrder(
-                                expandedOrder === order.id ? null : order.id
-                              )
-                            }
-                            className="px-3 py-1 text-sm primary-btn rounded"
-                          >
-                            {expandedOrder === order.id ? "Hide" : "View"}{" "}
-                            Documents
-                          </button>
+                          // <button
+                          //   onClick={() =>
+                          //     setExpandedOrder(
+                          //       expandedOrder === order.id ? null : order.id
+                          //     );
+                          // 
+                          //   }
+                          //   className="px-3 py-1 text-sm primary-btn rounded"
+                          // >
+                          //   {expandedOrder === order.id ? "Hide" : "View"}{" "}
+                          //   Documents
+                          // </button>
+                          
+                          <button onClick={() => {
+    setExpandedOrder(
+      expandedOrder === order.id ? null : order.id
+    );
+
+    // 👇 Mark as viewed ONLY when opening docs
+    if (!salesViewedOrders.includes(order.id)) {
+      markOrderAsViewedBySales(order.id);
+    }
+  }}
+  className="px-3 py-1 text-sm primary-btn rounded"
+>
+  {expandedOrder === order.id ? "Hide" : "View"} Documents
+</button>
+
                         ) : (
                           <span className="text-gray-500">No Docs</span>
                         )}
@@ -410,8 +543,55 @@ export default function SalesOrdersPage() {
               })
             )}
           </tbody>
+
         </table>
+        </div>
+
+        {/* //17-12-25 */}
+        {totalPages > 1 && (
+  <div className="flex justify-center items-center mt-6 space-x-2">
+    <button
+      onClick={() => setCurrentPage(currentPage - 1)}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 rounded border ${
+        currentPage === 1
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Prev
+    </button>
+
+    {[...Array(totalPages)].map((_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded border ${
+          currentPage === i + 1
+            ? "primaryBg text-white"
+            : "bg-white hover:bg-blue-100"
+        }`}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      onClick={() => setCurrentPage(currentPage + 1)}
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded border ${
+        currentPage === totalPages
+          ? "bg-gray-200 cursor-not-allowed"
+          : "bg-white hover:bg-blue-100"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
+
       </div>
     </div>
   );
 }
+

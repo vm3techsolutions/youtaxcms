@@ -68,6 +68,13 @@ const OrderHistory = () => {
   if (loading) return <p className="text-gray-600 text-center py-4">Loading order history...</p>;
   if (error) return <p className="text-red-500 text-center py-4">Error: {error}</p>;
 
+
+
+  // 🔹 Hide system-generated logs
+const filteredLogs = (logs || []).filter(
+  (log) => log.from_role !== "system"
+);
+
   return (
     <div className="bg-white shadow-lg rounded-xl p-6">
       {/* Header + Search + Date Filter */}
@@ -237,53 +244,55 @@ const OrderHistory = () => {
       </button>
 
       {/* ORDER INFO — SHOW ONCE */}
-      {logs.length > 0 && (
+      {filteredLogs.length > 0 && (
         <div className="mb-6 bg-gray-100 p-4 rounded-lg border">
           <h3 className="text-xl font-semibold mb-3">Order Details</h3>
-          <p><strong>Customer:</strong> {logs[0].customer_name}</p>
-          <p><strong>Service:</strong> {logs[0].service_name}</p>
-          <p><strong>Date:</strong> {new Date(logs[0].created_at).toLocaleDateString()}</p>
+          <p><strong>Customer:</strong> {filteredLogs[0].customer_name}</p>
+          <p><strong>Service:</strong> {filteredLogs[0].service_name}</p>
+          <p><strong>Date:</strong> {new Date(filteredLogs[0].created_at).toLocaleDateString()}</p>
         </div>
       )}
 
       <h3 className="text-xl font-semibold mb-4">Timeline</h3>
 
       {/* TIMELINE */}
-      {logsLoading ? (
-        <p className="text-center py-4 text-gray-600">Loading logs...</p>
-      ) : logs.length === 0 ? (
-        <p className="text-center py-4 text-gray-500">No logs available.</p>
-      ) : (
-        <div className="space-y-6 mt-4 max-h-[70vh] pr-2">
-          {/*
-            Put the first log at the top, then display the rest
-          */}
-          {[
-            logs[0],                 // first entry at top
-            ...logs.slice(1),        // remaining logs
-          ].map((log, index) => (
-            <div
-              key={index}
-              className="relative pl-8 border-l-2 border-yellow-500 animate-[fadeIn_0.4s_ease]"
-            >
-              {/* Timeline Dot */}
-              <span className="absolute -left-[10px] top-1 w-5 h-5 bg-yellow-500 rounded-full shadow-md"></span>
+{logsLoading ? (
+  <p className="text-center py-4 text-gray-600">Loading logs...</p>
+) : filteredLogs.length === 0 ? (
+  <p className="text-center py-4 text-gray-500">No logs available.</p>
+) : (
+  <div className="space-y-6 mt-4 max-h-[70vh] pr-2">
+    {filteredLogs.map((log, index) => (
+      <div
+        key={index}
+        className="relative pl-8 border-l-2 border-yellow-500 animate-[fadeIn_0.4s_ease]"
+      >
+        <span className="absolute -left-2.5 top-1 w-5 h-5 bg-yellow-500 rounded-full shadow-md"></span>
 
-              {/* MAIN LOG CONTENT */}
-              <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                <p><strong>From ({log.from_role || "System"}):</strong> {log.from_user_name || "System"} </p>
-                <p><strong>To ({log.to_role || "Unassigned"}):</strong> {log.to_user_name || "Unassigned"} </p>
-                <p><strong>Action:</strong> {log.action || "—"}</p>
-                <p><strong>Remark:</strong> {log.remarks || "—"}</p>
+        <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+          <p>
+            <strong>From ({log.from_role}):</strong>{" "}
+            {log.from_user_name}
+          </p>
 
-                <p className="text-xs text-gray-500 mt-2">
-                  {new Date(log.created_at).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))}
+          {log.to_role && log.to_user_name && (
+            <p>
+              <strong>To ({log.to_role}):</strong>{" "}
+              {log.to_user_name}
+            </p>
+          )}
+
+          <p><strong>Action:</strong> {log.action || "—"}</p>
+          <p><strong>Remark:</strong> {log.remarks || "—"}</p>
+
+          <p className="text-xs text-gray-500 mt-2">
+            {new Date(log.created_at).toLocaleString()}
+          </p>
         </div>
-      )}
+      </div>
+    ))}
+  </div>
+)}
     </div>
   </div>
 )}

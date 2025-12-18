@@ -110,6 +110,26 @@ export const deleteSamplePDF = createAsyncThunk(
   }
 );
 
+export const toggleDocumentStatus = createAsyncThunk(
+  "serviceDocuments/toggleStatus",
+  async ({ id, is_active, serviceId }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axiosInstance.patch(
+        `/service-documents/${id}/status`,
+        { is_active },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return { id, is_active, serviceId };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to update status");
+    }
+  }
+);
+
+
 
 
 // --------------------- Slice ---------------------
@@ -186,6 +206,30 @@ const serviceDocumentsSlice = createSlice({
         state.error = action.payload;
       })
 
+      // Toggle Active/Inactive
+      .addCase(toggleDocumentStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(toggleDocumentStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        const { id, is_active, serviceId } = action.payload;
+
+        if (state.serviceDocuments[serviceId]) {
+          const index = state.serviceDocuments[serviceId].findIndex(d => d.id === id);
+          if (index !== -1) {
+            state.serviceDocuments[serviceId][index].is_active = is_active;
+          }
+        }
+
+        state.success = true;
+      })
+      .addCase(toggleDocumentStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      
       // Delete
       .addCase(deleteServiceDocument.pending, (state) => {
         state.loading = true;
