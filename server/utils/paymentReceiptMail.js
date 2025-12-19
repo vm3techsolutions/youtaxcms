@@ -131,6 +131,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       .fontSize(10)
       .text("Pune, Maharashtra, India", { align: "right" })
       .text("Email: support@youtax.in", { align: "right" })
+      .text("GST: 27AABCY0470A2ZQ", { align: "right" })
       .moveDown(3);
 
     doc.font("Noto-Bold").fontSize(12).fillColor("#000").text("Billed To:", 50, doc.y);
