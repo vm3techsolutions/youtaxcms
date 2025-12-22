@@ -48,7 +48,7 @@ const createOrder = async (req, res) => {
 
     // 1. fetch service pricing
     const [services] = await db.query(
-      "SELECT base_price, advance_price, service_charges, requires_advance FROM services WHERE id=?",
+      "SELECT base_price, advance_price, service_charges, gst_rate, requires_advance FROM services WHERE id=?",
       [service_id]
     );
     if (!services || services.length === 0) {
@@ -59,11 +59,17 @@ const createOrder = async (req, res) => {
 
     const basePrice = service.base_price ? parseFloat(service.base_price) : 0;
     const serviceCharges = service.service_charges ? parseFloat(service.service_charges) : 0;
+    const gstRate = Number(service.gst_rate || 0);
     const advancePrice = service.advance_price ? parseFloat(service.advance_price) : 0;
 
     // const totalAmount = basePrice + serviceCharges;
     //  TOTAL FOR YEARS
-    const totalAmount = (basePrice + serviceCharges) * serviceYears;
+    // const totalAmount = (basePrice + serviceCharges) * serviceYears;
+
+    const taxableAmount = (basePrice + serviceCharges) * serviceYears;
+    const gstAmount = +(taxableAmount * gstRate / 100).toFixed(2);
+    const totalAmount = +(taxableAmount + gstAmount).toFixed(2);
+
 
 
     let amountToPay = totalAmount; // default full payment
@@ -98,9 +104,9 @@ const createOrder = async (req, res) => {
     // 2. insert order
     const [ins] = await db.query(
       `INSERT INTO orders 
-        (customer_id, service_id, service_years, status, total_amount, advance_required, advance_paid)
-       VALUES (?, ?, ?, 'awaiting_payment', ?, ?, 0)`,
-      [customer_id, service_id, serviceYears, totalAmount, service.advance_price || 0]
+        (customer_id, service_id, service_years, status,taxable_amount, gst_rate, gst_amount, total_amount, advance_required, advance_paid)
+       VALUES (?, ?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, 0)`,
+      [customer_id, service_id, serviceYears, taxableAmount, gstRate, gstAmount, totalAmount, service.advance_price || 0]
     );
     const orderId = ins.insertId;
 
