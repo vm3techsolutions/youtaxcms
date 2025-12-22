@@ -18,6 +18,7 @@ function ServicePriceInfo({ service, paymentOption, years }) {
   const serviceCharges = Number(service.service_charges || 0);
   const totalPrice = (basePrice + serviceCharges) * years;
   const advancePrice = Number(service.advance_price || 0);
+  const newTotalPrice = ((basePrice + serviceCharges) + (basePrice + serviceCharges) * 0.18 ) * years;
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg">
@@ -25,6 +26,12 @@ function ServicePriceInfo({ service, paymentOption, years }) {
       <div className="flex justify-between mb-2">
         <span className="font-medium">Service Price:</span>
         <span>₹{totalPrice.toLocaleString()}</span>
+      </div>
+
+      {/* GST */}
+      <div className="flex justify-between mb-2">
+        <span className="font-medium">GST:</span>
+        <span>18%</span>
       </div>
 
       {/* Show Advance Price only for display */}
@@ -42,7 +49,7 @@ function ServicePriceInfo({ service, paymentOption, years }) {
           ₹
           {paymentOption === "advance" && advancePrice > 0
             ? advancePrice.toLocaleString()
-            : totalPrice.toLocaleString()}
+            : newTotalPrice.toLocaleString()}
         </span>
       </div>
     </div>
@@ -201,7 +208,7 @@ export default function ServicesFlex() {
             return (
               <div
                 key={service.id}
-                className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-[300px]"
+                className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-75"
               >
                 <div
                   className="p-6 text-center font-semibold text-xl secondaryText"
