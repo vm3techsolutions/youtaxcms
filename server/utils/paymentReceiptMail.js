@@ -235,12 +235,20 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     }
 
     doc.moveDown(5);
+    const pageWidth =
+      doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
     doc
       .font("Noto")
       .fontSize(10)
       .fillColor("#777")
-      .text("Thank you for your business!", { align: "center" })
-      .text("Youtax.in", {
+      .text("Thank you for your business!", doc.page.margins.left, doc.y, {
+        width: pageWidth,
+        align: "center",
+      })
+      .moveDown(0.3)
+      .text("Youtax.in", doc.page.margins.left, doc.y, {
+        width: pageWidth,
         align: "center",
         link: "https://youtax.in",
         underline: true,
