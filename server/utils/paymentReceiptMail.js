@@ -40,7 +40,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     }
 
     // -----------------------------
-    // Fetch payment + order + service + customer info
+    // Fetch payment + order + service + customer info (with GST fields)
     // -----------------------------
     const query = `
       SELECT 
@@ -54,6 +54,11 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
         p.txn_ref,
         p.created_at AS payment_date,
         o.id AS order_id,
+        o.taxable_amount,
+        o.gst_rate,
+        o.gst_amount,
+        o.total_amount,
+        o.advance_paid,
         s.name AS service_name,
         c.name AS customer_name,
         c.email AS customer_email,
@@ -88,6 +93,17 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const paidDate =
       overrides.date || new Date(payment.payment_date).toLocaleString();
     const status = overrides.status || payment.status || "Paid";
+
+    // Store GST values safely (avoid undefined)
+    const taxableAmount = Number(payment.taxable_amount || 0);
+    const gstRate = Number(payment.gst_rate || 0);
+    const gstAmount = Number(payment.gst_amount || 0);
+    const totalAmount = Number(payment.total_amount || 0);
+    const advancePaid = Number(payment.advance_paid || 0);
+    const finalPaid = Number(amountPaid || 0);
+
+    // Calculate pending amount (for advance invoices)
+    const pendingAmount = Math.max(totalAmount - advancePaid, 0);
 
     // -----------------------------
     // Generate PDF receipt (unchanged)
@@ -186,11 +202,37 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       rowY + 5
     );
 
-    const totalsY = rowY + 50;
-    doc
-      .font("Noto-Bold")
-      .fontSize(12)
-      .text(`Total: ₹${amountPaid}`, 400, totalsY, { align: "right" });
+    let summaryY = rowY + 40;
+
+    doc.font("Noto").fontSize(10);
+
+    doc.text(`Taxable Amount: ₹${taxableAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    summaryY += 15;
+
+    doc.text(`GST @ ${gstRate}%: ₹${gstAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    summaryY += 15;
+
+    doc.font("Noto-Bold");
+    doc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    summaryY += 20;
+
+    doc.font("Noto");
+
+    // Advance Invoice
+    if (paymentType === "advance") {
+      doc.text(`Advance Paid: ₹${finalPaid.toFixed(2)}`, 350, summaryY, { align: "right" });
+      summaryY += 15;
+
+      doc.font("Noto-Bold").fillColor("red");
+      doc.text(`Pending Amount: ₹${pendingAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+      doc.fillColor("black");
+    }
+
+    // Final Invoice
+    if (paymentType === "final") {
+      doc.font("Noto-Bold").fontSize(12);
+      doc.text(`Final Amount Paid: ₹${totalAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    }
 
     doc.moveDown(5);
     doc
@@ -264,6 +306,30 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     // Keep base64 available (not used in HTML now) in case fallback required elsewhere
     const logoBase64 = imageToBase64(logoPath);
 
+    // Build payment summary HTML based on payment type
+    let paymentSummaryHtml = "";
+
+    if (paymentType === "advance") {
+      paymentSummaryHtml = `
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Advance Paid</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">₹${finalPaid.toFixed(2)}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Pending Amount</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd; color: red;"><strong>₹${pendingAmount.toFixed(2)}</strong></td>
+            </tr>
+      `;
+    } else {
+      paymentSummaryHtml = `
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Amount Paid</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>₹${totalAmount.toFixed(2)}</strong></td>
+            </tr>
+      `;
+    }
+
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
         <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 30px;">
@@ -321,9 +387,21 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
             </tr>
 
             <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Amount Paid</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">₹${amountPaid}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Taxable Amount</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">₹${taxableAmount.toFixed(2)}</td>
             </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>GST (${gstRate}%)</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">₹${gstAmount.toFixed(2)}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Amount</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">₹${totalAmount.toFixed(2)}</td>
+            </tr>
+
+            ${paymentSummaryHtml}
 
             ${
               payment.txn_ref
