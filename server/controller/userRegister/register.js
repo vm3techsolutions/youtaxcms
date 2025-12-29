@@ -6,7 +6,7 @@ const sendWelcomeMail = require("../../utils/welcomeMail");
 
 // ✅ SIGNUP
 const userSignUp = async (req, res) => {
-  const { name, email, password, phone, pancard, location, options } = req.body;
+  const { name, email, password, phone, pancard, location, state, gst_number, options } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: "Name, email, and password are required" });
@@ -25,8 +25,8 @@ const userSignUp = async (req, res) => {
     // 3️⃣ Insert new customer
     const insertSql = `
       INSERT INTO customers 
-      (name, email, password_hash, phone, pancard, location, options, email_verified, phone_verified, kyc_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (name, email, password_hash, phone, pancard, location, state, gst_number, options, email_verified, phone_verified, kyc_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await db.query(insertSql, [
       name,
@@ -35,6 +35,8 @@ const userSignUp = async (req, res) => {
       phone || null,
       pancard || null,
       location || null,
+      state || null,
+      gst_number || null,
       options || null,
       false,
       false,
@@ -93,6 +95,8 @@ const userLogin = async (req, res) => {
         phone: customer.phone || "Not provided",
         pancard: customer.pancard || "Not provided",
         location: customer.location || "Not provided",
+        state: customer.state || "Not provided",
+        gst_number: customer.gst_number || "Not provided",
         options: customer.options || "Not provided",
         email_verified: customer.email_verified,
         phone_verified: customer.phone_verified,
