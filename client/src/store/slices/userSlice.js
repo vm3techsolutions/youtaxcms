@@ -117,6 +117,32 @@ export const fetchVerificationStatus = createAsyncThunk(
   }
 );
 
+//To update profile details like pancard, location, state, gst_number, options
+export const updateCustomerDetails = createAsyncThunk(
+  "user/updateCustomerDetails",
+  async (formData, { getState, rejectWithValue }) => {
+    try {
+      const { token } = getState().user;
+
+      const response = await axiosInstance.put(
+        "/user/customer", // ✅ leading slash FIX
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Profile update failed" }
+      );
+    }
+  }
+);
+
+
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
@@ -248,8 +274,34 @@ const userSlice = createSlice({
       })
       .addCase(fetchVerificationStatus.rejected, (state, action) => {
         state.error = action.payload.message;
-      });
-  },
+      })
+
+      // ✅ Update Customer Details
+      .addCase(updateCustomerDetails.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+.addCase(updateCustomerDetails.fulfilled, (state, action) => {
+  state.loading = false;
+  state.successMessage = action.payload.message;
+
+  // 🔥 Update local userInfo immediately
+  state.userInfo = {
+    ...state.userInfo,
+    ...action.meta.arg,
+  };
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+    sessionStorage.setItem("userInfo", JSON.stringify(state.userInfo));
+  };
+})
+.addCase(updateCustomerDetails.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload.message;
+})
+
+  }
 });
 
 export const { logout, clearMessages, checkSession } = userSlice.actions;

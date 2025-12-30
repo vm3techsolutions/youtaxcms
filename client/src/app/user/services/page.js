@@ -13,12 +13,35 @@ import { fetchCategories } from "@/store/slices/categorySlice";
 
 // Reusable Price Info Component
 
-function ServicePriceInfo({ service, paymentOption, years }) {
+// function ServicePriceInfo({ service, paymentOption, years }) {
+function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
+
+  
   const basePrice = Number(service.base_price || 0);
   const serviceCharges = Number(service.service_charges || 0);
   const totalPrice = (basePrice + serviceCharges) * years;
-  const advancePrice = Number(service.advance_price || 0);
+  // const advancePrice = Number(service.advance_price || 0);
   const newTotalPrice = ((basePrice + serviceCharges) + (basePrice + serviceCharges) * 0.18 ) * years;
+  
+
+
+   const subtotal = (basePrice + serviceCharges) * years;
+
+  let cgst = 0;
+  let sgst = 0;
+  let igst = 0;
+
+  if (isMaharashtra) {
+    cgst = subtotal * 0.09;
+    sgst = subtotal * 0.09;
+  } else {
+    igst = subtotal * 0.18;
+  }
+
+  const totalTax = cgst + sgst + igst;
+  const totalPayable = subtotal + totalTax;
+
+  const advancePrice = Number(service.advance_price || 0);
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg">
@@ -29,10 +52,28 @@ function ServicePriceInfo({ service, paymentOption, years }) {
       </div>
 
       {/* GST */}
-      <div className="flex justify-between mb-2">
+      {/* <div className="flex justify-between mb-2">
         <span className="font-medium">GST:</span>
         <span>18%</span>
-      </div>
+      </div> */}
+      {/* TAX BREAKUP */}
+{isMaharashtra ? (
+        <>
+          <div className="flex justify-between mb-2">
+            <span className="font-medium">CGST (9%)</span>
+            <span>₹{cgst.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="font-medium">SGST (9%)</span>
+            <span>₹{sgst.toLocaleString()}</span>
+          </div>
+        </>
+      ) : (
+        <div className="flex justify-between mb-2">
+          <span className="font-medium">IGST (18%)</span>
+          <span>₹{igst.toLocaleString()}</span>
+        </div>
+      )}
 
       {/* Show Advance Price only for display */}
       {paymentOption === "advance" && advancePrice > 0 && (
@@ -43,7 +84,7 @@ function ServicePriceInfo({ service, paymentOption, years }) {
       )}
 
       {/* Total to Pay Now */}
-      <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+      {/* <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
         <span>Total to Pay Now:</span>
         <span>
           ₹
@@ -51,7 +92,16 @@ function ServicePriceInfo({ service, paymentOption, years }) {
             ? advancePrice.toLocaleString()
             : newTotalPrice.toLocaleString()}
         </span>
-      </div>
+      </div> */}
+      <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+  <span>Total to Pay Now:</span>
+  <span>
+    ₹
+    {paymentOption === "advance" && advancePrice > 0
+      ? advancePrice.toLocaleString()
+      : totalPayable.toLocaleString()}
+  </span>
+</div>
     </div>
   );
 }
@@ -74,6 +124,9 @@ export default function ServicesFlex() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [years, setYears] = useState(1);
+
+  const isMaharashtra =
+  userInfo?.state?.toLowerCase() === "maharashtra";
 
   useEffect(() => {
     dispatch(fetchAllServicesWithActive());
@@ -275,11 +328,19 @@ export default function ServicesFlex() {
                 </p>
               </div>
 
-              <ServicePriceInfo
+              {/* <ServicePriceInfo
                 service={modalService}
                 paymentOption={paymentOption}
                 years={years}
-              />
+              /> */}
+             <ServicePriceInfo
+  service={modalService}
+  paymentOption={paymentOption}
+  years={years}
+  isMaharashtra={isMaharashtra}
+/>
+
+
               {/* Show Years drop-down only for Food License */}
               {getCategoryName(modalService.category_id) === "Food License" && (
                 <div className="mt-4">
