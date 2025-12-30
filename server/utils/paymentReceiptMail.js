@@ -63,7 +63,9 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
         c.name AS customer_name,
         c.email AS customer_email,
         c.phone AS customer_phone,
-        c.location AS customer_location
+        c.location AS customer_location,
+        c.state AS customer_state,
+        c.gst_number AS customer_gst_number
       FROM payments p
       JOIN orders o ON p.order_id = o.id
       JOIN services s ON o.service_id = s.id
@@ -85,6 +87,8 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const customerEmailFinal = email || payment.customer_email;
     const customerPhone = payment.customer_phone || "N/A";
     const customerLocation = payment.customer_location || "N/A";
+    const customerGstNumber = payment.customer_gst_number || "N/A";
+    const customerStateDisplay = payment.customer_state || "N/A";
     const paymentType = overrides.paymentType || payment.payment_type || "N/A";
 
     const amountPaid =
@@ -101,6 +105,10 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const totalAmount = Number(payment.total_amount || 0);
     const advancePaid = Number(payment.advance_paid || 0);
     const finalPaid = Number(amountPaid || 0);
+
+    const customerState = (payment.customer_state || "").toLowerCase().trim();
+    const isMaharashtra = customerState === "maharashtra";
+    const halfGST = +(gstAmount / 2).toFixed(2);
 
     // Calculate pending amount (for advance invoices)
     const pendingAmount = Math.max(totalAmount - advancePaid, 0);
@@ -171,13 +179,15 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
 
     doc.font("Noto-Bold").fontSize(12).fillColor("#000").text("Billed To:", 50, doc.y);
 
-      doc
-        .font("Noto")
-        .text(`${customerName}`)
-        .text(`${customerEmailFinal}`)
-        .text(`Phone: ${customerPhone}`)
-        .text(`Location: ${customerLocation}`)
-        .moveDown(1);
+    doc
+      .font("Noto")
+      .text(`${customerName}`)
+      .text(`${customerEmailFinal}`)
+      .text(`Phone: ${customerPhone}`)
+      .text(`Location: ${customerLocation}`)
+      .text(`State: ${customerStateDisplay}`)
+      .text(`GST: ${customerGstNumber}`)
+      .moveDown(1);
 
       const invoiceTop = 180;
       doc.font("Noto-Bold").fontSize(12).text("Invoice", 400, invoiceTop);
@@ -225,8 +235,19 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       doc.text(`Taxable Amount: ₹${taxableAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
       summaryY += 15;
 
-      doc.text(`GST @ ${gstRate}%: ₹${gstAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    // doc.text(`GST @ ${gstRate}%: ₹${gstAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+    // summaryY += 15;
+    if (isMaharashtra) {
+      doc.text(`CGST @ 9%: ₹${halfGST.toFixed(2)}`, 350, summaryY, { align: "right" });
       summaryY += 15;
+
+      doc.text(`SGST @ 9%: ₹${halfGST.toFixed(2)}`, 350, summaryY, { align: "right" });
+      summaryY += 15;
+    } else {
+      doc.text(`IGST @ 18%: ₹${gstAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
+      summaryY += 15;
+    }
+
 
       doc.font("Noto-Bold");
       doc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 350, summaryY, { align: "right" });
@@ -399,6 +420,29 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       `;
     }
 
+    // Build dynamic GST HTML based on customer location/state
+    let gstHtml = "";
+
+    if (isMaharashtra) {
+      gstHtml = `
+        <tr>
+          <td style="padding:10px;border:1px solid #ddd;"><strong>CGST @ 9%</strong></td>
+          <td style="padding:10px;border:1px solid #ddd;">₹${halfGST.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;border:1px solid #ddd;"><strong>SGST @ 9%</strong></td>
+          <td style="padding:10px;border:1px solid #ddd;">₹${halfGST.toFixed(2)}</td>
+        </tr>
+      `;
+    } else {
+      gstHtml = `
+        <tr>
+          <td style="padding:10px;border:1px solid #ddd;"><strong>IGST @ 18%</strong></td>
+          <td style="padding:10px;border:1px solid #ddd;">₹${gstAmount.toFixed(2)}</td>
+        </tr>
+      `;
+    }
+
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
         <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 30px;">
@@ -469,6 +513,16 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
             </tr>
 
             <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>State</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${customerStateDisplay}</td>
+            </tr>
+
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;"><strong>GST Number</strong></td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${customerGstNumber}</td>
+            </tr>
+
+            <tr>
               <td style="padding: 10px; border: 1px solid #ddd;"><strong>Payment Mode</strong></td>
               <td style="padding: 10px; border: 1px solid #ddd;">${paymentMode}</td>
             </tr>
@@ -483,10 +537,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
               <td style="padding: 10px; border: 1px solid #ddd;">₹${taxableAmount.toFixed(2)}</td>
             </tr>
 
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;"><strong>GST (${gstRate}%)</strong></td>
-              <td style="padding: 10px; border: 1px solid #ddd;">₹${gstAmount.toFixed(2)}</td>
-            </tr>
+            ${gstHtml}
 
             <tr>
               <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Amount</strong></td>
