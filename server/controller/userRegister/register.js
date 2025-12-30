@@ -193,10 +193,100 @@ const getCustomerStats = async (req, res) => {
   }
 };
 
+// ✅ GET CUSTOMER DETAILS (pancard, location, state, gst_number, options)
+const getCustomerDetails = async (req, res) => {
+  try {
+    const customerId = req.user && req.user.id;
+    if (!customerId) return res.status(401).json({ message: "Unauthorized" });
+
+    const [rows] = await db.query(
+      "SELECT id, pancard, location, state, gst_number, options FROM customers WHERE id = ?",
+      [customerId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: rows[0].id,
+        pancard: rows[0].pancard || null,
+        location: rows[0].location || null,
+        state: rows[0].state || null,
+        gst_number: rows[0].gst_number || null,
+        options: rows[0].options || null,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Get Customer Details Error:", err);
+    return res.status(500).json({ success: false, message: "Database error", error: err.message });
+  }
+};
+
+// ✅ UPDATE CUSTOMER DETAILS (pancard, location, state, gst_number, options)
+const updateCustomerDetails = async (req, res) => {
+  try {
+    const customerId = req.user && req.user.id;
+    if (!customerId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { pancard, location, state, gst_number, options } = req.body;
+
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+
+    if (pancard !== undefined) {
+      updates.push("pancard = ?");
+      values.push(pancard || null);
+    }
+    if (location !== undefined) {
+      updates.push("location = ?");
+      values.push(location || null);
+    }
+    if (state !== undefined) {
+      updates.push("state = ?");
+      values.push(state || null);
+    }
+    if (gst_number !== undefined) {
+      updates.push("gst_number = ?");
+      values.push(gst_number || null);
+    }
+    if (options !== undefined) {
+      updates.push("options = ?");
+      values.push(options || null);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(customerId);
+    const updateSql = `UPDATE customers SET ${updates.join(", ")} WHERE id = ?`;
+
+    const result = await db.query(updateSql, values);
+
+    if (result[0].affectedRows === 0) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Customer details updated successfully",
+    });
+  } catch (err) {
+    console.error("❌ Update Customer Details Error:", err);
+    return res.status(500).json({ success: false, message: "Database error", error: err.message });
+  }
+};
+
 module.exports = {
   userSignUp,
   userLogin,
   forgotPassword,
   resetPassword,
   getCustomerStats,
+  getCustomerDetails,
+  updateCustomerDetails,
 };
