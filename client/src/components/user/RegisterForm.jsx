@@ -7,8 +7,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { STATES } from "./states"; 
 
 export default function RegisterForm() {
+
+const [filteredStates, setFilteredStates] = useState([]);
+const [showStateDropdown, setShowStateDropdown] = useState(false);
+
+
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading, error, successMessage } = useSelector((state) => state.user);
@@ -19,6 +25,8 @@ export default function RegisterForm() {
     phone: "",
     pancard: "",
     location: "",
+    state: "",
+    gst_number: "",
     options: "",
     password: "",
     confirmPassword: "",
@@ -28,13 +36,34 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // const handleChange = (e) => {
+  //   const { name, value, type, checked } = e.target;
+  //   setFormData({
+  //     ...formData,
+  //     [name]: type === "checkbox" ? checked : value,
+  //   });
+  // };
+
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
+  const { name, value, type, checked } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value,
+  }));
+
+  if (name === "state") {
+    if (value.length >= 2) {
+      const matches = STATES.filter((s) =>
+        s.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredStates(matches);
+      setShowStateDropdown(true);
+    } else {
+      setShowStateDropdown(false);
+    }
+  }
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -71,7 +100,7 @@ export default function RegisterForm() {
             <input
               type="text"
               name="name"
-              placeholder="Name"
+              placeholder="Name*"
               value={formData.name}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -80,7 +109,7 @@ export default function RegisterForm() {
             <input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder="Email*"
               value={formData.email}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -93,10 +122,11 @@ export default function RegisterForm() {
             <input
               type="text"
               name="phone"
-              placeholder="Mobile No."
+              placeholder="Mobile No.*"
               value={formData.phone}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
             />
             <input
               type="text"
@@ -113,11 +143,58 @@ export default function RegisterForm() {
             <input
               type="text"
               name="location"
-              placeholder="Location"
+              placeholder="Location*"
               value={formData.location}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
             />
+            
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+  <input
+    type="text"
+    name="state"
+    placeholder="State*"
+    value={formData.state}
+    onChange={handleChange}
+    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+    required
+    autoComplete="off"
+  />
+
+  {showStateDropdown && filteredStates.length > 0 && (
+    <div className="absolute z-30 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden">
+      {filteredStates.map((state) => (
+        <div
+          key={state}
+          onClick={() => {
+            setFormData((prev) => ({ ...prev, state }));
+            setFilteredStates([]);
+            setShowStateDropdown(false);
+          }}
+          className="px-4 py-3 cursor-pointer text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition"
+        >
+          {state}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+           
+            
+          </div>
+
+{/* GST NO & Branch */}
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="gst_number"
+              placeholder="GST NO."
+              value={formData.gst_number}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
             <select
               name="options"
               value={formData.options}
@@ -125,7 +202,7 @@ export default function RegisterForm() {
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Select Office</option>
+              <option value="">Select Office*</option>
               <option value="pune">Pune</option>
               <option value="baramati">Baramati</option>
             </select>
@@ -137,7 +214,7 @@ export default function RegisterForm() {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Password"
+                placeholder="Password*"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -155,7 +232,7 @@ export default function RegisterForm() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
-                placeholder="Confirm Password"
+                placeholder="Confirm Password*"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"

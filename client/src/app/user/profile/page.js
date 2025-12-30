@@ -29,12 +29,14 @@ export default function UserProfile() {
   const [isVerifying, setIsVerifying] = useState(true);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    pancard: "",
-    location: "",
-    options: "",
+      name: "",
+  email: "",
+  phone: "",
+  pancard: "",
+  location: "",
+  options: "",
+  state: "",
+  gst_number: "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -66,6 +68,8 @@ export default function UserProfile() {
         pancard: userInfo.pancard || "",
         location: userInfo.location || "",
         options: userInfo.options || "",
+        state:  userInfo.state || "",
+        gst_number: userInfo.gst_number || "",
       });
     }
   }, [userInfo, dispatch]);
@@ -219,6 +223,31 @@ export default function UserProfile() {
             onChange={handleChange}
             className="w-full border rounded px-3 py-2 mt-1"
           />
+        </div>
+
+        <div>
+           {/* State */}
+            <label className="block text-gray-700 font-semibold">State:</label>
+            <input
+              type="text"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 mt-1"
+            />
+        </div>
+
+{/* GST No */}
+        <div>
+          <label className="block text-gray-700 font-semibold">GST No:</label>
+          <input
+              type="text"
+              name="gst_number"
+              value={formData.gst_number}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 mt-1"
+            />
+
         </div>
 
         {/* Branch */}

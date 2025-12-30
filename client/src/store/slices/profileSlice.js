@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 // ✅ API Base
-const API_URL = "http://localhost:5000/api"; // adjust backend base url
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // adjust backend base url
 
 // ✅ Thunks
 export const fetchProfiles = createAsyncThunk(
