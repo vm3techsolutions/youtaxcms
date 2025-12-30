@@ -6,11 +6,16 @@ import {
   verifyOtp,
   clearMessages,
   fetchVerificationStatus,
+  updateCustomerDetails
 } from "@/store/slices/userSlice";
 import { useState, useEffect } from "react";
 import { resetPassword, clearPasswordMessages } from "@/store/slices/passwordResetSlice"; // new slice
+import { STATES } from "@/components/user/states";
+
 
 export default function UserProfile() {
+  const [filteredStates, setFilteredStates] = useState([]);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
   const dispatch = useDispatch();
   const {
     userInfo,
@@ -130,15 +135,48 @@ export default function UserProfile() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  //States change handler
+  const handleStateChange = (e) => {
+  const value = e.target.value;
+
+  setFormData((prev) => ({ ...prev, state: value }));
+
+  if (value.length > 0) {
+    const filtered = STATES.filter((state) =>
+      state.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStates(filtered);
+    setShowStateDropdown(true);
+  } else {
+    setShowStateDropdown(false);
+  }
+};
+
+const handleSelectState = (state) => {
+  setFormData((prev) => ({ ...prev, state }));
+  setShowStateDropdown(false);
+};
+
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // const handleSave = () => {
+  //   console.log("Updated Profile Data:", formData);
+  //   // dispatch(updateUserProfile(formData))
+  // };
   const handleSave = () => {
-    console.log("Updated Profile Data:", formData);
-    // dispatch(updateUserProfile(formData))
-  };
+  dispatch(updateCustomerDetails({
+    pancard: formData.pancard,
+    location: formData.location,
+    state: formData.state,
+    gst_number: formData.gst_number,
+    options: formData.options,
+  }));
+};
+
 
   const handleUpdatePassword = () => {
     if (!passwordData.currentPassword || !passwordData.newPassword) return;
@@ -167,6 +205,7 @@ export default function UserProfile() {
             value={formData.name}
             onChange={handleChange}
             className="w-full border rounded px-3 py-2 mt-1"
+            readOnly
           />
         </div>
 
@@ -180,6 +219,7 @@ export default function UserProfile() {
               value={formData.email}
               onChange={handleChange}
               className="flex-1 border rounded px-3 py-2 mt-1"
+              readOnly
             />
             {renderVerificationBadge(verificationStatus.email_verified, "email")}
           </div>
@@ -196,6 +236,7 @@ export default function UserProfile() {
               onChange={handleChange}
               className="flex-1 border rounded px-3 py-2 mt-1"
               placeholder="Enter phone number"
+              readOnly
             />
             {renderVerificationBadge(verificationStatus.phone_verified, "phone")}
           </div>
@@ -225,17 +266,32 @@ export default function UserProfile() {
           />
         </div>
 
-        <div>
-           {/* State */}
-            <label className="block text-gray-700 font-semibold">State:</label>
-            <input
-              type="text"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 mt-1"
-            />
-        </div>
+       <div className="relative">
+  <label className="block text-gray-700 font-semibold">State:</label>
+
+  <input
+    type="text"
+    value={formData.state}
+    onChange={handleStateChange}
+    onFocus={() => formData.state && setShowStateDropdown(true)}
+    placeholder="Select state"
+    className="w-full border rounded px-3 py-2 mt-1"
+  />
+
+  {showStateDropdown && filteredStates.length > 0 && (
+    <ul className="absolute z-20 bg-white border w-full max-h-48 overflow-y-auto rounded shadow-md mt-1">
+      {filteredStates.map((state) => (
+        <li
+          key={state}
+          onClick={() => handleSelectState(state)}
+          className="px-4 py-2 cursor-pointer hover:bg-indigo-100"
+        >
+          {state}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
 
 {/* GST No */}
         <div>
