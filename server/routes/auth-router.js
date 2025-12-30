@@ -37,6 +37,8 @@ const { isAdmin } = require('../middleware/auth');
 // Define routes for user registration and login
 router.post('/user/signup', userRegister.userSignUp);
 router.post('/user/login', userRegister.userLogin);
+router.get('/user/customer', verifyToken, userRegister.getCustomerDetails);
+router.put('/user/customer', verifyToken, userRegister.updateCustomerDetails);
 
 // MyProfile Routes (protected with JWT)
 router.post("/customerprofile", verifyToken, userMyprofile.createMyProfile);
