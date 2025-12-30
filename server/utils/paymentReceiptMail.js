@@ -113,6 +113,18 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     // Calculate pending amount (for advance invoices)
     const pendingAmount = Math.max(totalAmount - advancePaid, 0);
 
+    // Fetch any advance payment rows for this order so they can be included in the PDF
+    let advancePayments = [];
+    try {
+      const [advRows] = await db.query(
+        `SELECT id, amount, payment_type, status, created_at FROM payments WHERE order_id = ? AND payment_type = 'advance' ORDER BY created_at ASC`,
+        [payment.order_id]
+      );
+      advancePayments = advRows || [];
+    } catch (e) {
+      console.error("❌ Error fetching advance payments for PDF:", e);
+      advancePayments = [];
+    }
     // -----------------------------
     // Generate PDF receipt (only for final payments)
     // -----------------------------
@@ -228,7 +240,39 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       doc.text(`₹${Number(amountPaid).toFixed(2)}`, itemX + colWidths[0] + colWidths[1] + colWidths[2] + 10, rowY + 5);
       doc.text(`${String(paymentType).charAt(0).toUpperCase() + String(paymentType).slice(1)}`, itemX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 10, rowY + 5);
 
+      // Insert Advance Payments table in PDF (if any)
       let summaryY = rowY + 40;
+      if (advancePayments && advancePayments.length) {
+        let advTop = rowY + 40;
+        doc.moveDown(1);
+        doc.font("Noto-Bold").fontSize(12).fillColor("#003366").text("Advance Payments", itemX, advTop);
+        advTop += 18;
+
+        // Header row
+        const advColWidths = [240, 120, 140];
+        doc.font("Noto-Bold").fontSize(10).fillColor("#fff");
+        doc.rect(itemX, advTop, 500, 20).fill("#003366").stroke();
+        const advHeaders = ["Date", "Amount", "Status"];
+        advHeaders.forEach((header, i) => {
+          const x = itemX + (i === 0 ? 10 : advColWidths.slice(0, i).reduce((a, b) => a + b, 0) + 10);
+          doc.text(header, x, advTop + 5);
+        });
+
+        advTop += 25;
+        doc.fillColor("#000").font("Noto").fontSize(10);
+        advancePayments.forEach((p) => {
+          const dateStr = p.created_at ? new Date(p.created_at).toLocaleString() : "-";
+          doc.rect(itemX, advTop, 500, 20).stroke();
+          doc.text(dateStr, itemX + 10, advTop + 5);
+          doc.text(`₹${Number(p.amount).toFixed(2)}`, itemX + advColWidths[0] + 10, advTop + 5, { width: advColWidths[1], align: "right" });
+          const statusText = String(p.status || p.payment_type || "").charAt(0).toUpperCase() + String(p.status || p.payment_type || "").slice(1);
+          doc.text(statusText, itemX + advColWidths[0] + advColWidths[1] + 10, advTop + 5);
+          advTop += 25;
+        });
+
+        summaryY = advTop + 10;
+        doc.fillColor("#000");
+      }
 
       doc.font("Noto").fontSize(10);
 
@@ -351,18 +395,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     const logoCid = "youtaxlogo@cid";
     // logoBase64ForPdf contains the data URI used to embed into the PDF; we'll convert it to a buffer and attach inline for email clients
 
-    // Fetch any advance payment rows for this order to display history
-    let advancePayments = [];
-    try {
-      const [advRows] = await db.query(
-        `SELECT id, amount, payment_type, status, created_at FROM payments WHERE order_id = ? AND payment_type = 'advance' ORDER BY created_at ASC`,
-        [payment.order_id]
-      );
-      advancePayments = advRows || [];
-    } catch (e) {
-      console.error("❌ Error fetching advance payments:", e);
-      advancePayments = [];
-    }
+    // Advance payments were fetched earlier (for PDF inclusion)
 
     // Build HTML for advance payments section
     let advancePaymentsHtml = "";
