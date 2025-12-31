@@ -250,24 +250,25 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
 
         // Header row
         const advColWidths = [240, 120, 140];
-        doc.font("Noto-Bold").fontSize(10).fillColor("#fff");
-        doc.rect(itemX, advTop, 500, 20).fill("#003366").stroke();
+        doc.font("Noto-Bold").fontSize(10);
+        doc.rect(itemX, advTop, 500, 25).fill("#003366").stroke();
+        doc.fillColor("#fff");
         const advHeaders = ["Date", "Amount", "Status"];
         advHeaders.forEach((header, i) => {
-          const x = itemX + (i === 0 ? 10 : advColWidths.slice(0, i).reduce((a, b) => a + b, 0) + 10);
-          doc.text(header, x, advTop + 5);
+          const x = itemX + (i === 0 ? 10 : advColWidths.slice(0, i).reduce((a, b) => a + b, 0) + 15);
+          doc.text(header, x, advTop + 7);
         });
 
-        advTop += 25;
+        advTop += 30;
         doc.fillColor("#000").font("Noto").fontSize(10);
         advancePayments.forEach((p) => {
           const dateStr = p.created_at ? new Date(p.created_at).toLocaleString() : "-";
-          doc.rect(itemX, advTop, 500, 20).stroke();
-          doc.text(dateStr, itemX + 10, advTop + 5);
-          doc.text(`₹${Number(p.amount).toFixed(2)}`, itemX + advColWidths[0] + 10, advTop + 5, { width: advColWidths[1], align: "right" });
+          doc.rect(itemX, advTop, 500, 25).stroke();
+          doc.text(dateStr, itemX + 10, advTop + 7);
+          doc.text(`₹${Number(p.amount).toFixed(2)}`, itemX + 255, advTop + 7);
           const statusText = String(p.status || p.payment_type || "").charAt(0).toUpperCase() + String(p.status || p.payment_type || "").slice(1);
-          doc.text(statusText, itemX + advColWidths[0] + advColWidths[1] + 10, advTop + 5);
-          advTop += 25;
+          doc.text(statusText, itemX + 375, advTop + 7);
+          advTop += 30;
         });
 
         summaryY = advTop + 10;
