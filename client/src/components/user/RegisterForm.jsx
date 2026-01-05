@@ -150,7 +150,8 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
               required
             />
             
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+{/* State */}
+  <div className="relative" onClick={(e) => e.stopPropagation()}>
   <input
     type="text"
     name="state"

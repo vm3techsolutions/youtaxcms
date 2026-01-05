@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const db = require("../../config/db");
 const sendEmail = require("../../config/forgotMail");
 const sendWelcomeMail = require("../../utils/welcomeMail");
+const { isNonNullObject } = require("razorpay/dist/utils/razorpay-utils");
 
 // ✅ SIGNUP
 const userSignUp = async (req, res) => {
@@ -93,10 +94,10 @@ const userLogin = async (req, res) => {
         name: customer.name,
         email: customer.email,
         phone: customer.phone || "Not provided",
-        pancard: customer.pancard || "Not provided",
+        pancard: customer.pancard || null,
         location: customer.location || "Not provided",
-        state: customer.state || "Not provided",
-        gst_number: customer.gst_number || "Not provided",
+        state: customer.state || null,
+        gst_number: customer.gst_number || null,
         options: customer.options || "Not provided",
         email_verified: customer.email_verified,
         phone_verified: customer.phone_verified,

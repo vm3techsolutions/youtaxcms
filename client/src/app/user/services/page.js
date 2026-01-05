@@ -125,6 +125,14 @@ export default function ServicesFlex() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [years, setYears] = useState(1);
 
+  const isStateMissing =
+  !userInfo?.state ||
+  userInfo.state === "Not provided" ||
+  userInfo.state.trim() === "";
+
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+
+
   const isMaharashtra =
   userInfo?.state?.toLowerCase() === "maharashtra";
 
@@ -140,17 +148,34 @@ export default function ServicesFlex() {
     }
   };
 
-  const handleApplyNow = (service) => {
-    setModalService(service);
-    dispatch(resetOrderState());
-    setPaymentOption("full");
+  // const handleApplyNow = (service) => {
+  //   setModalService(service);
+  //   dispatch(resetOrderState());
+  //   setPaymentOption("full");
 
-    dispatch(fetchServiceById(service.id)).then((resultAction) => {
-      if (fetchServiceById.fulfilled.match(resultAction)) {
-        setModalService(resultAction.payload);
-      }
-    });
-  };
+  //   dispatch(fetchServiceById(service.id)).then((resultAction) => {
+  //     if (fetchServiceById.fulfilled.match(resultAction)) {
+  //       setModalService(resultAction.payload);
+  //     }
+  //   });
+  // };
+  const handleApplyNow = (service) => {
+  if (isStateMissing) {
+    setShowProfilePopup(true);
+    return;
+  }
+
+  setModalService(service);
+  dispatch(resetOrderState());
+  setPaymentOption("full");
+
+  dispatch(fetchServiceById(service.id)).then((resultAction) => {
+    if (fetchServiceById.fulfilled.match(resultAction)) {
+      setModalService(resultAction.payload);
+    }
+  });
+};
+
 
   const handleBackToList = () => {
     setModalService(null);
@@ -400,6 +425,37 @@ export default function ServicesFlex() {
           </div>
         </div>
       )}
+
+      {showProfilePopup && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-white rounded-lg p-6 w-[90%] max-w-md text-center shadow-lg">
+      <h2 className="text-xl font-semibold mb-2">Complete Your Profile</h2>
+      <p className="text-gray-600 mb-6">
+        Please complete your profile by adding your <b>State</b> before applying for any service.
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => setShowProfilePopup(false)}
+          className="px-4 py-2 rounded bg-gray-200"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => {
+            setShowProfilePopup(false);
+            window.location.href = "/user/profile";
+          }}
+          className="px-4 py-2 rounded primary-btn text-white"
+        >
+          Go to Profile
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

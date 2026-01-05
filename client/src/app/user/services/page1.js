@@ -145,7 +145,7 @@ export default function ServicesFlex() {
           return (
             <div
               key={service.id}
-              className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-[300px]"
+              className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-75"
             >
               <div
                 className="p-6 text-center font-semibold text-xl secondaryText"

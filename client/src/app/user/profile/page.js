@@ -198,7 +198,7 @@ const handleSelectState = (state) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name */}
         <div>
-          <label className="block text-gray-700 font-semibold">Full Name:</label>
+          <label className="block text-gray-700 font-semibold">Full Name*:</label>
           <input
             type="text"
             name="name"
@@ -211,7 +211,7 @@ const handleSelectState = (state) => {
 
         {/* Email */}
         <div>
-          <label className="block text-gray-700 font-semibold">Email:</label>
+          <label className="block text-gray-700 font-semibold">Email*:</label>
           <div className="flex items-center">
             <input
               type="email"
@@ -227,7 +227,7 @@ const handleSelectState = (state) => {
 
         {/* Phone */}
         <div>
-          <label className="block text-gray-700 font-semibold">Phone:</label>
+          <label className="block text-gray-700 font-semibold">Mobile No.*:</label>
           <div className="flex items-center">
             <input
               type="text"
@@ -256,7 +256,7 @@ const handleSelectState = (state) => {
 
         {/* Location */}
         <div>
-          <label className="block text-gray-700 font-semibold">Location:</label>
+          <label className="block text-gray-700 font-semibold">Location*:</label>
           <input
             type="text"
             name="location"
@@ -266,9 +266,10 @@ const handleSelectState = (state) => {
           />
         </div>
 
-       <div className="relative">
-  <label className="block text-gray-700 font-semibold">State:</label>
 
+{/* State */}
+       <div className="relative">
+  <label className="block text-gray-700 font-semibold">State*:</label>
   <input
     type="text"
     value={formData.state}
@@ -276,6 +277,7 @@ const handleSelectState = (state) => {
     onFocus={() => formData.state && setShowStateDropdown(true)}
     placeholder="Select state"
     className="w-full border rounded px-3 py-2 mt-1"
+    required
   />
 
   {showStateDropdown && filteredStates.length > 0 && (
@@ -308,13 +310,14 @@ const handleSelectState = (state) => {
 
         {/* Branch */}
         <div>
-          <label className="block text-gray-700 font-semibold">Branch:</label>
+          <label className="block text-gray-700 font-semibold">Branch*:</label>
           <input
             type="text"
             name="options"
             value={formData.options}
             onChange={handleChange}
             className="w-full border rounded px-3 py-2 mt-1"
+            required
           />
         </div>
       </div>
