@@ -158,31 +158,29 @@ export default function DocumentUpload() {
 
   return (
     <div className="container bg-white px-14 py-10 max-w-4xl">
-      
-      {/* --- TABS --- */}
-<div className="flex mb-10 justify-center">
-  <button
-    onClick={() => setActiveTab("documents")}
-    className={`px-4 py-2 ${
-      activeTab === "documents"
-        ? "border-b-2 border-[#FFBF00] font-bold"
-        : ""
-    }`}
-  >
-    Upload Documents
-  </button>
 
-  <button
-    onClick={() => setActiveTab("fields")}
-    className={`px-4 py-2 ${
-      activeTab === "fields"
-        ? "border-b-2 border-[#FFBF00] font-bold"
-        : ""
-    }`}
-  >
-    Additional Information
-  </button>
-</div>
+      {/* --- TABS --- */}
+      <div className="flex mb-10 justify-center">
+        <button
+          onClick={() => setActiveTab("documents")}
+          className={`px-4 py-2 ${activeTab === "documents"
+              ? "border-b-2 border-[#FFBF00] font-bold"
+              : ""
+            }`}
+        >
+          Upload Documents
+        </button>
+
+        <button
+          onClick={() => setActiveTab("fields")}
+          className={`px-4 py-2 ${activeTab === "fields"
+              ? "border-b-2 border-[#FFBF00] font-bold"
+              : ""
+            }`}
+        >
+          Additional Information
+        </button>
+      </div>
 
       <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">
         {serviceName || "Service"} - Upload Documents
@@ -198,176 +196,176 @@ export default function DocumentUpload() {
 
 
 
-  {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
+      {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
 
 
-  {activeTab === "documents" && (
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {documents.map((doc) => {
-          const uploadedFilesForDoc =
-            uploadedDocs?.filter((f) => f.service_doc_id === doc.id) || [];
-          const previewsForDoc = previews[doc.id] || [];
+      {activeTab === "documents" && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {documents.map((doc) => {
+            const uploadedFilesForDoc =
+              uploadedDocs?.filter((f) => f.service_doc_id === doc.id) || [];
+            const previewsForDoc = previews[doc.id] || [];
 
-          return (
-            <div
-              key={doc.id}
-              className="grid grid-cols-1 md:grid-cols-6 items-start gap-4 border-b pb-4"
-            >
-              {/* Label */}
-              <div className="md:col-span-2 flex items-center font-semibold text-gray-700">
-                {doc.doc_name}{" "}
-                {doc.is_mandatory && <span className="text-red-500">*</span>}
+            return (
+              <div
+                key={doc.id}
+                className="grid grid-cols-1 md:grid-cols-6 items-start gap-4 border-b pb-4"
+              >
+                {/* Label */}
+                <div className="md:col-span-2 flex items-center font-semibold text-gray-700">
+                  {doc.doc_name}{" "}
+                  {doc.is_mandatory === 1 && <span className="text-red-500">*</span>}
 
-                 {/* SAMPLE DOCUMENT (if exists) */}
-{doc.sample_pdf_signed_url && (
-  <div className="md:col-span-4 mb-3">
-    <div className="flex items-center justify-between bg-gray-100 p-2 rounded">
-      
+                  {/* SAMPLE DOCUMENT (if exists) */}
+                  {doc.sample_pdf_signed_url && (
+                    <div className="md:col-span-4 mb-3">
+                      <div className="flex items-center justify-between bg-gray-100 p-2 rounded">
 
-      <a
-        href={doc.sample_pdf_signed_url}
-        download
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-      >
-        Download
-      </a>
-    </div>
-  </div>
-)}
 
-              </div>
-
-             
-
-              {/* Input + thumbnails */}
-              <div className="md:col-span-4 flex flex-col">
-                <input
-                  type="file"
-                  multiple={doc.allow_multiple === 1}
-                  required={doc.is_mandatory && uploadedFilesForDoc.length === 0}
-                  onChange={(e) => handleFileChange(doc.id, e.target.files)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-
-                {/* Uploaded files */}
-                {uploadedFilesForDoc.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {uploadedFilesForDoc.map((file) => {
-                      const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.file_url);
-                      return (
-                        <div
-                          key={file.id}
-                          className="w-20 h-20 border rounded-lg overflow-hidden shadow-sm flex items-center justify-center relative"
+                        <a
+                          href={doc.sample_pdf_signed_url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                         >
-                          {isImage ? (
-                            <img
-                              src={file.signed_url || file.file_url}
-                              alt="Uploaded"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <p className="text-xs text-center p-1">
-                              {file.file_url.split("/").pop()}
-                            </p>
-                          )}
+                          Download
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveUploadedFile(file.id)}
-                            className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-600"
+                </div>
+
+
+
+                {/* Input + thumbnails */}
+                <div className="md:col-span-4 flex flex-col">
+                  <input
+                    type="file"
+                    multiple={doc.allow_multiple === 1}
+                    required={doc.is_mandatory && uploadedFilesForDoc.length === 0}
+                    onChange={(e) => handleFileChange(doc.id, e.target.files)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  {/* Uploaded files */}
+                  {uploadedFilesForDoc.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {uploadedFilesForDoc.map((file) => {
+                        const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.file_url);
+                        return (
+                          <div
+                            key={file.id}
+                            className="w-20 h-20 border rounded-lg overflow-hidden shadow-sm flex items-center justify-center relative"
                           >
-                            &times;
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                            {isImage ? (
+                              <img
+                                src={file.signed_url || file.file_url}
+                                alt="Uploaded"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <p className="text-xs text-center p-1">
+                                {file.file_url.split("/").pop()}
+                              </p>
+                            )}
 
-                {/* New file previews */}
-                {previewsForDoc.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {previewsForDoc.map((url, index) => {
-                      const file = newFiles[doc.id][index];
-                      const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.name);
-                      return (
-                        <div
-                          key={index}
-                          className="w-20 h-20 border rounded-lg overflow-hidden shadow-sm flex items-center justify-center relative"
-                        >
-                          {isImage ? (
-                            <img
-                              src={url}
-                              alt={file.name}
-                              className="w-full h-full object-cover"
-                              onClick={() => openPreview({ url, name: file.name })}
-                            />
-
-                          ) : (
-                            <p
-                              className="text-xs text-center p-1 cursor-pointer underline"
-                              onClick={() => openPreview({ url, name: file.name })}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveUploadedFile(file.id)}
+                              className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-600"
                             >
-                              {file.name}
-                            </p>
-                          )}
+                              &times;
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveNewFile(doc.id, index)}
-                            className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-600"
+                  {/* New file previews */}
+                  {previewsForDoc.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {previewsForDoc.map((url, index) => {
+                        const file = newFiles[doc.id][index];
+                        const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.name);
+                        return (
+                          <div
+                            key={index}
+                            className="w-20 h-20 border rounded-lg overflow-hidden shadow-sm flex items-center justify-center relative"
                           >
-                            &times;
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                            {isImage ? (
+                              <img
+                                src={url}
+                                alt={file.name}
+                                className="w-full h-full object-cover"
+                                onClick={() => openPreview({ url, name: file.name })}
+                              />
+
+                            ) : (
+                              <p
+                                className="text-xs text-center p-1 cursor-pointer underline"
+                                onClick={() => openPreview({ url, name: file.name })}
+                              >
+                                {file.name}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNewFile(doc.id, index)}
+                              className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-600"
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        <div className="text-right mt-4">
-          {uploadedDocs?.some((doc) => documents.map(d => d.id).includes(doc.service_doc_id)) ? (
-            <button
-              type="submit"
-              // onClick={() => router.push(`/order-documents?orderId=${orderId}&serviceId=${serviceId}&serviceName=${serviceName}`)}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Submitted Documents
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="px-6 py-3 secondaryBg text-white rounded-lg hover:bg-blue-700 transition-colors"
-              disabled={loading}
-            >
-              {loading ? "Uploading..." : "Submit Documents"}
-            </button>
-          )}
-        </div>
+          <div className="text-right mt-4">
+            {uploadedDocs?.some((doc) => documents.map(d => d.id).includes(doc.service_doc_id)) ? (
+              <button
+                type="submit"
+                // onClick={() => router.push(`/order-documents?orderId=${orderId}&serviceId=${serviceId}&serviceName=${serviceName}`)}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Submitted Documents
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="px-6 py-3 secondaryBg text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={loading}
+              >
+                {loading ? "Uploading..." : "Submit Documents"}
+              </button>
+            )}
+          </div>
 
-      </form>
-  )}
+        </form>
+      )}
       {/* =========================
           Custom Fields Form
       ========================= */}
 
-   {/* Wrapped in conditional rendering */}
+      {/* Wrapped in conditional rendering */}
       {activeTab === "fields" && (
-  <div className="mt-10">
-    <ServiceCustomFieldsDisplay
-      serviceId={serviceId}
-      onSubmit={handleCustomFieldsSubmit}
-      readOnly={isSubmitted}
-      initialValues={initialFormValues}
-    />
-  </div>
-)}
+        <div className="mt-10">
+          <ServiceCustomFieldsDisplay
+            serviceId={serviceId}
+            onSubmit={handleCustomFieldsSubmit}
+            readOnly={isSubmitted}
+            initialValues={initialFormValues}
+          />
+        </div>
+      )}
       {previewPopup && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 
