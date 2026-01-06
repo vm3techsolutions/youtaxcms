@@ -334,8 +334,8 @@ export default function DocumentUpload() {
         <div className="text-right mt-4">
           {uploadedDocs?.some((doc) => documents.map(d => d.id).includes(doc.service_doc_id)) ? (
             <button
-              type="button"
-              onClick={() => router.push(`/order-documents?orderId=${orderId}&serviceId=${serviceId}&serviceName=${serviceName}`)}
+              type="submit"
+              // onClick={() => router.push(`/order-documents?orderId=${orderId}&serviceId=${serviceId}&serviceName=${serviceName}`)}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Submitted Documents
