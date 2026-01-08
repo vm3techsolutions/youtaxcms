@@ -11,6 +11,7 @@ const kycController = require("../controller/userMyprofile/kycUpload");
 const orderDocuments = require("../controller/orderDocument/orderDocuments");
 const supportController = require("../controller/supportTicket/support");
 const deliverablesController = require("../controller/deliverables/deliverables");
+const customerDocumentController = require("../controller/customerDocument/customerDocumentController");
 // admin routes
 const adminRegister = require('../controller/adminController/adminRoles/adminRoles');
 const adminUsers = require('../controller/adminController/adminUsers/adminUsers');
@@ -91,6 +92,13 @@ router.get("/support/tickets", verifyToken, supportController.listTickets);
 // Deliverables Routes
 router.get("/download/deliverables", verifyToken, deliverablesController.getDeliverablesByCustomerId);
 
+// Customer Document Routes
+router.post("/upload/customer-document", verifyToken, upload.single("file"), customerDocumentController.uploadCustomerDocument);
+router.get("/customer-documents/order/:order_id", verifyToken, customerDocumentController.getCustomerDocumentsForOrder);
+router.get("/customer-document/:id", verifyToken, customerDocumentController.getCustomerDocumentById);
+router.put("/customer-document/status/:id", verifyToken, customerDocumentController.updateCustomerDocumentStatus);
+router.put("/customer-document/replace/:id", verifyToken, upload.single("file"), customerDocumentController.replaceCustomerDocument);
+router.get("/customer-documents/all", verifyToken, customerDocumentController.getAllCustomerDocuments);
 
 // ===========================================================================
 
