@@ -34,6 +34,7 @@ const operationDocumentController = require('../controller/adminController/opera
 const adminControllerScond = require('../controller/adminController/adminControllerSecond/admin');
 const { isAdmin } = require('../middleware/auth');
 
+const adminServiceBundlesController = require('../controller/adminController/serviceBundles/serviceBundlesController');
 
 // Define routes for user registration and login
 router.post('/user/signup', userRegister.userSignUp);
@@ -145,6 +146,12 @@ router.delete("/service-input/:id", verifyToken, serviceInput.deleteServiceInput
 // service order input
 router.post("/order-input", verifyToken, serviceOrderInput.submitOrderInput);
 router.get("/order-inputs/order/:order_id", verifyToken, serviceOrderInput.getOrderInputs);
+
+// admin service bundles
+router.post('/admin/service-bundles', verifyToken, isAdmin, adminServiceBundlesController.createServiceBundle);
+router.get('/admin/service-bundles', verifyToken, isAdmin, adminServiceBundlesController.getAllServiceBundles);
+router.get('/admin/service-bundles/primary/:primary_service_id', verifyToken, adminServiceBundlesController.getServiceBundleByPrimaryId);
+router.put('/admin/service-bundles/toggle-status/:id', verifyToken, isAdmin, adminServiceBundlesController.toggleServiceBundleStatus);
 
 //adminCustomerController
 //user
