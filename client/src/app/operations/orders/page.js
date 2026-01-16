@@ -16,11 +16,10 @@ import {
   getDocumentsByOrderId,
 } from "@/store/slices/operationDocumentsSlice";
 import OperationDocumentsPopup from "./OperationDocumentsPopup";
+import MonthlyCustomerDocuments from "./MonthlyCustomerDocuments";
 
-
-  
 //18-12-25
-  const STORAGE_KEY = "operations_viewed_docs_orders";
+const STORAGE_KEY = "operations_viewed_docs_orders";
 
 const getViewedDocOrders = () => {
   if (typeof window === "undefined") return [];
@@ -37,12 +36,9 @@ const markOrderDocsViewed = (orderId) => {
 //-------------------------------------------------
 
 export default function OperationsOrdersPage() {
-
-// Pagination
-const [currentPage, setCurrentPage] = useState(1);
-const ordersPerPage = 10;
-
-
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
 
   const dispatch = useDispatch();
   const {
@@ -52,10 +48,9 @@ const ordersPerPage = 10;
     error,
     success,
   } = useSelector((state) => state.operationOrders || {});
-    useEffect(() => {
-  setCurrentPage(1);
-}, [assignedOrders]);
-
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [assignedOrders]);
 
   const { roles } = useSelector((state) => state.admin);
   const { usersByRole: roleUsers } = useSelector(
@@ -80,12 +75,10 @@ const ordersPerPage = 10;
   const [showDocsTable, setShowDocsTable] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
- const [viewedDocOrders, setViewedDocOrders] = useState([]);
+  const [viewedDocOrders, setViewedDocOrders] = useState([]);
   useEffect(() => {
-  setViewedDocOrders(getViewedDocOrders());
-}, []);
-
-
+    setViewedDocOrders(getViewedDocOrders());
+  }, []);
 
   // Fetch assigned orders and roles on mount
   useEffect(() => {
@@ -119,15 +112,14 @@ const ordersPerPage = 10;
     }
   }, [selectedOrder, dispatch]);
 
-
   //18-12-2025
   //17-12-25
-    // 🔁 Poll new orders every 30 seconds
+  // 🔁 Poll new orders every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       dispatch(fetchAssignedOrdersForOperations());
     }, 30000); // 30 sec
-  
+
     return () => clearInterval(interval);
   }, [dispatch]);
 
@@ -176,19 +168,19 @@ const ordersPerPage = 10;
 
   //18-12-25
   const sortedAssignedOrders = [...assignedOrders].sort(
-  (a, b) => new Date(b.created_at) - new Date(a.created_at)
-);
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
-//Pagination-calculations
-const totalPages = Math.ceil(sortedAssignedOrders.length / ordersPerPage);
+  //Pagination-calculations
+  const totalPages = Math.ceil(sortedAssignedOrders.length / ordersPerPage);
 
-const indexOfLastOrder = currentPage * ordersPerPage;
-const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
 
-const currentOrders = sortedAssignedOrders.slice(
-  indexOfFirstOrder,
-  indexOfLastOrder
-);
+  const currentOrders = sortedAssignedOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
 
   return (
     <div className="container mx-auto p-6">
@@ -256,60 +248,58 @@ const currentOrders = sortedAssignedOrders.slice(
                 </td>
               </tr>
             )}
-          {/* //  {assignedOrders.map((order, index) => { */}
+            {/* //  {assignedOrders.map((order, index) => { */}
             {/* {sortedAssignedOrders.map((order, index) => { */}
             {currentOrders.map((order, index) => {
               const hasDocuments =
-    order.order_documents && order.order_documents.length > 0;
+                order.order_documents && order.order_documents.length > 0;
 
-  const isNewDoc =
-    hasDocuments && !viewedDocOrders.includes(order.id);
-    return(
-              <tr key={order.id} className="hover:bg-gray-50">
-                {/* <td className="p-2 border">{index + 1}</td> */}
+              const isNewDoc =
+                hasDocuments && !viewedDocOrders.includes(order.id);
+              return (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  {/* <td className="p-2 border">{index + 1}</td> */}
 
-                <td className="p-2 border relative">
-  
-
-  {isNewDoc && (
-    <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
-      NEW
-    </span>
-  )}
-  {/* {index + 1} */}
-  {indexOfFirstOrder + index + 1}
-</td>
-                <td className="py-2 px-4 border">{order.id}</td>
-                <td className="py-2 px-4 border">{order.customer_name}</td>
-                <td className="py-2 px-4 border">{order.service_name}</td>
-                <td className="py-2 px-2 border">₹{order.total_amount}</td>
-                {/* <td className="py-2 px-2 border">₹{order.advance_required}</td> */}
-                <td className="py-2 px-2 border">₹{order.advance_paid}</td>
-                <td className="py-2 px-2 border">₹{order.pending_amount}</td>
-                <td className="py-2 px-2 border">{order.payment_status}</td>
-                <td className="py-2 px-4 border">
-                  <span
-                    className={`px-2 py-1 text-sm rounded 
+                  <td className="p-2 border relative">
+                    {isNewDoc && (
+                      <span className="mb-1 inline-block px-2 py-0.5 text-[10px] font-bold text-black bg-[#FFBF00] rounded-full -rotate-6 ">
+                        NEW
+                      </span>
+                    )}
+                    {/* {index + 1} */}
+                    {indexOfFirstOrder + index + 1}
+                  </td>
+                  <td className="py-2 px-4 border">{order.id}</td>
+                  <td className="py-2 px-4 border">{order.customer_name}</td>
+                  <td className="py-2 px-4 border">{order.service_name}</td>
+                  <td className="py-2 px-2 border">₹{order.total_amount}</td>
+                  {/* <td className="py-2 px-2 border">₹{order.advance_required}</td> */}
+                  <td className="py-2 px-2 border">₹{order.advance_paid}</td>
+                  <td className="py-2 px-2 border">₹{order.pending_amount}</td>
+                  <td className="py-2 px-2 border">{order.payment_status}</td>
+                  <td className="py-2 px-4 border">
+                    <span
+                      className={`px-2 py-1 text-sm rounded 
       ${order.qc_status === "rejected" ? "bg-red-100 text-red-800" : ""}
       ${
         order.qc_status === "pending" || !order.qc_status
           ? "bg-yellow-100 text-yellow-800"
           : ""
       }`}
-                  >
-                    {order.qc_status ? order.qc_status : "pending"}
-                  </span>
-                </td>
+                    >
+                      {order.qc_status ? order.qc_status : "pending"}
+                    </span>
+                  </td>
 
-                <td className="py-2 px-4 border">
-                  <button
-                    className="px-3 py-1 rounded primary-btn"
-                    onClick={() => setSelectedOrder(order.id)}
-                  >
-                    Upload / Forward
-                  </button>
-                </td>
-                {/* <td className="py-2 px-4 border">
+                  <td className="py-2 px-4 border">
+                    <button
+                      className="px-3 py-1 rounded primary-btn"
+                      onClick={() => setSelectedOrder(order.id)}
+                    >
+                      Upload / Forward
+                    </button>
+                  </td>
+                  {/* <td className="py-2 px-4 border">
                   <button
                     className="px-3 py-1 rounded primary-btn"
                     onClick={() => setViewDocumentsOrder(order)}
@@ -317,19 +307,19 @@ const currentOrders = sortedAssignedOrders.slice(
                     View Documents
                   </button>
                 </td> */}
-                <td className="py-2 px-4 border">
-  <button
-    className="relative px-3 py-1 rounded primary-btn"
-    onClick={() => {
-      markOrderDocsViewed(order.id);
-      setViewedDocOrders(getViewedDocOrders());
-      setViewDocumentsOrder(order);
-    }}
-  >
-    View Documents
-  </button>
-</td>
-                {/* <td className="py-2 px-4 border">
+                  <td className="py-2 px-4 border">
+                    <button
+                      className="relative px-3 py-1 rounded primary-btn"
+                      onClick={() => {
+                        markOrderDocsViewed(order.id);
+                        setViewedDocOrders(getViewedDocOrders());
+                        setViewDocumentsOrder(order);
+                      }}
+                    >
+                      View Documents
+                    </button>
+                  </td>
+                  {/* <td className="py-2 px-4 border">
                   <button
                     className="px-3 py-1 rounded primary-btn"
                     onClick={() => {
@@ -341,87 +331,85 @@ const currentOrders = sortedAssignedOrders.slice(
                   </button>
                 </td> */}
 
-                <td className="py-2 px-4 border">
-                  {order.operation_documents &&
-                  order.operation_documents.length > 0 ? (
-                    <button
-                      className="px-3 py-1 rounded bg-blue-600 text-white"
-                      onClick={() => {
-                        setUploadCustomerDocOrder(order);
-                        dispatch(getOperationDocuments(order.id));
-                      }}
-                    >
-                      View Documents
-                    </button>
-                  ) : (
-                    <button
-                      className="px-3 py-1 rounded bg-green-600 text-white"
-                      onClick={() => {
-                        setUploadCustomerDocOrder(order);
-                        dispatch(getDocumentsByOrderId(order.id));
-                      }}
-                    >
-                      Upload Documents
-                    </button>
-                  )}
-                </td>
+                  <td className="py-2 px-4 border">
+                    {order.operation_documents &&
+                    order.operation_documents.length > 0 ? (
+                      <button
+                        className="px-3 py-1 rounded bg-blue-600 text-white"
+                        onClick={() => {
+                          setUploadCustomerDocOrder(order);
+                          dispatch(getOperationDocuments(order.id));
+                        }}
+                      >
+                        View Documents
+                      </button>
+                    ) : (
+                      <button
+                        className="px-3 py-1 rounded bg-green-600 text-white"
+                        onClick={() => {
+                          setUploadCustomerDocOrder(order);
+                          dispatch(getDocumentsByOrderId(order.id));
+                        }}
+                      >
+                        Upload Documents
+                      </button>
+                    )}
+                  </td>
 
-                <td className="py-2 px-4 ">
-                  {order.created_at
-                    ? new Date(order.created_at).toLocaleString("en-GB")
-                    : "—"}
-                </td>
-              </tr>)}
-            )}
+                  <td className="py-2 px-4 ">
+                    {order.created_at
+                      ? new Date(order.created_at).toLocaleString("en-GB")
+                      : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-{/* Paginations UI */}
+      {/* Paginations UI */}
       {totalPages > 1 && (
-  <div className="flex justify-center items-center mt-6 space-x-2">
-    <button
-      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-      disabled={currentPage === 1}
-      className={`px-3 py-1 rounded border ${
-        currentPage === 1
-          ? "bg-gray-200 cursor-not-allowed"
-          : "bg-white hover:bg-blue-100"
-      }`}
-    >
-      Prev
-    </button>
+        <div className="flex justify-center items-center mt-6 space-x-2">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded border ${
+              currentPage === 1
+                ? "bg-gray-200 cursor-not-allowed"
+                : "bg-white hover:bg-blue-100"
+            }`}
+          >
+            Prev
+          </button>
 
-    {[...Array(totalPages)].map((_, i) => (
-      <button
-        key={i}
-        onClick={() => setCurrentPage(i + 1)}
-        className={`px-3 py-1 rounded border ${
-          currentPage === i + 1
-            ? "primaryBg text-white"
-            : "bg-white hover:bg-blue-100"
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded border ${
+                currentPage === i + 1
+                  ? "primaryBg text-white"
+                  : "bg-white hover:bg-blue-100"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
 
-    <button
-      onClick={() =>
-        setCurrentPage((p) => Math.min(p + 1, totalPages))
-      }
-      disabled={currentPage === totalPages}
-      className={`px-3 py-1 rounded border ${
-        currentPage === totalPages
-          ? "bg-gray-200 cursor-not-allowed"
-          : "bg-white hover:bg-blue-100"
-      }`}
-    >
-      Next
-    </button>
-  </div>
-)}
-
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded border ${
+              currentPage === totalPages
+                ? "bg-gray-200 cursor-not-allowed"
+                : "bg-white hover:bg-blue-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* Upload / Forward Modal */}
       {selectedOrder &&
@@ -470,22 +458,6 @@ const currentOrders = sortedAssignedOrders.slice(
                   <label className="block mb-2 text-sm font-medium">
                     {/* Select Account: */}
                     Pending Payament Send Back To Account
-                    {/* <select
-                      value={accountId}
-                      onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full border p-2 mt-1"
-                    >
-                      <option value="">-- Select Account --</option>
-                      {roles
-                        ?.filter((r) => r?.name?.toLowerCase() === "accounts")
-                        .flatMap((role) =>
-                          (roleUsers[role.id] || []).map((user) => (
-                            <option key={user.id} value={user.id}>
-                              {user.name} (ID: {user.id})
-                            </option>
-                          ))
-                        )}
-                    </select> */}
                   </label>
                 )}
 
@@ -575,35 +547,99 @@ const currentOrders = sortedAssignedOrders.slice(
 
       {/* View Documents Popup */}
       {viewDocumentsOrder && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h2 className="text-lg font-bold mb-4">
-              Customer Documents for Order #{viewDocumentsOrder.id}
-            </h2>
-            {viewDocumentsOrder.order_documents &&
-            viewDocumentsOrder.order_documents.length > 0 ? (
-              <ul className="list-disc pl-5">
-                {viewDocumentsOrder.order_documents.map((doc) => (
-                  <li key={doc.id} className="mb-1">
-                    {doc.doc_name} ({doc.doc_type}) -{" "}
-                    <a
-                      href={doc.signed_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      View Document
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-red-600">No customer documents uploaded.</p>
-            )}
-            <div className="flex justify-end mt-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-3xl h-[80vh] rounded-xl shadow-xl flex flex-col">
+            {/* HEADER */}
+            <div className="flex justify-between items-center px-6 py-4 border-b shrink-0">
+              <div>
+                <h2 className="text-xl font-semibold">Customer Documents</h2>
+                <p className="text-sm text-gray-500">
+                  Order #{viewDocumentsOrder.id}
+                </p>
+              </div>
+
               <button
                 onClick={() => setViewDocumentsOrder(null)}
-                className="px-3 py-1 primary-btn rounded"
+                className="text-gray-500 hover:text-gray-800 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* TABS */}
+            <div className="flex border-b shrink-0">
+              <button
+                className={`flex-1 py-3 text-sm font-medium ${
+                  showDocsTable
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-600 hover:text-blue-600"
+                }`}
+                onClick={() => setShowDocsTable(true)}
+              >
+                General Documents
+              </button>
+
+              <button
+                className={`flex-1 py-3 text-sm font-medium ${
+                  !showDocsTable
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-600 hover:text-blue-600"
+                }`}
+                onClick={() => setShowDocsTable(false)}
+              >
+                Monthly Documents
+              </button>
+            </div>
+
+            {/* CONTENT (SCROLLABLE ONLY) */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              {showDocsTable ? (
+                <>
+                  {viewDocumentsOrder.order_documents?.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {viewDocumentsOrder.order_documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="border rounded-lg p-4 hover:shadow-md transition"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                {doc.doc_name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Type: {doc.doc_type}
+                              </p>
+                            </div>
+
+                            <a
+                              href={doc.signed_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 text-sm font-medium hover:underline"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500">
+                      No general documents uploaded.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <MonthlyCustomerDocuments orderId={viewDocumentsOrder.id} />
+              )}
+            </div>
+
+            {/* FOOTER */}
+            <div className="px-6 py-4 border-t bg-gray-50 shrink-0 flex justify-end">
+              <button
+                onClick={() => setViewDocumentsOrder(null)}
+                className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
               >
                 Close
               </button>
@@ -618,68 +654,6 @@ const currentOrders = sortedAssignedOrders.slice(
           onClose={() => setUploadCustomerDocOrder(null)}
         />
       )}
-
-      {/* {uploadCustomerDocOrder && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h2 className="text-lg font-bold mb-4">
-              Upload Customer Documents for Order #{uploadCustomerDocOrder.id}
-            </h2>
-
-            <label className="block mb-3 text-sm font-medium">
-              Upload New Document:
-              <input
-                type="file"
-                onChange={(e) => setCustomerDocFile(e.target.files[0])}
-                className="w-full border p-2 mt-1"
-              />
-            </label>
-
-            <label className="block mb-3 text-sm font-medium">
-              Remarks:
-              <textarea
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                className="w-full border p-2 mt-1"
-                rows="2"
-              />
-            </label>
-
- 
-            <div className="flex gap-2 mt-4">
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => {
-                  if (!customerDocFile) {
-                    alert("Please select a file to upload");
-                    return;
-                  }
-
-                  const formData = new FormData();
-                  formData.append("order_id", uploadCustomerDocOrder.id);
-                  formData.append("file", customerDocFile);
-                  formData.append("remarks", remarks);
-
-                  dispatch(uploadOperationDocument(formData)).then(() => {
-                    dispatch(getDocumentsByOrderId(uploadCustomerDocOrder.id));
-                    setCustomerDocFile(null);
-                    setRemarks("");
-                  });
-                }}
-              >
-                Upload Document
-              </button>
-
-              <button
-                className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700"
-                onClick={() => setUploadCustomerDocOrder(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
     </div>
   );
 }
