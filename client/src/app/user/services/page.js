@@ -17,43 +17,35 @@ import { fetchCategories } from "@/store/slices/categorySlice";
 function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
   const basePrice = Number(service.base_price || 0);
   const serviceCharges = Number(service.service_charges || 0);
-  const totalPrice = (basePrice + serviceCharges) * years;
-  // const advancePrice = Number(service.advance_price || 0);
-  const newTotalPrice =
-    (basePrice + serviceCharges + (basePrice + serviceCharges) * 0.18) * years;
+  const advancePrice = Number(service.advance_price || 0);
 
-  const subtotal = (basePrice + serviceCharges) * years;
+  // ✅ Correct calculation (hidden from UI)
+  const servicePrice = basePrice * years + serviceCharges;
 
+  // GST
   let cgst = 0;
   let sgst = 0;
   let igst = 0;
 
   if (isMaharashtra) {
-    cgst = subtotal * 0.09;
-    sgst = subtotal * 0.09;
+    cgst = servicePrice * 0.09;
+    sgst = servicePrice * 0.09;
   } else {
-    igst = subtotal * 0.18;
+    igst = servicePrice * 0.18;
   }
 
   const totalTax = cgst + sgst + igst;
-  const totalPayable = subtotal + totalTax;
-
-  const advancePrice = Number(service.advance_price || 0);
+  const totalPayable = servicePrice + totalTax;
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg">
-      {/* Total Service Price */}
+      {/* Service Price (single line only) */}
       <div className="flex justify-between mb-2">
-        <span className="font-medium">Service Price:</span>
-        <span>₹{totalPrice.toLocaleString()}</span>
+        <span className="font-medium">Service Price</span>
+        <span>₹{servicePrice.toLocaleString()}</span>
       </div>
 
-      {/* GST */}
-      {/* <div className="flex justify-between mb-2">
-        <span className="font-medium">GST:</span>
-        <span>18%</span>
-      </div> */}
-      {/* TAX BREAKUP */}
+      {/* TAX */}
       {isMaharashtra ? (
         <>
           <div className="flex justify-between mb-2">
@@ -72,26 +64,17 @@ function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
         </div>
       )}
 
-      {/* Show Advance Price only for display */}
+      {/* Advance */}
       {paymentOption === "advance" && advancePrice > 0 && (
         <div className="flex justify-between mb-2 text-blue-600">
-          <span className="font-medium">Advance Amount:</span>
+          <span className="font-medium">Advance Amount</span>
           <span>₹{advancePrice.toLocaleString()}</span>
         </div>
       )}
 
-      {/* Total to Pay Now */}
-      {/* <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-        <span>Total to Pay Now:</span>
-        <span>
-          ₹
-          {paymentOption === "advance" && advancePrice > 0
-            ? advancePrice.toLocaleString()
-            : newTotalPrice.toLocaleString()}
-        </span>
-      </div> */}
+      {/* Total */}
       <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-        <span>Total to Pay Now:</span>
+        <span>Total to Pay Now</span>
         <span>
           ₹
           {paymentOption === "advance" && advancePrice > 0
@@ -102,6 +85,8 @@ function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
     </div>
   );
 }
+
+
 
 export default function ServicesFlex() {
   const dispatch = useDispatch();
