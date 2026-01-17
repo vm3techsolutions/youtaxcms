@@ -15,17 +15,16 @@ import {
   submitOrderInputs,
   resetOrderInputsState,
 } from "@/store/slices/orderInputsSlice";
-import {
-  getDocumentsByOrderId,
-} from "@/store/slices/operationDocumentsSlice";
+import { getDocumentsByOrderId } from "@/store/slices/operationDocumentsSlice";
+import MonthlyDocuments from "../MonthlyDocuments";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
   const dispatch = useDispatch();
 
   const { documents: operationDocuments, loading } = useSelector(
-  (state) => state.operationDocuments
-);
+    (state) => state.operationDocuments
+  );
 
   const {
     orders = [],
@@ -46,13 +45,12 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [editableInputs, setEditableInputs] = useState({});
-  
-  // Fetch Operation Documents
-useEffect(() => {
-  if (!orderId) return;
-  dispatch(getDocumentsByOrderId(orderId));
-}, [orderId, dispatch]);
 
+  // Fetch Operation Documents
+  useEffect(() => {
+    if (!orderId) return;
+    dispatch(getDocumentsByOrderId(orderId));
+  }, [orderId, dispatch]);
 
   // Load orders if not loaded
   useEffect(() => {
@@ -81,8 +79,7 @@ useEffect(() => {
       const initialValues = {};
       orderInputs.forEach((input) => {
         const key = `field_${input.service_input_id}`;
-        initialValues[key] =
-          input.text_value || input.selected_option || "";
+        initialValues[key] = input.text_value || input.selected_option || "";
       });
       setEditableInputs(initialValues);
     }
@@ -98,9 +95,8 @@ useEffect(() => {
         ([key, value]) => ({
           service_input_id: Number(key.replace("field_", "")),
           text_value: typeof value === "string" ? value : null,
-          selected_option: typeof value === "string" || Array.isArray(value)
-            ? value
-            : null,
+          selected_option:
+            typeof value === "string" || Array.isArray(value) ? value : null,
         })
       );
 
@@ -139,28 +135,30 @@ useEffect(() => {
   //   });
   // }
 
-//   const payments = orderPayments[order.id] || [];
-// const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  //   const payments = orderPayments[order.id] || [];
+  // const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
-const payments = orderPayments[order.id] || [];
+  const payments = orderPayments[order.id] || [];
 
-const successfulPayments = payments.filter(
-  (p) => p.status === "success"
-);
+  const successfulPayments = payments.filter((p) => p.status === "success");
 
-const totalPaid = successfulPayments.reduce(
-  (sum, p) => sum + Number(p.amount),
-  0
-);
+  const totalPaid = successfulPayments.reduce(
+    (sum, p) => sum + Number(p.amount),
+    0
+  );
 
-const serviceCost = order.total_amount || 0;
+  const serviceCost = order.total_amount || 0;
 
-if (totalPaid > 0 && totalPaid < serviceCost && order.status !== "completed") {
-  orderSteps.splice(4, 0, {
-    key: "awaiting_final_payment",
-    label: "Final Payment",
-  });
-}
+  if (
+    totalPaid > 0 &&
+    totalPaid < serviceCost &&
+    order.status !== "completed"
+  ) {
+    orderSteps.splice(4, 0, {
+      key: "awaiting_final_payment",
+      label: "Final Payment",
+    });
+  }
 
   const renderSteps = (order) => {
     const completedSteps = [];
@@ -170,14 +168,12 @@ if (totalPaid > 0 && totalPaid < serviceCost && order.status !== "completed") {
 
     const payments = orderPayments[order.id] || [];
 
-const successfulPayments = payments.filter(
-  (p) => p.status === "success"
-);
+    const successfulPayments = payments.filter((p) => p.status === "success");
 
-const totalPaid = successfulPayments.reduce(
-  (sum, p) => sum + Number(p.amount),
-  0
-);
+    const totalPaid = successfulPayments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0
+    );
 
     const serviceCost = order.total_amount || 0;
 
@@ -195,21 +191,31 @@ const totalPaid = successfulPayments.reduce(
     }
 
     if (
-      ["under_review", "in_progress", "awaiting_final_payment", "completed"].includes(order.status)
-    ) completedSteps.push("under_review");
+      [
+        "under_review",
+        "in_progress",
+        "awaiting_final_payment",
+        "completed",
+      ].includes(order.status)
+    )
+      completedSteps.push("under_review");
 
-    if (["in_progress", "awaiting_final_payment", "completed"].includes(order.status))
+    if (
+      ["in_progress", "awaiting_final_payment", "completed"].includes(
+        order.status
+      )
+    )
       completedSteps.push("in_progress");
 
     // if (totalPaid > 0 && totalPaid < serviceCost) completedSteps.push("awaiting_final_payment");
 
     if (
-  totalPaid > 0 &&
-  totalPaid < serviceCost &&
-  order.status !== "completed"
-) {
-  completedSteps.push("awaiting_final_payment");
-}
+      totalPaid > 0 &&
+      totalPaid < serviceCost &&
+      order.status !== "completed"
+    ) {
+      completedSteps.push("awaiting_final_payment");
+    }
 
     if (order.status === "completed") completedSteps.push("completed");
 
@@ -227,8 +233,8 @@ const totalPaid = successfulPayments.reduce(
             //     label = "Partially Paid";
             //     statusClass = "bg-yellow-500";
             //     textClass = "text-yellow-600 font-semibold";
-            //   } 
-              
+            //   }
+
             //   else if (totalPaid >= serviceCost) {
             //     label = "Final Payment Done";
             //     statusClass = "bg-green-500";
@@ -236,30 +242,32 @@ const totalPaid = successfulPayments.reduce(
             //   }
             // }
 
-//             if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
-//   label = "Partially Paid"; // label never changes
+            //             if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
+            //   label = "Partially Paid"; // label never changes
 
-//   if (totalPaid >= serviceCost) {
-//     statusClass = "bg-green-500";
-//     textClass = "text-green-600 font-semibold";
-//   } else {
-//     statusClass = "bg-orange-500";
-//     textClass = "text-orange-600 font-semibold";
-//   }
-// }
+            //   if (totalPaid >= serviceCost) {
+            //     statusClass = "bg-green-500";
+            //     textClass = "text-green-600 font-semibold";
+            //   } else {
+            //     statusClass = "bg-orange-500";
+            //     textClass = "text-orange-600 font-semibold";
+            //   }
+            // }
 
-if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
-  label = "Payment"; // label stays same
+            if (
+              step.key === "awaiting_payment" &&
+              completedSteps.includes(step.key)
+            ) {
+              label = "Payment"; // label stays same
 
-  if (totalPaid >= serviceCost) {
-    statusClass = "bg-green-500";
-    textClass = "text-green-600 font-semibold";
-  } else {
-    statusClass = "bg-orange-500";
-    textClass = "text-orange-600 font-semibold";
-  }
-}
-
+              if (totalPaid >= serviceCost) {
+                statusClass = "bg-green-500";
+                textClass = "text-green-600 font-semibold";
+              } else {
+                statusClass = "bg-orange-500";
+                textClass = "text-orange-600 font-semibold";
+              }
+            }
 
             // if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
             //   label = "Final Payment Pending";
@@ -267,16 +275,18 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
             //   textClass = "text-yellow-600 font-semibold";
             // }
 
-            if (step.key === "awaiting_final_payment" && completedSteps.includes(step.key)) {
-  if (totalPaid >= serviceCost) {
-    statusClass = "bg-green-500";
-    textClass = "text-green-600 font-semibold";
-  } else {
-    statusClass = "bg-orange-500";
-    textClass = "text-orange-600 font-semibold";
-  }
-}
-
+            if (
+              step.key === "awaiting_final_payment" &&
+              completedSteps.includes(step.key)
+            ) {
+              if (totalPaid >= serviceCost) {
+                statusClass = "bg-green-500";
+                textClass = "text-green-600 font-semibold";
+              } else {
+                statusClass = "bg-orange-500";
+                textClass = "text-orange-600 font-semibold";
+              }
+            }
 
             // if (
             //   completedSteps.includes(step.key) &&
@@ -284,19 +294,16 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
             // ) {
             //   statusClass = "bg-green-500";
             //   textClass = "text-green-600 font-semibold";
-            // } 
+            // }
 
             if (
-  completedSteps.includes(step.key) &&
-  step.key !== "awaiting_payment" &&
-  step.key !== "awaiting_final_payment"
-) {
-  statusClass = "bg-green-500";
-  textClass = "text-green-600 font-semibold";
-}
-            
-            
-            else if (step.key === order.status) {
+              completedSteps.includes(step.key) &&
+              step.key !== "awaiting_payment" &&
+              step.key !== "awaiting_final_payment"
+            ) {
+              statusClass = "bg-green-500";
+              textClass = "text-green-600 font-semibold";
+            } else if (step.key === order.status) {
               statusClass = "bg-blue-500";
               textClass = "text-blue-600 font-semibold";
             }
@@ -308,12 +315,16 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
                     className={`w-5 h-5 rounded-full ${statusClass} border-2 border-gray-300 flex items-center justify-center`}
                   >
                     {statusClass === "bg-green-500" && (
-                      <span className="text-white text-xs font-bold">&#10003;</span>
+                      <span className="text-white text-xs font-bold">
+                        &#10003;
+                      </span>
                     )}
                   </div>
                   <span className={`text-xs mt-1 ${textClass}`}>{label}</span>
                 </div>
-                {index < orderSteps.length - 1 && <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>}
+                {index < orderSteps.length - 1 && (
+                  <div className={`flex-1 h-1 mx-2 ${statusClass}`}></div>
+                )}
               </div>
             );
           })}
@@ -325,12 +336,19 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Order #{order.id}</h2>
-      <p><strong>Service:</strong> {service?.name || "Unknown"}</p>
+      <p>
+        <strong>Service:</strong> {service?.name || "Unknown"}
+      </p>
       <p>
         <strong>Status:</strong>{" "}
-        <span className="px-2 py-1 rounded text-white bg-blue-600">{order.status}</span>
+        <span className="px-2 py-1 rounded text-white bg-blue-600">
+          {order.status}
+        </span>
       </p>
-      <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString("en-GB")}</p>
+      <p>
+        <strong>Created At:</strong>{" "}
+        {new Date(order.created_at).toLocaleString("en-GB")}
+      </p>
 
       {renderSteps(order)}
 
@@ -357,7 +375,9 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
                   <td className="p-2 border">{doc.doc_type}</td>
                   <td className="p-2 border">
                     {doc.status === "verified" ? (
-                      <span className="text-green-600 font-semibold">Verified</span>
+                      <span className="text-green-600 font-semibold">
+                        Verified
+                      </span>
                     ) : (
                       <span className="text-yellow-600 font-semibold">
                         {doc.status === "submitted" ? "Submitted" : "Pending"}
@@ -394,28 +414,29 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
                     )}
                   </td> */}
                   <td className="p-2 border text-center">
-  {doc.signed_url ? (
-    /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(doc.signed_url.split("?")[0]) ? (
-      <button
-        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-        onClick={() => setPreviewImage(doc.signed_url)}
-      >
-        View Image
-      </button>
-    ) : (
-      <button
-        className="px-3 py-1  bg-blue-600 text-white rounded hover:bg-blue-700"
-        onClick={() => window.open(doc.signed_url, "_blank")}
-      >
-        View File
-      </button>
-    )
-  ) : (
-    <span className="text-red-500">No Preview</span>
-  )}
-</td>
+                    {doc.signed_url ? (
+                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                        doc.signed_url.split("?")[0]
+                      ) ? (
+                        <button
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          onClick={() => setPreviewImage(doc.signed_url)}
+                        >
+                          View Image
+                        </button>
+                      ) : (
+                        <button
+                          className="px-3 py-1  bg-blue-600 text-white rounded hover:bg-blue-700"
+                          onClick={() => window.open(doc.signed_url, "_blank")}
+                        >
+                          View File
+                        </button>
+                      )
+                    ) : (
+                      <span className="text-red-500">No Preview</span>
+                    )}
+                  </td>
 
-                  
                   {/* <td className="p-2 border">
                     {doc.status === "rejected" ? (
                       <button
@@ -434,6 +455,11 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
           </table>
         </div>
       )}
+
+      {/* Monthly Document */}
+      {documents.length > 0 && (
+  <MonthlyDocuments orderId={orderId} />
+)}
 
       {/* ================= Other Sections (Inputs, Payments, Preview Modal) ================= */}
       {/* Keep the existing Custom Fields, Payments, and Preview Modal code unchanged */}
@@ -474,86 +500,91 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
       )} */}
 
       {/* Custom Fields */}
-<h3 className="mt-6 font-semibold text-lg border-b pb-2">Custom Fields</h3>
-{loadingInputs ? (
-  <p>Loading inputs...</p>
-) : orderInputs.length === 0 ? (
-  <p className="text-gray-500 mt-2">No custom fields defined for this order.</p>
-) : (
-  <div className="mt-2 space-y-4">
-    {orderInputs.map((input) => {
-      const fieldKey = `field_${input.service_input_id}`;
-      const value = editableInputs[fieldKey] || "";
+      {!loadingInputs && orderInputs.length > 0 && (
+  <>
+    <h3 className="mt-6 font-semibold text-lg border-b pb-2">
+      Custom Fields
+    </h3>
 
-      return (
-        <div key={input.id} className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <label className="w-full md:w-1/3 font-medium">{input.label_name}:</label>
-          <p className="w-full md:w-2/3 p-2 bg-gray-100 rounded border">
-            {Array.isArray(value) ? value.join(", ") : value || "-"}
-          </p>
+    <div className="mt-2 space-y-4">
+      {orderInputs.map((input) => {
+        const fieldKey = `field_${input.service_input_id}`;
+        const value = editableInputs[fieldKey] || "";
+
+        return (
+          <div
+            key={input.id}
+            className="flex flex-col md:flex-row items-start md:items-center gap-4"
+          >
+            <label className="w-full md:w-1/3 font-medium">
+              {input.label_name}:
+            </label>
+            <p className="w-full md:w-2/3 p-2 bg-gray-100 rounded border">
+              {Array.isArray(value) ? value.join(", ") : value || "-"}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  </>
+)}
+
+
+      {/* ================= Operation Documents ================= */}
+      <h3 className="mt-6 font-semibold text-lg border-b pb-2 text-green-700">
+        Downloads
+      </h3>
+
+      {operationDocuments.length === 0 ? (
+        <p className="text-gray-500 mt-2">No operation documents uploaded.</p>
+      ) : (
+        <div className="overflow-x-auto mt-2">
+          <table className="w-full border border-gray-300 rounded text-sm">
+            <thead className="bg-gray-100">
+              <tr className="text-center">
+                <th className="p-2 border">File</th>
+                <th className="p-2 border">Remark</th>
+                <th className="p-2 border">Uploaded Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {operationDocuments.map((doc) => (
+                <tr key={doc.id} className="text-center hover:bg-gray-50">
+                  {/* File Name with Download */}
+                  <td className="p-2 border">
+                    {doc.signed_url ? (
+                      <button
+                        className="text-blue-600 underline hover:text-blue-800"
+                        onClick={() => window.open(doc.signed_url, "_blank")}
+                      >
+                        {doc.file_name || doc.fileUrl.split("/").pop()}
+                      </button>
+                    ) : (
+                      <span className="text-red-500">No File</span>
+                    )}
+                  </td>
+
+                  {/* Remark */}
+                  <td className="p-2 border">{doc.remarks || "-"}</td>
+
+                  {/* Uploaded Date */}
+                  <td className="p-2 border">
+                    {doc.created_at
+                      ? new Date(doc.created_at).toLocaleString("en-GB")
+                      : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      );
-    })}
-  </div>
-)}
-
-{/* ================= Operation Documents ================= */}
-<h3 className="mt-6 font-semibold text-lg border-b pb-2 text-green-700">
-  Downloads
-</h3>
-
-{operationDocuments.length === 0 ? (
-  <p className="text-gray-500 mt-2">No operation documents uploaded.</p>
-) : (
-  <div className="overflow-x-auto mt-2">
-    <table className="w-full border border-gray-300 rounded text-sm">
-      <thead className="bg-gray-100">
-        <tr className="text-center">
-          <th className="p-2 border">File</th>
-          <th className="p-2 border">Remark</th>
-          <th className="p-2 border">Uploaded Date</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {operationDocuments.map((doc) => (
-          <tr key={doc.id} className="text-center hover:bg-gray-50">
-
-            {/* File Name with Download */}
-            <td className="p-2 border">
-              {doc.signed_url ? (
-                <button
-                  className="text-blue-600 underline hover:text-blue-800"
-                  onClick={() => window.open(doc.signed_url, "_blank")}
-                >
-                  {doc.file_name || doc.fileUrl.split("/").pop()}
-                </button>
-              ) : (
-                <span className="text-red-500">No File</span>
-              )}
-            </td>
-
-            {/* Remark */}
-            <td className="p-2 border">{doc.remarks || "-"}</td>
-
-            {/* Uploaded Date */}
-            <td className="p-2 border">
-              {doc.created_at
-                ? new Date(doc.created_at).toLocaleString("en-GB")
-                : "-"}
-            </td>
-
-            
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
-
+      )}
 
       {/* Payments / Invoices */}
-      <h3 className="mt-6 font-semibold text-lg border-b pb-2">Invoices / Payments</h3>
+      <h3 className="mt-6 font-semibold text-lg border-b pb-2">
+        Invoices / Payments
+      </h3>
       {loadingPayments ? (
         <p>Loading payments...</p>
       ) : payments.length === 0 ? (
@@ -575,7 +606,9 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold">Amount:</span>
-                <span className="font-semibold text-green-600">₹{Number(p.amount)?.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">
+                  ₹{Number(p.amount)?.toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold">Mode:</span>
@@ -640,7 +673,6 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
   );
 }
 
-
 // "use client";
 
 // import { useEffect, useState } from "react";
@@ -689,13 +721,12 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
 //   const [order, setOrder] = useState(null);
 //   const [previewImage, setPreviewImage] = useState(null);
 //   const [editableInputs, setEditableInputs] = useState({});
-  
+
 //   // Fetch Operation Documents
 // useEffect(() => {
 //   if (!orderId) return;
 //   dispatch(getDocumentsByOrderId(orderId));
 // }, [orderId, dispatch]);
-
 
 //   // Load orders if not loaded
 //   useEffect(() => {
@@ -965,7 +996,6 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
 //   )}
 // </td>
 
-                  
 //                   {/* <td className="p-2 border">
 //                     {doc.status === "rejected" ? (
 //                       <button
@@ -1093,14 +1123,12 @@ if (step.key === "awaiting_payment" && completedSteps.includes(step.key)) {
 //                 : "-"}
 //             </td>
 
-            
 //           </tr>
 //         ))}
 //       </tbody>
 //     </table>
 //   </div>
 // )}
-
 
 //       {/* Payments / Invoices */}
 //       <h3 className="mt-6 font-semibold text-lg border-b pb-2">Invoices / Payments</h3>

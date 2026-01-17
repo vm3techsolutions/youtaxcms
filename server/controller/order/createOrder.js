@@ -57,20 +57,50 @@ const createOrder = async (req, res) => {
 
     const service = services[0];
 
+    // 2️⃣ Fetch bundled services
+    const [bundles] = await db.query(
+      `SELECT sb.*, s.base_price, s.service_charges, s.gst_rate
+       FROM service_bundles sb
+       JOIN services s ON sb.bundled_service_id = s.id
+       WHERE sb.primary_service_id = ? AND sb.is_active = 1`,
+      [service_id]
+    );
+
     const basePrice = service.base_price ? parseFloat(service.base_price) : 0;
     const serviceCharges = service.service_charges ? parseFloat(service.service_charges) : 0;
     const gstRate = Number(service.gst_rate || 0);
     const advancePrice = service.advance_price ? parseFloat(service.advance_price) : 0;
 
-    // const totalAmount = basePrice + serviceCharges;
-    //  TOTAL FOR YEARS
-    // const totalAmount = (basePrice + serviceCharges) * serviceYears;
-
-    const taxableAmount = (basePrice + serviceCharges) * serviceYears;
+    // ✅ CORRECT PRICING FORMULA:
+    // Base price is yearly → multiply by years
+    // Service charges are ONE-TIME → add only once
+    const yearlyBaseTotal = basePrice * serviceYears; // yearly base * years
+    const taxableAmount = yearlyBaseTotal + serviceCharges; // + one-time charges
     const gstAmount = +(taxableAmount * gstRate / 100).toFixed(2);
     const totalAmount = +(taxableAmount + gstAmount).toFixed(2);
 
+    // 3️⃣ Calculate totals for order group
+    let totalMrp = totalAmount;
+    let totalDiscount = 0;
 
+    bundles.forEach(b => {
+      const bundlePrice =
+        (Number(b.base_price || 0) + Number(b.service_charges || 0)) * serviceYears;
+      totalMrp += bundlePrice;
+      totalDiscount += bundlePrice; // free bundles
+    });
+
+    const totalPayable = totalMrp - totalDiscount;
+
+    // 4️⃣ Create order group
+    const [groupRes] = await db.query(
+      `INSERT INTO order_groups 
+       (customer_id, primary_service_id, total_mrp, total_discount, total_payable)
+       VALUES (?, ?, ?, ?, ?)`,
+      [customer_id, service_id, totalMrp, totalDiscount, totalPayable]
+    );
+
+    const orderGroupId = groupRes.insertId;
 
     let amountToPay = totalAmount; // default full payment
     let paymentType = "final";     // default payment type
@@ -101,14 +131,57 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment amount" });
     }
 
-    // 2. insert order
+    // 5️⃣ Create PRIMARY order (paid)
     const [ins] = await db.query(
       `INSERT INTO orders 
-        (customer_id, service_id, service_years, status,taxable_amount, gst_rate, gst_amount, total_amount, advance_required, advance_paid)
-       VALUES (?, ?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, 0)`,
-      [customer_id, service_id, serviceYears, taxableAmount, gstRate, gstAmount, totalAmount, service.advance_price || 0]
+       (order_group_id, customer_id, service_id, service_years, is_primary,
+        original_price, discount_amount,
+        taxable_amount, gst_rate, gst_amount, total_amount,
+        status, advance_required, advance_paid)
+       VALUES (?, ?, ?, ?, 1, ?, 0, ?, ?, ?, ?, 'awaiting_payment', ?, 0)`,
+      [
+        orderGroupId,
+        customer_id,
+        service_id,
+        serviceYears,
+        totalAmount,
+        taxableAmount,
+        gstRate,
+        gstAmount,
+        totalAmount,
+        service.advance_price || 0,
+      ]
     );
     const orderId = ins.insertId;
+
+    // 6️⃣ Create bundled (FREE) orders
+    for (const b of bundles) {
+      const bundleBase =
+        (Number(b.base_price || 0) + Number(b.service_charges || 0)) * serviceYears;
+
+      const gst = +(bundleBase * Number(b.gst_rate || 0) / 100).toFixed(2);
+      const mrp = +(bundleBase + gst).toFixed(2);
+
+      await db.query(
+        `INSERT INTO orders
+         (order_group_id, customer_id, service_id, service_years, is_primary,
+          original_price, discount_amount,
+          taxable_amount, gst_rate, gst_amount,
+          total_amount, status)
+         VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 0, 'awaiting_docs')`,
+        [
+          orderGroupId,
+          customer_id,
+          b.bundled_service_id,
+          serviceYears,
+          mrp,
+          mrp,
+          bundleBase,
+          b.gst_rate || 0,
+          gst,
+        ]
+      );
+    }
 
     // 3. create Razorpay Payment Link
     // const paymentLink = await razorpay.paymentLink.create({
@@ -250,7 +323,9 @@ const verifyPaymentLink = async (req, res) => {
 
     // Fetch order
     const [orderRows] = await db.query(
-      `SELECT total_amount, advance_paid, status FROM orders WHERE id=?`,
+      `SELECT id, order_group_id, total_amount, advance_paid, status, is_primary
+       FROM orders
+       WHERE id = ?`,
       [paymentLink.notes.order_id]
     );
     const order = orderRows[0];
@@ -276,6 +351,24 @@ const verifyPaymentLink = async (req, res) => {
        WHERE id=?`,
       [amountPaid, newPaymentStatus, newOrderStatus, paymentLink.notes.order_id]
     );
+
+    // 🔔 UPDATE ORDER GROUP PAYMENT STATUS (BASED ON PRIMARY ORDER)
+    if (order.is_primary && order.order_group_id) {
+      let groupPaymentStatus = "unpaid";
+
+      if (newPaymentStatus === "paid") {
+        groupPaymentStatus = "paid";
+      } else if (newPaymentStatus === "partially_paid") {
+        groupPaymentStatus = "partial";
+      }
+
+      await db.query(
+        `UPDATE order_groups
+         SET payment_status = ?
+         WHERE id = ?`,
+        [groupPaymentStatus, order.order_group_id]
+      );
+    }
 
 
     // Update orders table with actual amountPaid

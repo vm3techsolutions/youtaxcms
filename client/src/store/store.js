@@ -31,6 +31,7 @@ import salesStatsReducer from "./slices/salesStatsSlice";
 import accountsStatsReducer from "./slices/accountsStatsSlice";
 import operationsStatsReducer from "./slices/operationsStatsSlice";
 import orderLogsReducer from "./slices/orderLogsSlice";
+import customerDocumentReducer from "./slices/customerDocumentSlice";
 
 export const store = configureStore({
   reducer: {
@@ -67,5 +68,7 @@ export const store = configureStore({
     operationsStats: operationsStatsReducer,
     operationDocuments: operationDocumentReducer,
     orderLogs: orderLogsReducer,
+
+    customerDocument: customerDocumentReducer,
   },
 });

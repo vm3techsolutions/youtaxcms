@@ -19,6 +19,11 @@ import {
   resetOrderInputsState,
 } from "@/store/slices/orderInputsSlice";
 import ServiceCustomFieldsDisplay from "./ServiceCustomFieldsDisplay";
+import {
+  uploadCustomerDocument,
+  fetchCustomerDocumentsByOrder,
+} from "@/store/slices/customerDocumentSlice";
+
 
 export default function DocumentUpload() {
 
@@ -47,6 +52,23 @@ export default function DocumentUpload() {
   const [previews, setPreviews] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [previewPopup, setPreviewPopup] = useState(null);
+
+
+  // for monthly document 
+
+const [monthlyFile, setMonthlyFile] = useState(null);
+const [docMonth, setDocMonth] = useState("");
+const [docYear, setDocYear] = useState("");
+const [monthlyFileName, setMonthlyFileName] = useState("");
+const [monthlyUploading, setMonthlyUploading] = useState(false);
+
+const { documents: customerDocument } = useSelector(
+  (state) => state.customerDocument
+);
+
+const monthlyDocs = customerDocument?.filter(
+  (d) => d.doc_month && d.doc_year
+);
 
   useEffect(() => {
     if (!serviceId || !orderId) {
@@ -156,6 +178,43 @@ export default function DocumentUpload() {
     }
   };
 
+  // For monthly document 
+
+  const handleMonthlyUpload = async (e) => {
+  e.preventDefault();
+
+  if (!monthlyFile || !docMonth || !docYear) {
+    alert("Month, year, and file are required");
+    return;
+  }
+
+  try {
+    setMonthlyUploading(true);
+    await dispatch(
+      uploadCustomerDocument({
+        file: monthlyFile,
+        order_id: orderId,
+        doc_month: docMonth,
+        doc_year: docYear,
+        file_name: monthlyFileName || monthlyFile.name.split(".")[0],
+      })
+    ).unwrap();
+
+    alert("Monthly document uploaded successfully");
+
+    setMonthlyFile(null);
+    setMonthlyFileName("");
+    setDocMonth("");
+    setDocYear("");
+
+    // refresh list
+    dispatch(fetchCustomerDocumentsByOrder(orderId));
+  } catch (err) {
+    alert(err || "Monthly document upload failed");
+  }
+};
+
+
   return (
     <div className="container bg-white px-14 py-10 max-w-4xl">
 
@@ -164,8 +223,8 @@ export default function DocumentUpload() {
         <button
           onClick={() => setActiveTab("documents")}
           className={`px-4 py-2 ${activeTab === "documents"
-              ? "border-b-2 border-[#FFBF00] font-bold"
-              : ""
+            ? "border-b-2 border-[#FFBF00] font-bold"
+            : ""
             }`}
         >
           Upload Documents
@@ -174,11 +233,21 @@ export default function DocumentUpload() {
         <button
           onClick={() => setActiveTab("fields")}
           className={`px-4 py-2 ${activeTab === "fields"
-              ? "border-b-2 border-[#FFBF00] font-bold"
-              : ""
+            ? "border-b-2 border-[#FFBF00] font-bold"
+            : ""
             }`}
         >
           Additional Information
+        </button>
+
+        <button
+          onClick={() => setActiveTab("monthly")}
+          className={`px-4 py-2 ${activeTab === "monthly"
+            ? "border-b-2 border-[#FFBF00] font-bold"
+            : ""
+            }`}
+        >
+          Monthly Documents
         </button>
       </div>
 
@@ -191,10 +260,6 @@ export default function DocumentUpload() {
           No documents required for this service.
         </p>
       )}
-
-
-
-
 
       {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
 
@@ -396,6 +461,129 @@ export default function DocumentUpload() {
           </div>
         </div>
       )}
+
+{/* For monthly */}
+    {activeTab === "monthly" && (
+  <form
+    onSubmit={handleMonthlyUpload}
+    className="max-w-3xl mx-auto mt-8 space-y-6"
+  >
+    {/* File Name */}
+    <div>
+      <label className="block text-md font-medium text-gray-700 mb-1">
+        File Name <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        placeholder="Enter file name"
+        value={monthlyFileName}
+        onChange={(e) => setMonthlyFileName(e.target.value)}
+        className="w-full border text-gray-700 placeholder:text-gray-700 text-md border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#FFBF00] focus:outline-none"
+        required
+      />
+    </div>
+
+    {/* Month */}
+    <div>
+      <label className="block text-md font-medium text-gray-700 mb-1">
+        Month <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={docMonth}
+        onChange={(e) => setDocMonth(e.target.value)}
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#FFBF00] focus:outline-none"
+        required
+      >
+        <option value="">Select Month</option>
+        {[
+          "01", "02", "03", "04", "05", "06",
+          "07", "08", "09", "10", "11", "12",
+        ].map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Year */}
+    <div>
+      <label className="block text-md font-medium text-gray-700 mb-1">
+        Year <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={docYear}
+        onChange={(e) => setDocYear(e.target.value)}
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#FFBF00] focus:outline-none"
+        required
+      >
+        <option value="">Select Year</option>
+        {[2024, 2025, 2026].map((y) => (
+          <option key={y} value={y}>
+            {y}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Upload Document */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Upload Document <span className="text-red-500">*</span>
+      </label>
+
+      <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+          <svg
+            className="w-10 h-10 mb-3 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l4-4m-4 4l-4-4"
+            />
+          </svg>
+          <p className="text-sm text-gray-600">
+            <span className="font-semibold">Click to upload</span> or drag and
+            drop
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+          </p>
+        </div>
+
+        <input
+          type="file"
+          className="hidden"
+          onChange={(e) => setMonthlyFile(e.target.files[0])}
+          required
+        />
+      </label>
+
+      {monthlyFile && (
+        <p className="mt-2 text-sm text-green-600">
+          Selected file: {monthlyFile.name}
+        </p>
+      )}
+    </div>
+
+    {/* Submit Button */}
+    <div className="flex justify-end pt-6">
+      <button
+        type="submit"
+        disabled={monthlyUploading}
+        className="px-8 py-3 bg-[#FFBF00] text-black font-semibold rounded-lg hover:bg-[#e6ac00] transition disabled:opacity-60"
+      >
+        {monthlyUploading ? "Uploading..." : "Submit"}
+      </button>
+    </div>
+  </form>
+)}
+
 
     </div>
   );

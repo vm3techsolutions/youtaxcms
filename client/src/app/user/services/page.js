@@ -18,49 +18,38 @@ import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 // function ServicePriceInfo({ service, paymentOption, years }) {
 function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
-
-  
   const basePrice = Number(service.base_price || 0);
   const serviceCharges = Number(service.service_charges || 0);
-  const totalPrice = (basePrice + serviceCharges) * years;
-  // const advancePrice = Number(service.advance_price || 0);
-  const newTotalPrice = ((basePrice + serviceCharges) + (basePrice + serviceCharges) * 0.18 ) * years;
-  
+  const advancePrice = Number(service.advance_price || 0);
 
+  // ✅ Correct calculation (hidden from UI)
+  const servicePrice = basePrice * years + serviceCharges;
 
-   const subtotal = (basePrice + serviceCharges) * years;
-
+  // GST
   let cgst = 0;
   let sgst = 0;
   let igst = 0;
 
   if (isMaharashtra) {
-    cgst = subtotal * 0.09;
-    sgst = subtotal * 0.09;
+    cgst = servicePrice * 0.09;
+    sgst = servicePrice * 0.09;
   } else {
-    igst = subtotal * 0.18;
+    igst = servicePrice * 0.18;
   }
 
   const totalTax = cgst + sgst + igst;
-  const totalPayable = subtotal + totalTax;
-
-  const advancePrice = Number(service.advance_price || 0);
+  const totalPayable = servicePrice + totalTax;
 
   return (
     <div className="bg-gray-100 p-4 rounded-lg">
-      {/* Total Service Price */}
+      {/* Service Price (single line only) */}
       <div className="flex justify-between mb-2">
-        <span className="font-medium">Service Price:</span>
-        <span>₹{totalPrice.toLocaleString()}</span>
+        <span className="font-medium">Service Price</span>
+        <span>₹{servicePrice.toLocaleString()}</span>
       </div>
 
-      {/* GST */}
-      {/* <div className="flex justify-between mb-2">
-        <span className="font-medium">GST:</span>
-        <span>18%</span>
-      </div> */}
-      {/* TAX BREAKUP */}
-{isMaharashtra ? (
+      {/* TAX */}
+      {isMaharashtra ? (
         <>
           <div className="flex justify-between mb-2">
             <span className="font-medium">CGST (9%)</span>
@@ -78,36 +67,29 @@ function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
         </div>
       )}
 
-      {/* Show Advance Price only for display */}
+      {/* Advance */}
       {paymentOption === "advance" && advancePrice > 0 && (
         <div className="flex justify-between mb-2 text-blue-600">
-          <span className="font-medium">Advance Amount:</span>
+          <span className="font-medium">Advance Amount</span>
           <span>₹{advancePrice.toLocaleString()}</span>
         </div>
       )}
 
-      {/* Total to Pay Now */}
-      {/* <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-        <span>Total to Pay Now:</span>
+      {/* Total */}
+      <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+        <span>Total to Pay Now</span>
         <span>
           ₹
           {paymentOption === "advance" && advancePrice > 0
             ? advancePrice.toLocaleString()
-            : newTotalPrice.toLocaleString()}
+            : totalPayable.toLocaleString()}
         </span>
-      </div> */}
-      <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-  <span>Total to Pay Now:</span>
-  <span>
-    ₹
-    {paymentOption === "advance" && advancePrice > 0
-      ? advancePrice.toLocaleString()
-      : totalPayable.toLocaleString()}
-  </span>
-</div>
+      </div>
     </div>
   );
 }
+
+
 
 export default function ServicesFlex() {
   const dispatch = useDispatch();
@@ -129,15 +111,13 @@ export default function ServicesFlex() {
   const [years, setYears] = useState(1);
 
   const isStateMissing =
-  !userInfo?.state ||
-  userInfo.state === "Not provided" ||
-  userInfo.state.trim() === "";
+    !userInfo?.state ||
+    userInfo.state === "Not provided" ||
+    userInfo.state.trim() === "";
 
   const [showProfilePopup, setShowProfilePopup] = useState(false);
 
-
-  const isMaharashtra =
-  userInfo?.state?.toLowerCase() === "maharashtra";
+  const isMaharashtra = userInfo?.state?.toLowerCase() === "maharashtra";
 
   useEffect(() => {
     dispatch(fetchAllServicesWithActive());
@@ -163,22 +143,21 @@ export default function ServicesFlex() {
   //   });
   // };
   const handleApplyNow = (service) => {
-  if (isStateMissing) {
-    setShowProfilePopup(true);
-    return;
-  }
-
-  setModalService(service);
-  dispatch(resetOrderState());
-  setPaymentOption("full");
-
-  dispatch(fetchServiceById(service.id)).then((resultAction) => {
-    if (fetchServiceById.fulfilled.match(resultAction)) {
-      setModalService(resultAction.payload);
+    if (isStateMissing) {
+      setShowProfilePopup(true);
+      return;
     }
-  });
-};
 
+    setModalService(service);
+    dispatch(resetOrderState());
+    setPaymentOption("full");
+
+    dispatch(fetchServiceById(service.id)).then((resultAction) => {
+      if (fetchServiceById.fulfilled.match(resultAction)) {
+        setModalService(resultAction.payload);
+      }
+    });
+  };
 
   const handleBackToList = () => {
     setModalService(null);
@@ -465,13 +444,12 @@ export default function ServicesFlex() {
                 paymentOption={paymentOption}
                 years={years}
               /> */}
-             <ServicePriceInfo
-  service={modalService}
-  paymentOption={paymentOption}
-  years={years}
-  isMaharashtra={isMaharashtra}
-/>
-
+              <ServicePriceInfo
+                service={modalService}
+                paymentOption={paymentOption}
+                years={years}
+                isMaharashtra={isMaharashtra}
+              />
 
               {/* Show Years drop-down only for Food License */}
               {getCategoryName(modalService.category_id) === "Food License" && (
@@ -482,7 +460,7 @@ export default function ServicesFlex() {
                     onChange={(e) => setYears(Number(e.target.value))}
                     className="w-full border p-2 rounded-lg mt-1"
                   >
-                    {[1, 2].map((y) => (
+                    {[1, 2, 3, 4, 5].map((y) => (
                       <option key={y} value={y}>
                         {y} Year{y > 1 ? "s" : ""}
                       </option>
@@ -534,35 +512,37 @@ export default function ServicesFlex() {
       )}
 
       {showProfilePopup && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div className="bg-white rounded-lg p-6 w-[90%] max-w-md text-center shadow-lg">
-      <h2 className="text-xl font-semibold mb-2">Complete Your Profile</h2>
-      <p className="text-gray-600 mb-6">
-        Please complete your profile by adding your <b>State</b> before applying for any service.
-      </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 w-[90%] max-w-md text-center shadow-lg">
+            <h2 className="text-xl font-semibold mb-2">
+              Complete Your Profile
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Please complete your profile by adding your <b>State</b> before
+              applying for any service.
+            </p>
 
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={() => setShowProfilePopup(false)}
-          className="px-4 py-2 rounded bg-gray-200"
-        >
-          Cancel
-        </button>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setShowProfilePopup(false)}
+                className="px-4 py-2 rounded bg-gray-200"
+              >
+                Cancel
+              </button>
 
-        <button
-          onClick={() => {
-            setShowProfilePopup(false);
-            window.location.href = "/user/profile";
-          }}
-          className="px-4 py-2 rounded primary-btn text-white"
-        >
-          Go to Profile
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+              <button
+                onClick={() => {
+                  setShowProfilePopup(false);
+                  window.location.href = "/user/profile";
+                }}
+                className="px-4 py-2 rounded primary-btn text-white"
+              >
+                Go to Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
