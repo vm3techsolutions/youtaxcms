@@ -71,11 +71,11 @@ const createOrder = async (req, res) => {
     const gstRate = Number(service.gst_rate || 0);
     const advancePrice = service.advance_price ? parseFloat(service.advance_price) : 0;
 
-    // const totalAmount = basePrice + serviceCharges;
-    //  TOTAL FOR YEARS
-    // const totalAmount = (basePrice + serviceCharges) * serviceYears;
-
-    const taxableAmount = (basePrice + serviceCharges) * serviceYears;
+    // ✅ CORRECT PRICING FORMULA:
+    // Base price is yearly → multiply by years
+    // Service charges are ONE-TIME → add only once
+    const yearlyBaseTotal = basePrice * serviceYears; // yearly base * years
+    const taxableAmount = yearlyBaseTotal + serviceCharges; // + one-time charges
     const gstAmount = +(taxableAmount * gstRate / 100).toFixed(2);
     const totalAmount = +(taxableAmount + gstAmount).toFixed(2);
 
