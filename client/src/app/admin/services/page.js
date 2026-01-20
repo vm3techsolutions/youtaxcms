@@ -6,8 +6,6 @@ import ActiveDeactivateServices from "./ActiveDeactiveServices";
 
 export default function AdminServices() {
   const [showForm, setShowForm] = useState(false);
-
-   //Code By Devyani 
   const [showSettings, setShowSettings] = useState(false);
 
   return (

@@ -10,6 +10,9 @@ import {
 import { fetchActiveDocumentsByService } from "@/store/slices/serviceDocumentsSlice";
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
+import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+
+
 
 // Reusable Price Info Component
 
@@ -211,22 +214,61 @@ export default function ServicesFlex() {
     return <p className="text-center mt-8">Loading services...</p>;
   if (servicesError)
     return <p className="text-center text-red-500 mt-8">{servicesError}</p>;
+  
 
   return (
     <div className="container mx-auto py-4 px-4">
-      {/* 🔍 Search Bar */}
-      <div className="flex justify-center mb-6">
-        <input
-          type="text"
-          placeholder="Search services by name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
+      <h2 className="secondaryText text-2xl font-bold mb-8">Our Services</h2>
+
+<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 bg-white p-4 rounded-lg shadow">
+
+  {/* 🔽 Funnel Filter */}
+  <div className="relative w-auto my-2">
+    
+    {/* Funnel Icon */}
+    <FunnelIcon className="w-7 h-7 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+    <select
+      value={activeCategory}
+      onChange={(e) => setActiveCategory(e.target.value)}
+      className="w-full appearance-none bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    >
+      <option value="all">All Services</option>
+      {categories.map((cat) => (
+        <option key={cat.id} value={cat.id}>
+          {cat.name}
+        </option>
+      ))}
+    </select>
+
+    {/* Dropdown Arrow */}
+    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+      ▼
+    </span>
+  </div>
+
+  {/* 🔍 Search Bar */}
+  <div className="relative w-full lg:w-220 md:w-80 my-2">
+
+    <MagnifyingGlassIcon className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+    <input
+      type="text"
+      placeholder="Search services..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full border border-gray-300 bg-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+</div>
+
+
+      
+   
 
       {/* ⭐ Horizontal Category Filter Bar */}
-      <div className="flex flex-wrap gap-3 pb-2 mb-6 justify-center">
+      {/* <div className="flex flex-wrap gap-3 pb-2 mb-6 justify-center">
         <button
           onClick={() => setActiveCategory("all")}
           className={`px-4 py-2 rounded-full border whitespace-nowrap text-md font-bold ${
@@ -251,10 +293,16 @@ export default function ServicesFlex() {
             {cat.name}
           </button>
         ))}
-      </div>
+      </div> */}
+
+
+
+
 
       {/* Services List */}
-      <div className="flex flex-wrap justify-center gap-6 items-start">
+      {/* <div className="flex flex-wrap justify-center gap-6 items-start"> */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-center mt-15">
+
         {filteredServices.length === 0 ? (
           <p className="text-gray-500">No services found.</p>
         ) : (
@@ -263,42 +311,101 @@ export default function ServicesFlex() {
             const documents = serviceDocuments[service.id] || [];
 
             return (
-              <div
-                key={service.id}
-                className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-75"
-              >
-                <div
-                  className="p-6 text-center font-semibold text-xl secondaryText"
-                  onClick={() => handleToggle(service.id)}
-                >
-                  {service.name}
-                </div>
+              // <div
+              //   key={service.id}
+              //   className="bg-white shadow-md rounded-xl cursor-pointer overflow-hidden flex flex-col transition-all duration-300 w-75"
+              // >
+              //   <div
+              //     className="p-6 text-center font-semibold text-xl secondaryText"
+              //     onClick={() => handleToggle(service.id)}
+              //   >
+              //     {service.name}
+              //   </div>
 
-                {isExpanded && (
-                  <div className="px-8 py-2">
-                    <h3 className="font-semibold mb-2 text-gray-800">
-                      Documents Required
-                    </h3>
-                    {documents.length === 0 ? (
-                      <p>Not Uploaded</p>
-                    ) : (
-                      <ol className="list-decimal list-inside text-gray-700 mb-4">
-                        {documents.map((doc) => (
-                          <li key={doc.id}>{doc.doc_name}</li>
-                        ))}
-                      </ol>
-                    )}
-                    <div className="flex justify-center mb-4">
-                      <button
-                        onClick={() => handleApplyNow(service)}
-                        className="px-4 py-2 primary-btn text-white rounded-lg"
-                      >
-                        Apply Now
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              //   {isExpanded && (
+              //     <div className="px-8 py-2">
+              //       <h3 className="font-semibold mb-2 text-gray-800">
+              //         Documents Required
+              //       </h3>
+              //       {documents.length === 0 ? (
+              //         <p>Not Uploaded</p>
+              //       ) : (
+              //         <ol className="list-decimal list-inside text-gray-700 mb-4">
+              //           {documents.map((doc) => (
+              //             <li key={doc.id}>{doc.doc_name}</li>
+              //           ))}
+              //         </ol>
+              //       )}
+              //       <div className="flex justify-center mb-4">
+              //         <button
+              //           onClick={() => handleApplyNow(service)}
+              //           className="px-4 py-2 primary-btn text-white rounded-lg"
+              //         >
+              //           Apply Now
+              //         </button>
+              //       </div>
+              //     </div>
+              //   )}
+              // </div>
+              <div
+  key={service.id}
+  onClick={() => handleToggle(service.id)}
+  className="w-85 bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border-l-4"
+  style={{
+    borderColor: service.color || "#FFBF00", // fallback blue
+  }}
+>
+  <div className="flex items-center gap-4 p-5">
+    
+    {/* Icon */}
+    <div
+      className="w-12 h-12 flex items-center justify-center rounded-lg"
+      style={{
+        backgroundColor: `${service.color || "#FFBF00"}10`,
+        color: service.color || "#FFBF00",
+      }}
+    >
+      📄
+    </div>
+
+    {/* Title */}
+    <h3 className="font-semibold text-gray-800 text-lg">
+      {service.name}
+    </h3>
+  </div>
+
+  {/* Expand Area */}
+  {expanded === service.id && (
+    <div className="px-5 pb-5">
+      <h4 className="font-medium mb-2 text-gray-700">
+        Documents Required
+      </h4>
+
+      {serviceDocuments[service.id]?.length ? (
+        <ol className="list-decimal list-inside text-sm text-gray-600 mb-4">
+          {serviceDocuments[service.id].map((doc) => (
+            <li key={doc.id}>{doc.doc_name}</li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-sm text-gray-400 mb-4">
+          Not Uploaded
+        </p>
+      )}
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleApplyNow(service);
+        }}
+        className="w-full py-2 rounded-lg primary-btn text-white"
+      >
+        Apply Now
+      </button>
+    </div>
+  )}
+</div>
+
             );
           })
         )}
