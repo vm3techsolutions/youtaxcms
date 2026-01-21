@@ -386,7 +386,32 @@ const getAllDeliverablesWithCustomerAndService = async (req, res) => {
           c.id AS customer_id, 
           c.name AS customer_name, 
           s.id AS service_id, 
-          s.name AS service_name
+          s.name AS service_name,
+
+                    -- Sales user who worked on the order
+          (
+            SELECT ol.from_user
+            FROM order_logs ol
+            WHERE ol.order_id = o.id
+              AND ol.from_role = 'sale'
+              AND ol.from_user IS NOT NULL
+            ORDER BY ol.created_at DESC
+            LIMIT 1
+          ) AS sales_id,
+
+          -- Accounts user who worked on the order
+          (
+            SELECT ol.from_user
+            FROM order_logs ol
+            WHERE ol.order_id = o.id
+              AND ol.from_role = 'accounts'
+              AND ol.from_user IS NOT NULL
+            ORDER BY ol.created_at DESC
+            LIMIT 1
+          ) AS account_id
+
+
+          
         FROM deliverables d
         JOIN orders o ON d.order_id = o.id
         JOIN customers c ON o.customer_id = c.id
@@ -485,11 +510,54 @@ const getOperationDashboardStats = async (req, res) => {
   }
 };
 
+// ========================
+// Get Deliverables by Operation ID (generated_by)
+// ========================
+const getDeliverablesByOperationId = async (req, res) => {
+  try {
+    const operationId = req.user.id; // logged-in operation user
+
+    const [rows] = await db.query(
+      `SELECT 
+          d.*, 
+          o.id AS order_id, 
+          o.status AS order_status, 
+          c.id AS customer_id,
+          c.name AS customer_name, 
+          s.id AS service_id,
+          s.name AS service_name
+        FROM deliverables d
+        JOIN orders o ON d.order_id = o.id
+        JOIN customers c ON o.customer_id = c.id
+        JOIN services s ON o.service_id = s.id
+        WHERE d.generated_by = ?
+        ORDER BY d.created_at DESC`,
+      [operationId]
+    );
+
+    const deliverables = await Promise.all(
+      rows.map(async (d) => {
+        let signedUrl = null;
+        if (d.file_url) {
+          signedUrl = await generateSignedUrl(d.file_url);
+        }
+        return { ...d, signed_url: signedUrl };
+      })
+    );
+
+    res.json({ success: true, data: deliverables });
+  } catch (err) {
+    console.error("Error fetching deliverables by operation ID:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
 module.exports = { 
   getAssignedOrdersForOperations, 
   uploadDeliverable, 
   getDeliverablesForOrder, 
   getDeliverableById,
   getAllDeliverablesWithCustomerAndService, // <-- export the new function
+  getDeliverablesByOperationId,
   getOperationDashboardStats
 };
