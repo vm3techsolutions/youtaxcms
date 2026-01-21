@@ -81,6 +81,25 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
 
     const payment = results[0];
 
+    // 🔹 Fetch bundled (FREE) services for same order_group
+    const [bundleServices] = await db.query(
+      `
+      SELECT 
+        o.id,
+        s.name AS service_name,
+        o.taxable_amount,
+        o.total_amount,
+        o.discount_amount
+      FROM orders o
+      JOIN services s ON o.service_id = s.id
+      WHERE o.order_group_id = (
+        SELECT order_group_id FROM orders WHERE id = ?
+      )
+      AND o.is_primary = 0
+    `,
+      [payment.order_id]
+    );
+
     const serviceName = overrides.serviceName || payment.service_name || "N/A";
     const customerName =
       overrides.name || payment.customer_name || `Customer_${payment.customer_id}`;
@@ -240,11 +259,24 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       doc.text(`₹${Number(amountPaid).toFixed(2)}`, itemX + colWidths[0] + colWidths[1] + colWidths[2] + 10, rowY + 5);
       doc.text(`${String(paymentType).charAt(0).toUpperCase() + String(paymentType).slice(1)}`, itemX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 10, rowY + 5);
 
-      // Insert Advance Payments table in PDF (if any)
-      let summaryY = rowY + 40;
+      // 🔹 ADD FREE SERVICES ROWS IN PDF TABLE
+      let currentRowY = rowY + 25;
+
+      if (bundleServices && bundleServices.length) {
+        bundleServices.forEach((b) => {
+          doc.rect(itemX, currentRowY, 500, 20).stroke();
+          doc.text("Combo Service", itemX + 10, currentRowY + 5);
+          doc.text(b.service_name, itemX + colWidths[0] + 10, currentRowY + 5);
+          doc.text("1", itemX + colWidths[0] + colWidths[1] + 10, currentRowY + 5);
+          doc.text("₹0.00", itemX + colWidths[0] + colWidths[1] + colWidths[2] + 10, currentRowY + 5);
+          doc.text("Free", itemX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + 10, currentRowY + 5);
+          currentRowY += 25;
+        });
+      }
+
+      let summaryY = currentRowY + 15;
       if (advancePayments && advancePayments.length) {
-        let advTop = rowY + 40;
-        doc.moveDown(1);
+        let advTop = currentRowY + 10;
         doc.font("Noto-Bold").fontSize(12).fillColor("#003366").text("Advance Payments", itemX, advTop);
         advTop += 18;
 
@@ -454,6 +486,23 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
       `;
     }
 
+    // 🔹 SHOW FREE SERVICES IN EMAIL INVOICE TABLE
+    let freeServicesHtml = "";
+
+    if (bundleServices && bundleServices.length) {
+      bundleServices.forEach((b) => {
+        freeServicesHtml += `
+          <tr>
+            <td style="padding:10px; border:1px solid #ddd;">Combo Service (FREE)</td>
+            <td style="padding:10px; border:1px solid #ddd;">${b.service_name}</td>
+            <td style="padding:10px; border:1px solid #ddd; text-align:center;">1</td>
+            <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹0.00</td>
+            <td style="padding:10px; border:1px solid #ddd;">Free</td>
+          </tr>
+        `;
+      });
+    }
+
     // Build dynamic GST HTML based on customer location/state
     let gstHtml = "";
 
@@ -515,6 +564,8 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
                 <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${Number(amountPaid).toFixed(2)}</td>
                 <td style="padding:10px; border:1px solid #ddd;">${String(paymentType).charAt(0).toUpperCase() + String(paymentType).slice(1)}</td>
               </tr>
+
+              ${freeServicesHtml}
             </tbody>
           </table>
 
