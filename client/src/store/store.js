@@ -32,6 +32,7 @@ import accountsStatsReducer from "./slices/accountsStatsSlice";
 import operationsStatsReducer from "./slices/operationsStatsSlice";
 import orderLogsReducer from "./slices/orderLogsSlice";
 import customerDocumentReducer from "./slices/customerDocumentSlice";
+import serviceBundleReducer from "./slices/serviceBundleSlice";
 
 export const store = configureStore({
   reducer: {
@@ -70,5 +71,6 @@ export const store = configureStore({
     orderLogs: orderLogsReducer,
 
     customerDocument: customerDocumentReducer,
+    serviceBundles: serviceBundleReducer,
   },
 });

@@ -30,6 +30,7 @@ export default function AdminServices() {
             Add New Service
           </button>
 
+        
           {/* code by devyani */}
            {/* ⚙ Settings Button */}
           <button
@@ -73,6 +74,9 @@ export default function AdminServices() {
           <ServicesList />
         )}
       </div>
+        
+
+      
     </div>
   );
 }

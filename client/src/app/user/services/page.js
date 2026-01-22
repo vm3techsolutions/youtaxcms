@@ -11,8 +11,8 @@ import { fetchActiveDocumentsByService } from "@/store/slices/serviceDocumentsSl
 import { resetOrderState, createOrder } from "@/store/slices/orderSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
 import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-
-
+import { fetchBundlesByPrimaryService } from "@/store/slices/serviceBundleSlice";
+import BundledServices from "./BundledServices";
 
 // Reusable Price Info Component
 
@@ -89,8 +89,6 @@ function ServicePriceInfo({ service, paymentOption, years, isMaharashtra }) {
   );
 }
 
-
-
 export default function ServicesFlex() {
   const dispatch = useDispatch();
 
@@ -109,6 +107,11 @@ export default function ServicesFlex() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [years, setYears] = useState(1);
+  // BundledService 
+  const selectedBundles = useSelector(
+  (state) =>
+    state.serviceBundles.primaryBundles[modalService?.id] || []
+);
 
   const isStateMissing =
     !userInfo?.state ||
@@ -129,6 +132,9 @@ export default function ServicesFlex() {
     if (!serviceDocuments[serviceId]) {
       dispatch(fetchActiveDocumentsByService(serviceId));
     }
+
+    // Bundled Service
+    dispatch(fetchBundlesByPrimaryService(serviceId));
   };
 
   // const handleApplyNow = (service) => {
@@ -152,12 +158,21 @@ export default function ServicesFlex() {
     dispatch(resetOrderState());
     setPaymentOption("full");
 
-    dispatch(fetchServiceById(service.id)).then((resultAction) => {
-      if (fetchServiceById.fulfilled.match(resultAction)) {
-        setModalService(resultAction.payload);
-      }
-    });
+    // dispatch(fetchServiceById(service.id)).then((resultAction) => {
+    //   if (fetchServiceById.fulfilled.match(resultAction)) {
+    //     setModalService(resultAction.payload);
+    //   }
+    // });
   };
+
+  // convert Id to name 
+  const getServiceName = (id) => {
+  if (!id || !services?.length) return "—";
+  const service = services.find(
+    (s) => Number(s.id) === Number(id)
+  );
+  return service?.name || "Service not found";
+};
 
   const handleBackToList = () => {
     setModalService(null);
@@ -175,6 +190,10 @@ export default function ServicesFlex() {
       customer_contact: userInfo.phone,
       payment_option: paymentOption, // 'full' or 'advance'
       years: years,
+      bundled_services: selectedBundles.map((b) => ({
+    service_id: b.bundled_service_id,
+    price: 0,
+  })),
       callback_url: `${window.location.origin}/user/payment-success`,
     };
 
@@ -214,58 +233,49 @@ export default function ServicesFlex() {
     return <p className="text-center mt-8">Loading services...</p>;
   if (servicesError)
     return <p className="text-center text-red-500 mt-8">{servicesError}</p>;
-  
 
   return (
     <div className="container mx-auto py-4 px-4">
       <h2 className="secondaryText text-2xl font-bold mb-8">Our Services</h2>
 
-<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 bg-white p-4 rounded-lg shadow">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 bg-white p-4 rounded-lg shadow">
+        {/* 🔽 Funnel Filter */}
+        <div className="relative w-auto my-2">
+          {/* Funnel Icon */}
+          <FunnelIcon className="w-7 h-7 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 
-  {/* 🔽 Funnel Filter */}
-  <div className="relative w-auto my-2">
-    
-    {/* Funnel Icon */}
-    <FunnelIcon className="w-7 h-7 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            className="w-full appearance-none bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="all">All Services</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
 
-    <select
-      value={activeCategory}
-      onChange={(e) => setActiveCategory(e.target.value)}
-      className="w-full appearance-none bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    >
-      <option value="all">All Services</option>
-      {categories.map((cat) => (
-        <option key={cat.id} value={cat.id}>
-          {cat.name}
-        </option>
-      ))}
-    </select>
+          {/* Dropdown Arrow */}
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            ▼
+          </span>
+        </div>
 
-    {/* Dropdown Arrow */}
-    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-      ▼
-    </span>
-  </div>
+        {/* 🔍 Search Bar */}
+        <div className="relative w-full lg:w-220 md:w-80 my-2">
+          <MagnifyingGlassIcon className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 
-  {/* 🔍 Search Bar */}
-  <div className="relative w-full lg:w-220 md:w-80 my-2">
-
-    <MagnifyingGlassIcon className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-
-    <input
-      type="text"
-      placeholder="Search services..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full border border-gray-300 bg-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    />
-  </div>
-
-</div>
-
-
-      
-   
+          <input
+            type="text"
+            placeholder="Search services..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border border-gray-300 bg-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
 
       {/* ⭐ Horizontal Category Filter Bar */}
       {/* <div className="flex flex-wrap gap-3 pb-2 mb-6 justify-center">
@@ -295,14 +305,9 @@ export default function ServicesFlex() {
         ))}
       </div> */}
 
-
-
-
-
       {/* Services List */}
       {/* <div className="flex flex-wrap justify-center gap-6 items-start"> */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-center mt-15">
-
         {filteredServices.length === 0 ? (
           <p className="text-gray-500">No services found.</p>
         ) : (
@@ -348,64 +353,63 @@ export default function ServicesFlex() {
               //   )}
               // </div>
               <div
-  key={service.id}
-  onClick={() => handleToggle(service.id)}
-  className="w-85 bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border-l-4"
-  style={{
-    borderColor: service.color || "#FFBF00", // fallback blue
-  }}
->
-  <div className="flex items-center gap-4 p-5">
-    
-    {/* Icon */}
-    <div
-      className="w-12 h-12 flex items-center justify-center rounded-lg"
-      style={{
-        backgroundColor: `${service.color || "#FFBF00"}10`,
-        color: service.color || "#FFBF00",
-      }}
-    >
-      📄
-    </div>
+                key={service.id}
+                onClick={() => handleToggle(service.id)}
+                className="w-85 bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border-l-4"
+                style={{
+                  borderColor: service.color || "#FFBF00", // fallback blue
+                }}
+              >
+                <div className="flex items-center gap-4 p-5">
+                  {/* Icon */}
+                  <div
+                    className="w-12 h-12 flex items-center justify-center rounded-lg"
+                    style={{
+                      backgroundColor: `${service.color || "#FFBF00"}10`,
+                      color: service.color || "#FFBF00",
+                    }}
+                  >
+                    📄
+                  </div>
 
-    {/* Title */}
-    <h3 className="font-semibold text-gray-800 text-lg">
-      {service.name}
-    </h3>
-  </div>
+                  {/* Title */}
+                  <h3 className="font-semibold text-gray-800 text-lg">
+                    {service.name}
+                  </h3>
+                </div>
 
-  {/* Expand Area */}
-  {expanded === service.id && (
-    <div className="px-5 pb-5">
-      <h4 className="font-medium mb-2 text-gray-700">
-        Documents Required
-      </h4>
+                {/* Expand Area */}
+                {expanded === service.id && (
+                  <div className="px-5 pb-5">
+                    <h4 className="font-medium mb-2 text-gray-700">
+                      Documents Required
+                    </h4>
 
-      {serviceDocuments[service.id]?.length ? (
-        <ol className="list-decimal list-inside text-sm text-gray-600 mb-4">
-          {serviceDocuments[service.id].map((doc) => (
-            <li key={doc.id}>{doc.doc_name}</li>
-          ))}
-        </ol>
-      ) : (
-        <p className="text-sm text-gray-400 mb-4">
-          Not Uploaded
-        </p>
-      )}
+                    {serviceDocuments[service.id]?.length ? (
+                      <ol className="list-decimal list-inside text-sm text-gray-600 mb-4">
+                        {serviceDocuments[service.id].map((doc) => (
+                          <li key={doc.id}>{doc.doc_name}</li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="text-sm text-gray-400 mb-4">Not Uploaded</p>
+                    )}
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleApplyNow(service);
-        }}
-        className="w-full py-2 rounded-lg primary-btn text-white"
-      >
-        Apply Now
-      </button>
-    </div>
-  )}
-</div>
+                    {/* 🔥 Bundled Services */}
+                    <BundledServices serviceId={service.id}/>
 
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApplyNow(service);
+                      }}
+                      className="w-full py-2 rounded-lg primary-btn text-white"
+                    >
+                      Apply Now
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })
         )}
@@ -450,6 +454,27 @@ export default function ServicesFlex() {
                 years={years}
                 isMaharashtra={isMaharashtra}
               />
+
+                  {/* Included Free Services */}
+              {selectedBundles.length > 0 && (
+  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+    <h4 className="font-semibold text-green-800 mb-2">
+      Included Free Services
+    </h4>
+
+    {selectedBundles.map((bundle) => (
+      <div
+        key={bundle.id}
+        className="flex justify-between text-sm text-green-800"
+      >
+        <span>✔ {getServiceName(bundle.bundled_service_id)}</span>
+        <span>₹0</span>
+      </div>
+    ))}
+  </div>
+)}
+
+
 
               {/* Show Years drop-down only for Food License */}
               {getCategoryName(modalService.category_id) === "Food License" && (

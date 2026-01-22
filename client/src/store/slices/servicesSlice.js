@@ -129,6 +129,7 @@ export const toggleServiceStatus = createAsyncThunk(
 
 const initialState = {
   services: [],
+  serviceMap: {},
   currentService: null,
   loading: false,
   error: null,

@@ -17,6 +17,7 @@ import {
   BriefcaseIcon, // Deliverables / Work Items
   TagIcon, // Categories
   HomeIcon, // Dashboard
+  GiftIcon,
 } from "@heroicons/react/24/solid";
 
 // 🔹 Menu configuration with distinct icons per item
@@ -25,6 +26,7 @@ const menuConfig = {
     {name: "Dashboard", path: "/admin/dashboard", icon: HomeIcon },
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
+    { name: "Offers", path: "/admin/offers", icon: GiftIcon },
     { name: "Categories", path: "/admin/service-categories", icon: TagIcon },
     { name: "Customers", path: "/admin/customers", icon: IdentificationIcon },
     { name: "Order History", path: "/admin/order-history", icon: ClipboardDocumentListIcon },
