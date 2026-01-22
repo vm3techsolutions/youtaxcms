@@ -18,6 +18,7 @@ import { Plus, X, Trash2, Save, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createServiceInput, getServiceInputsByService, updateServiceInput, deleteServiceInput } from "@/store/slices/serviceInputSlice";
 import ServiceCustomFields from "./ServiceCustomFields";
+import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 export default function ServiceCardsBookPopup() {
   const dispatch = useDispatch();
@@ -254,10 +255,56 @@ export default function ServiceCardsBookPopup() {
   if (servicesError) return <p className="text-red-600">{servicesError}</p>;
 
   return (
-    <div className="p-6">
+    <div className="container mx-auto py-4 px-4">
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm">
+
+  {/* 🔽 Funnel Category Filter */}
+  <div className="relative w-full sm:w-64 my-2">
+
+    <FunnelIcon className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+    <select
+      value={activeCategory}
+      onChange={(e) => setActiveCategory(e.target.value)}
+      className="w-full appearance-none bg-white border border-gray-300 rounded-lg pl-10 pr-10 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    >
+      <option value="all">All Services</option>
+
+      {categories?.map((cat) => (
+        <option key={cat.id} value={cat.id}>
+          {cat.name}
+        </option>
+      ))}
+    </select>
+
+    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+      ▼
+    </span>
+  </div>
+
+  {/* 🔍 Search Bar */}
+  <div className="relative w-full sm:w-80 lg:w-220 my-2">
+
+    <MagnifyingGlassIcon className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search services..."
+      className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+
+</div>
+
+
+
+  
 
       {/* Search Bar */}
-      <div className="mb-4 flex justify-start">
+      {/* <div className="mb-4 flex justify-start">
         <input
           type="text"
           value={searchQuery}
@@ -265,10 +312,10 @@ export default function ServiceCardsBookPopup() {
           placeholder="Search services..."
           className="border border-gray-300 rounded-lg p-2 w-full max-w-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </div> */}
 
       {/* ⭐ Horizontal Category Filter Bar */}
-      <div className="flex gap-3 flex-wrap pb-2 mb-6">
+      {/* <div className="flex gap-3 flex-wrap pb-2 mb-6">
         <button
           onClick={() => setActiveCategory("all")}
           className={`px-4 py-2 rounded-full border whitespace-nowrap text-lg font-bold ${activeCategory === "all"
@@ -291,20 +338,55 @@ export default function ServiceCardsBookPopup() {
             {cat.name}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Services Card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredServices.length > 0 ? (
           filteredServices.map((service) => (
+            // <div
+            //   key={service.id}
+            //   className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
+            //   onClick={() => handleServiceClick(service)}
+            // >
+            //   <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
+            //   <p className="text-gray-500 truncate">{service.description || "No description"}</p>
+            // </div>
             <div
-              key={service.id}
-              className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-xl transition-shadow transform hover:-translate-y-1 hover:scale-105"
-              onClick={() => handleServiceClick(service)}
-            >
-              <h3 className="text-lg font-semibold mb-2 secondaryText">{service.name}</h3>
-              <p className="text-gray-500 truncate">{service.description || "No description"}</p>
-            </div>
+  key={service.id}
+  onClick={() => handleServiceClick(service)}
+  className="w-85 bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border-l-4"
+   style={{
+    borderColor: service.color || "#FFBF00", // fallback blue
+  }}
+>
+  <div className="p-5 flex items-start gap-4">
+
+   
+    {/* Icon */}
+    <div
+      className="w-12 h-12 flex items-center justify-center rounded-lg"
+      style={{
+        backgroundColor: `${service.color || "#FFBF00"}10`,
+        color: service.color || "#FFBF00",
+      }}
+    >
+      📄
+    </div>
+
+    {/* Content */}
+    <div className="flex-1">
+      <h3 className="text-lg font-semibold text-gray-800 group-hover:text-indigo-600 transition">
+        {service.name}
+      </h3>
+
+      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+        {service.description || "No description available"}
+      </p>
+    </div>
+  </div>
+</div>
+
           ))
         ) : (
           <p className="text-gray-500 col-span-full text-center">
