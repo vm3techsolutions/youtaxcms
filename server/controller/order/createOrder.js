@@ -77,7 +77,8 @@ const createOrder = async (req, res) => {
     const yearlyBaseTotal = basePrice * serviceYears; // yearly base * years
     const taxableAmount = yearlyBaseTotal + serviceCharges; // + one-time charges
     const gstAmount = +(taxableAmount * gstRate / 100).toFixed(2);
-    const totalAmount = +(taxableAmount + gstAmount).toFixed(2);
+    const totalAmountBeforeRound = +(taxableAmount + gstAmount).toFixed(2);
+    const totalAmount = Math.round(totalAmountBeforeRound); // Round to nearest integer
 
     // 3️⃣ Calculate totals for order group
     let totalMrp = totalAmount;
