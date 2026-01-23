@@ -531,7 +531,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
         <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 30px;">
           
           <div style="font-size: 22px; font-weight: bold; color: #003366;">
-            Youtax
+            Youtax India Consulting Pvt. Ltd.
           </div>
 
           <div style="text-align: center; margin-top: 20px;">
@@ -694,7 +694,7 @@ async function sendPaymentReceiptMail(arg1, customerEmail) {
     console.log("📤 Sending email to:", customerEmailFinal);
 
     await transporter.sendMail({
-      from: `"Youtax" <${process.env.EMAIL_USER}>`,
+      from: `"Youtax India Consulting Pvt. Ltd." <${process.env.EMAIL_USER}>`,
       to: customerEmailFinal,
       subject: `Payment Receipt - ${payment.payment_id}`,
       html: htmlContent,

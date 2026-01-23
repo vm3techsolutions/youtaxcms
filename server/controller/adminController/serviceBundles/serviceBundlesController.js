@@ -74,7 +74,7 @@ const getAllServiceBundles = async (req, res) => {
 };
 
 /**
- * ✅ Get Service Bundle by Primary Service ID
+ * ✅ Get Service Bundle by Primary Service ID (Only Active Bundles)
  */
 const getServiceBundleByPrimaryId = async (req, res) => {
     try {
@@ -91,12 +91,12 @@ const getServiceBundleByPrimaryId = async (req, res) => {
             FROM service_bundles sb
             JOIN services ps ON sb.primary_service_id = ps.id
             JOIN services bs ON sb.bundled_service_id = bs.id
-            WHERE sb.primary_service_id = ?
+            WHERE sb.primary_service_id = ? AND sb.is_active = 1
             ORDER BY sb.created_at DESC
         `, [primary_service_id]);
 
         if (!rows.length) {
-            return res.status(404).json({ message: "No bundles found for this service" });
+            return res.status(404).json({ message: "No active bundles found for this service" });
         }
 
         res.json({ success: true, data: rows });
