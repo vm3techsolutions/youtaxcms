@@ -27,6 +27,7 @@ const menuConfig = {
     { name: "Orders", path: "/admin/orders", icon: BanknotesIcon },
     { name: "Services", path: "/admin/services", icon: ArrowDownTrayIcon },
     { name: "Offers", path: "/admin/offers", icon: GiftIcon },
+    { name: "Deliverables", path: "/admin/deliverables", icon: ArrowDownTrayIcon },
     { name: "Categories", path: "/admin/service-categories", icon: TagIcon },
     { name: "Customers", path: "/admin/customers", icon: IdentificationIcon },
     { name: "Order History", path: "/admin/order-history", icon: ClipboardDocumentListIcon },

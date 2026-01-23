@@ -196,7 +196,7 @@ router.get("/operations/orders/assigned", verifyToken , isOperation, operationCo
 router.post("/operations/upload/deliverable", verifyToken , isOperation, upload.array("files"), operationController.uploadDeliverable);
 router.get("/operations/upload/deliverable/:order_id", verifyToken , isOperation, operationController.getDeliverablesForOrder);
 router.get("/operations/upload/deliverablebyid/:id", verifyToken , isOperation, operationController.getDeliverableById);
-router.get("/operations/upload/all/deliverable", verifyToken , isOperation, operationController.getAllDeliverablesWithCustomerAndService);
+router.get("/operations/upload/all/deliverable", verifyToken , operationController.getAllDeliverablesWithCustomerAndService);
 router.get("/operations/deliverables/by-operation", verifyToken , isOperation, operationController.getDeliverablesByOperationId);
 router.get("/operations/dashboard/stats", verifyToken, isOperation, operationController.getOperationDashboardStats);
 

@@ -29,7 +29,9 @@ export default function BundledServices({ serviceId }) {
       </p>
 
       <ul className="space-y-2">
-        {bundles.map((bundle) => (
+        {bundles
+  .filter((bundle) => Number(bundle.is_active) === 1)
+  .map((bundle) => (
           <li
             key={bundle.id}
             className="flex justify-between items-center text-sm"
