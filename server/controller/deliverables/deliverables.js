@@ -43,6 +43,7 @@ const getDeliverablesByCustomerId = async (req, res) => {
         JOIN services s ON o.service_id = s.id
         WHERE o.customer_id=?
           AND (o.status = 'completed' OR o.status = 'awaiting_final_payment')
+            AND d.qc_status = 'approved'
         ORDER BY d.created_at DESC`,
       [customerId]
     );

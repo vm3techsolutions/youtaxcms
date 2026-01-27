@@ -118,8 +118,19 @@ const currentOrders = sortedOrders.slice(
   indexOfLastOrder
 );
 
-    
 
+const isLastDeliverableApproved = (orderId) => {
+  const list = deliverables[orderId] || [];
+  if (list.length === 0) return false;
+
+  // if deliverables have versions, make sure last means highest version
+  const sorted = [...list].sort((a, b) => (a.versions || 0) - (b.versions || 0));
+  const last = sorted[sorted.length - 1];
+
+  return last?.qc_status === "approved";
+};
+
+ 
   return (
     <div className="container mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Admin Orders</h2>
@@ -180,7 +191,7 @@ const currentOrders = sortedOrders.slice(
                 >
                   View Deliverables
                 </button>
-                {order.status === "in_progress" &&
+                {/* {order.status === "in_progress" &&
                   order.payment_status === "paid" && (
                     <button
                       onClick={() => handleApproveCompletion(order.id)}
@@ -188,7 +199,22 @@ const currentOrders = sortedOrders.slice(
                     >
                       Approve Completion
                     </button>
-                  )}
+                  )} */}
+                  
+
+  {order.status === "in_progress" &&
+  order.payment_status === "paid" &&
+  isLastDeliverableApproved(order.id) && (
+    <button
+      onClick={() => handleApproveCompletion(order.id)}
+      className="px-3 py-1 primary-btn text-white rounded"
+    >
+      Approve Completion
+    </button>
+  )}
+
+
+
               </td>
 
               <td className="py-2 px-4 border">
@@ -295,7 +321,7 @@ const currentOrders = sortedOrders.slice(
                             "No File"
                           )}
                         </td>
-                        <td className="p-2 border">
+                        {/* <td className="p-2 border">
                           {d.qc_status === "approved" ? (
                             <span className="px-2 py-1 bg-green-500 text-white rounded">
                               Approved
@@ -320,9 +346,35 @@ const currentOrders = sortedOrders.slice(
                               </button>
                             </>
                           )}
-                        </td>
+                        </td> */}
+
+                        <td className="p-2 border">
+  <button
+    onClick={() => handleQC(d.id, "approved")}
+    className={`px-2 py-1 rounded mr-2 ${
+      d.qc_status === "approved"
+        ? "bg-green-600 text-white"
+        : "bg-green-500 text-white hover:bg-green-600"
+    }`}
+  >
+    {d.qc_status === "approved" ? "Approved" : "Approve"}
+  </button>
+
+  <button
+    onClick={() => handleQC(d.id, "rejected")}
+    className={`px-2 py-1 rounded ${
+      d.qc_status === "rejected"
+        ? "bg-red-600 text-white"
+        : "bg-red-500 text-white hover:bg-red-600"
+    }`}
+  >
+    {d.qc_status === "rejected" ? "Rejected" : "Reject"}
+  </button>
+</td>
+
+
                       </tr>
-                    ))}
+                   ))}
                   </tbody>
                 </table>
               ) : (
