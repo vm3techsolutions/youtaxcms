@@ -33,6 +33,11 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
     rememberMe: false,
   });
 
+  const [errors, setErrors] = useState({
+  email: "",
+  phone: "",
+});
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -44,6 +49,16 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
   //   });
   // };
 
+  const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+const validatePhone = (phone) => {
+  const regex = /^[6-9]\d{9}$/; // Indian 10-digit mobile
+  return regex.test(phone);
+};
+
   const handleChange = (e) => {
   const { name, value, type, checked } = e.target;
 
@@ -51,6 +66,22 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
     ...prev,
     [name]: type === "checkbox" ? checked : value,
   }));
+
+  // Email validation
+  if (name === "email") {
+    setErrors((prev) => ({
+      ...prev,
+      email: validateEmail(value) ? "" : "Enter a valid email address",
+    }));
+  }
+
+  // Phone validation
+  if (name === "phone") {
+    setErrors((prev) => ({
+      ...prev,
+      phone: validatePhone(value) ? "" : "Enter a valid 10-digit mobile number",
+    }));
+  }
 
   if (name === "state") {
     if (value.length >= 2) {
@@ -67,6 +98,23 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!validateEmail(formData.email)) {
+    setErrors((prev) => ({
+      ...prev,
+      email: "Invalid email format",
+    }));
+    return;
+  }
+
+  if (!validatePhone(formData.phone)) {
+    setErrors((prev) => ({
+      ...prev,
+      phone: "Invalid mobile number",
+    }));
+    return;
+  }
+
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
@@ -115,6 +163,7 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+            
           </div>
 
           {/* Mobile + PAN */}
@@ -128,6 +177,7 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+
             <input
               type="text"
               name="pancard"
@@ -287,6 +337,12 @@ const [showStateDropdown, setShowStateDropdown] = useState(false);
         </form>
 
         {/* Error & Success Messages */}
+        {errors.email && (
+  <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+)}
+{errors.phone && (
+  <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+)}
         {error && <p className="text-center text-sm text-red-500 mt-4">{error}</p>}
         {successMessage && <p className="text-center text-sm text-green-500 mt-4">{successMessage}</p>}
       </div>
