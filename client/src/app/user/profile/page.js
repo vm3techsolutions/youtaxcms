@@ -24,6 +24,7 @@ export default function UserProfile() {
     successMessage,
     error,
     verificationStatus,
+    branches,
   } = useSelector((state) => state.user);
 
   const { loading: passwordLoading, successMessage: passwordSuccess, error: passwordError } =
@@ -169,6 +170,7 @@ const handleSelectState = (state) => {
   // };
   const handleSave = () => {
   dispatch(updateCustomerDetails({
+    name: formData.name,
     pancard: formData.pancard,
     location: formData.location,
     state: formData.state,
@@ -205,7 +207,6 @@ const handleSelectState = (state) => {
             value={formData.name}
             onChange={handleChange}
             className="w-full border rounded px-3 py-2 mt-1"
-            readOnly
           />
         </div>
 
