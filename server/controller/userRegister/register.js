@@ -226,18 +226,22 @@ const getCustomerDetails = async (req, res) => {
   }
 };
 
-// ✅ UPDATE CUSTOMER DETAILS (pancard, location, state, gst_number, options)
+// ✅ UPDATE CUSTOMER DETAILS (name, pancard, location, state, gst_number, options)
 const updateCustomerDetails = async (req, res) => {
   try {
     const customerId = req.user && req.user.id;
     if (!customerId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { pancard, location, state, gst_number, options } = req.body;
+    const { name, pancard, location, state, gst_number, options } = req.body;
 
     // Build dynamic update query
     const updates = [];
     const values = [];
 
+    if (name !== undefined) {
+      updates.push("name = ?");
+      values.push(name || null);
+    }
     if (pancard !== undefined) {
       updates.push("pancard = ?");
       values.push(pancard || null);

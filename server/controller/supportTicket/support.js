@@ -68,18 +68,16 @@ const createTicket = async (req, res) => {
 //   }
 // };
 
-// ---------------- List Tickets (Filterable) ----------------
+// ---------------- List Tickets (Filterable by Authenticated Customer) ----------------
 const listTickets = async (req, res) => {
   try {
-    const { customer_id, status, order_id } = req.query;
+    const customer_id = req.user.id;
+    const { status, order_id } = req.query;
+    
     let sql = `SELECT st.*, c.name AS customer_name FROM support_tickets st
-               JOIN customers c ON st.customer_id = c.id WHERE 1=1`;
-    const params = [];
+               JOIN customers c ON st.customer_id = c.id WHERE st.customer_id=?`;
+    const params = [customer_id];
 
-    if (customer_id) {
-      sql += " AND st.customer_id=?";
-      params.push(customer_id);
-    }
     if (status) {
       sql += " AND st.status=?";
       params.push(status);
